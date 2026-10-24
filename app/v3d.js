@@ -273,7 +273,7 @@ function build(THREE){
     cracks.visible=S.dry>.3&&thick>0; cracks.position.y=S.soilTop+.004; cracks.material.opacity=clamp((S.dry-.3)*1.4);
     // meteorite
     const pulse=.5+.5*Math.sin(t*(2.2+v.E*.03)), fl=S.flash; S.flash=Math.max(0,S.flash-dt*1.4);
-    stoneG.position.set(0,S.soilTop+.13,0); stone.rotation.y=t*.15; stoneMat.emissiveIntensity=.3+(v.E/100)*1.5*pulse+fl*2.2; metLight.position.set(0,S.soilTop+.5,0); metLight.intensity=(.2+1.3*(v.E/100)*pulse+fl*5)*(S.night?1.1:1);
+    stoneG.position.set(0,S.soilTop+.13,0); stoneMat.emissiveIntensity=.3+(v.E/100)*1.5*pulse+fl*2.2; metLight.position.set(0,S.soilTop+.5,0); metLight.intensity=(.2+1.3*(v.E/100)*pulse+fl*5)*(S.night?1.1:1);
     // piante
     plantsG.children.forEach((g,i)=>{ g.position.y=S.soilTop; }); v.plants.forEach(p=>{ const o=plantObjs[p.id]; if(!o) return; const key=Math.round(p.v*40)+':'+Math.round(S.dry*40)+':'+(S.v&&S.v.R>.6?1:0); if(o.key!==key){ o.key=key; o.upd(p.v,S.dry); } });
     // oggetti
