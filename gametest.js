@@ -44,4 +44,35 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   let resto=null; for(let gi=0;gi<12&&resto==null;gi++){ P.newGame('T',JSON.parse(JSON.stringify(su))); P.popups.length=0; for(let i=0;i<120&&resto==null;i++){ if(P.sim.finalePending) P.closeChapter(); if(P.sim.pending.length){ const q=P.sim.pending[0]; P.resolveDecision(q.id,'lascia'); } P.autoCare(); P.G.power.salto=6; const rr=P.usaSalto(); P.popups.length=0; if(rr.ok&&rr.pausa){ resto=rr.resto; const dd=P.sim.d, q=P.sim.pending[0]; P.resolveDecision(q.id,q.type==='mutazione'?'proteggi':q.type==='societa'?'nascosto':'lascia'); t('la notte rimasta si svolge da sola dopo la decisione',P.G.power.resto===0&&P.sim.d>=dd+resto,P.sim.d+' '+dd+' '+resto); } } }
   t('un salto interrotto da una decisione lascia 1 notte in sospeso',resto===1,resto);
   t('salvataggio e ripresa conservano le carte',(()=>{ P.persist(); const s=P.G.power.salto; P.loadSave(); return P.G.power.salto===s; })()); }
+// 7) microclima (ecologo): troppa acqua → ristagno, sole col tappo chiuso → caldo, muffa che nasce e si combatte, tappo e salvataggio
+{ const mk=(o)=>S.createSim(Object.assign({luce:1,acqua:1,meteorite:1,piante:['muschio','felce','succulenta'],insetti:['formiche'],oggetti:[]},o||{}),{seed:4,game:true,needs:true});
+  const has=(sim,ic)=>sim.log.some(e=>e.icon===ic);
+  // troppa acqua: cinque bicchieri di fila
+  const W=mk(), C=mk(); for(let i=0;i<5;i++) W.act('acqua'); W.steps(4); C.steps(4);
+  const pv=(x,id)=>x.view().plants.find(p=>p.id===id).v;
+  t('troppa acqua: il drenaggio si riempie e arriva il ristagno',W.view().clima.drenaggio>.85&&W.view().clima.ristagno>.4,JSON.stringify(W.view().clima));
+  t('troppa acqua: avviso «acqua ferma tra i sassolini»',has(W,'🫧'));
+  t('troppa acqua: la succulenta marcisce più del vaso curato',pv(W,'succulenta')<pv(C,'succulenta')*.5,pv(W,'succulenta').toFixed(2)+' '+pv(C,'succulenta').toFixed(2));
+  W.setTappo(true); W.steps(8); t('col tappo aperto il ristagno passa',W.view().clima.ristagno<.2,W.view().clima.ristagno);
+  // sole diretto col tappo chiuso: serra
+  const Sc=mk({luce:2}), So=mk({luce:2}), M=mk({luce:1}); So.setTappo(true); for(let i=0;i<4;i++){ [Sc,So,M].forEach(x=>{ x.setNeeds({um:.6}); x.step(); }); }
+  t('sole e tappo chiuso: dentro fa caldo (serra)',Sc.view().clima.T>=28&&has(Sc,'🌡️'),Sc.view().clima.T);
+  t('sole e tappo aperto: meno caldo',So.view().clima.T<Sc.view().clima.T&&!has(So,'🌡️'),So.view().clima.T);
+  t('la felce soffre il caldo della serra',pv(Sc,'felce')<pv(So,'felce')-.1,pv(Sc,'felce').toFixed(2)+' '+pv(So,'felce').toFixed(2));
+  // muffa: chiuso, umido, nessuna cura → cresce; aperto + pulito → cala; i collemboli arrivano da soli
+  const F=mk({acqua:2}); F.setNeeds({um:.85,pul:.9}); const m0=F.view().muffa; F.steps(10); const m1=F.view().muffa;
+  t('muffa: nel chiuso umido cresce da sola',m1>m0+.2,m0.toFixed(2)+'→'+m1.toFixed(2));
+  const G2=mk({acqua:2}); G2.setNeeds({um:.85,pul:.9}); G2.setTappo(true); G2.steps(10); t('muffa: col tappo aperto cresce molto meno',G2.view().muffa<m1-.15,G2.view().muffa.toFixed(2));
+  for(let i=0;i<5;i++){ F.setNeeds({um:.85}); F.steps(3); } t('muffa: arrivano i collemboli e lo racconta',F.view().clima.collemboli>.1&&has(F,'🔬'),JSON.stringify(F.view().clima));
+  F.act('pulisci'); F.setTappo(true); const m2=F.view().muffa; F.steps(6); t('muffa: aria, pulizia e collemboli la fanno calare',F.view().muffa<m2,m2.toFixed(2)+'→'+F.view().muffa.toFixed(2));
+  // salvataggio del motore: il clima si conserva
+  const s1=JSON.stringify(F.view().clima), F2=S.createSim({luce:1,acqua:1,piante:[],insetti:[],oggetti:[]},{seed:1,game:true,needs:true}); F2.load(JSON.parse(JSON.stringify(F.save()))); t('il clima si salva col vaso',JSON.stringify(F2.view().clima)===s1);
+  // strato app: __app.micro(), __app.tappo(), G.micro, salvataggi vecchi
+  const P=window.__app; P.newGame('T',JSON.parse(JSON.stringify(su))); P.popups.length=0; const mv=P.micro();
+  t('__app.micro() dà condensa, temperatura e muffa per zona',mv&&mv.condensa&&mv.T&&mv.muffa&&mv.clima&&typeof mv.aria.rh==='number',JSON.stringify(mv&&Object.keys(mv)));
+  const tp=P.tappo(true); t('__app.tappo(true) apre il vaso',tp.tappo==='aperto'&&P.sim.view().clima.aperto&&P.micro().tappo==='aperto');
+  P.tappo(false); P.passaNotte(); P.popups.length=0; t('un giorno del vaso = 6 ore del microclima',P.micro().t>=6,P.micro().t);
+  P.persist(); t('G.micro nel salvataggio, leggero',!!P.G.micro&&JSON.stringify(P.G.micro).length<4000,JSON.stringify(P.G.micro||'').length);
+  const sv=JSON.parse(localStorage.getItem('terrario.save.v2')); delete sv.micro; localStorage.setItem('terrario.save.v2',JSON.stringify(sv)); t('un salvataggio vecchio senza microclima si apre',P.loadSave()&&!!P.micro()&&!!P.G.micro);
+  P.doAct('acqua'); t('le cure passano al microclima',P.micro().aperto===true); }
 console.log(ok,'ok',bad,'falliti');

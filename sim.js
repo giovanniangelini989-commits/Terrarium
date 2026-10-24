@@ -79,6 +79,8 @@ const FINALI={
 const CULT2FIN={sacro:'fede',sapere:'accademia',commercio:'mercato',gioco:'carnevale',mistero:'mistero',comunicazione:'voci',fuoco:'fiamma',agricoltura:'giardinieri',tribale:'tribu',guerra:'tribu'};
 // ============ SIMULAZIONE ============
 const EV0=.034, EV1=.044, DT=.03, MU=.013, CW=.18, CM=.26, DET0=.75;
+// Microclima nel ramo dei bisogni (ecologo, docs/ecologia/modello.md §8): solo con opts.needs, lo storico (equiv.js) non cambia.
+const EVC0=.018, EVC1=.02, MG=.065, TOK={muschio:24,felce:26,succulenta:34,fungo:23,carnivora:30};
 function createSim(setup0,opts){
   opts=opts||{}; const R_=rng(opts.seed||1); const NEEDS=!!opts.needs;
   const setup={luce:setup0.luce,acqua:setup0.acqua,meteorite:setup0.meteorite==null?1:setup0.meteorite,piante:(setup0.piante||[]).slice(),insetti:(setup0.insetti||[]).slice(),oggetti:(setup0.oggetti||[]).slice()};
@@ -87,6 +89,7 @@ function createSim(setup0,opts){
   const ev=(d,kind,icon,text,why)=>{ const en={d,kind,icon,text,why:why||[]}; if(opts.game) en.n=++evN; log.push(en); if(kind==='pace') flags.pace=true; if(kind==='guerra'&&text.indexOf('La guerra finisce')===0) flags.warEnded=true; };
   let s,w,T,H,met,wBoost=0;
   let Wres=ACQUA[setup0.acqua==null?1:setup0.acqua].w, nw={um:false,ter:false,pul:false}; let E=20,pulse=0,muffa=ACQUA[setup.acqua].w>.7?.3:.05,detr=(opts.needs?DET0:.2); let muffaWarn=false, siccita=false;
+  const climaZero=()=>({tappo:0,ap:0,apOggi:0,dren:0,rist:0,umG:0,colle:0,rin:0,Tc:22,Hc:.8,pv:.7,f:{}}); let clima=climaZero();
   const mkPlant=id=>({id,...PIANTE[id],mut:false,v:0});
   const mkSp=id=>{ const b=SPECIE[id]; return {id,...b,tol:{...b.tol},pop:12,mut:[],mutIdx:0,X:0,gen:0,genAcc:0,society:null,suscept:1,tossico:false,alive:true,intBonus:0,monster:false,rep0:b.rep}; };
   const plants=setup.piante.map(mkPlant);
@@ -129,21 +132,22 @@ function createSim(setup0,opts){
   }
   function step(){
     if(pending.length) return {paused:true,d};
-    d++; wBoost=Math.max(0,wBoost-.03); if(NEEDS){ Wres=clamp(Wres-(EV0+EV1*s)); detr=clamp(detr-DT); } if(lumModLeft>0){ lumModLeft--; if(lumModLeft===0) lumMod=0; } recompute();
+    d++; wBoost=Math.max(0,wBoost-.03); if(NEEDS){ climaPre(); detr=clamp(detr-DT); } if(lumModLeft>0){ lumModLeft--; if(lumModLeft===0) lumMod=0; } recompute();
     // --- meteorite ---
     E+=met.g*(.9+3.2*s);
     if(E>=100){ E=20; pulse=.28; if(log.filter(l=>l.kind==='meteorite').length<3) ev(d,'meteorite','☄️','Il meteorite si scarica in un lampo viola.',['Energia accumulata: più luce ⇒ più energia ⇒ scariche più frequenti ('+LUCE[setup.luce].nome.toLowerCase()+').']); }
     pulse*=.8;
     const R=clamp(.1+.5*s+.25*(E/100)+pulse,0,1.3); series.R.push(R); series.E.push(E); radSum+=R; radN++; lastR=R;
     // --- muffa e piante ---
-    muffa=clamp(muffa+(H>.7?.02:-.01)+(NEEDS?MU:0)); if(muffa>.7 && !muffaWarn){ muffaWarn=true; ev(d,'ambiente','🟣','La muffa invade il vaso.',['Umidità alta ('+f2(H)+') e acqua abbondante.']); }
+    muffa=NEEDS?climaMuffa():clamp(muffa+(H>.7?.02:-.01)); if(muffa>.7 && !muffaWarn){ muffaWarn=true; ev(d,'ambiente','🟣','La muffa invade il vaso.',['Umidità alta ('+f2(H)+') e acqua abbondante.']); }
     let leaf=0, rot=muffa*.8+detr, carn=0;
     plants.forEach(p=>{
       let v=clamp(1-1.1*Math.abs(s-p.opt.l)-1.1*Math.abs(w-p.opt.w));
       v*= p.rad<0 ? 1+(-p.rad)*R : clamp(1-p.rad*Math.max(0,R-.5)*1.4,.1,1.5);
-      if(NEEDS){ v*=clamp(.45+1.1*detr,.45,1)*(1-clamp((muffa-.6)*1.2,0,.8)); } p.v=v; leaf+=p.foglie*v; rot+=p.rot*v; if(p.pred) carn+=v;
+      if(NEEDS){ v*=clamp(.45+1.1*detr,.45,1)*(1-clamp((muffa-.6)*1.2,0,.8)); v=climaPianta(p,v); } p.v=v; leaf+=p.foglie*v; rot+=p.rot*v; if(p.pred) carn+=v;
       if(!p.mut && R>.62 && d>25 && R_()<.03 && v>.3){ p.mut=true; ev(d,'mutazione','✨',p.id==='fungo'?'I funghi brillano e prosperano nella radiazione.':(p.id==='muschio'?'Il muschio comincia a emettere una luce verde.':p.nome+' cresce in forme strane vicino al meteorite.'),['Radiazione alta ('+f2(R)+') per molti giorni.']); }
     });
+    if(NEEDS) climaWarn();
     if(!siccita && w<.3 && s>.9 && d>10){ siccita=true; ev(d,'ambiente','🏜️','Il vaso si secca: le piante soffrono.',['Poca acqua e sole diretto.']); }
     // --- capacità ---
     const bio=x=>x.pop*x.size;
@@ -174,6 +178,7 @@ function createSim(setup0,opts){
       // predazione
       sp.forEach(y=>{ if(y.dieta==='insetti'&&y.alive&&y!==x&&x.dieta!=='insetti'){ dp-=.0045*y.pop*y.agg*(y.mut.includes('gigantismo')?1.6:1)*x.suscept*x.pop/(x.pop+25); } });
       if(carn>0 && x.id==='mosche') dp-=.003*carn*x.pop*30/(x.pop+25)*.5;
+      if(NEEDS&&x.id==='lumache') dp=climaLumache(x,dp);
       delta.set(x,dp);
     });
     sp.forEach(x=>{ if(!x.alive) return; x.pop=clamp(x.pop+delta.get(x),0,100); detr=clamp(detr+(delta.get(x)<0?-delta.get(x)*.004:0)-.002); });
@@ -266,7 +271,39 @@ function createSim(setup0,opts){
   function addObject(id){ if(ogg.includes(id)||!OGGETTI[id]) return false; ogg.push(id); recompute(); ev(d,'ambiente',OGGETTI[id].icon,OGGETTI[id].nome+' nel vaso.',['L’hai messo tu.']); sp.forEach(x=>{ if(x.society){ Object.entries(OGGETTI[id].memi).forEach(([m,v])=>{ x.society.memi[m]=(x.society.memi[m]||0)+v*.8; }); if(reculture(x)) ev(d,'cultura',OGGETTI[id].icon,OGGETTI[id].txt(x.nome),['La società ha scoperto un oggetto nuovo: la sua cultura cambia.']); } }); return true; }
   function removeObject(id){ const i=ogg.indexOf(id); if(i<0) return false; ogg.splice(i,1); recompute(); ev(d,'ambiente',OGGETTI[id].icon,OGGETTI[id].nome+' tolto dal vaso.',['L’hai tolto tu.']); return true; }
   function setMalus(delta,days){ lumMod=delta; lumModLeft=days; recompute(); ev(d,'ambiente','🩹','Il vetro si è scheggiato: entra meno luce.',['Per qualche giorno il vaso è un po’ più scuro.']); }
-  function setNeeds(o){ if(o.um!=null) Wres=clamp(o.um); if(o.ter!=null) detr=clamp(o.ter); if(o.pul!=null) muffa=clamp(1-o.pul); recompute(); }
+  function setNeeds(o){ if(o.um!=null) Wres=clamp(o.um); if(o.ter!=null) detr=clamp(o.ter); if(o.pul!=null) muffa=clamp(1-o.pul); if(o.rist!=null) clima.rist=clamp(o.rist); recompute(); }
+  // ---------- microclima (ecologo): tappo, ristagno, serra, muffa con le sue cause, collemboli ----------
+  // B1 evaporazione: col tappo aperto (o nel giorno dopo una cura, quando lo togli per curare) come prima; chiuso l'acqua ricircola e se ne perde meno della metà (tappo non ermetico).
+  function climaPre(){ const c=clima, ap=c.tappo||c.ap>0; c.apOggi=ap?1:0;
+    Wres=clamp(Wres-(ap?EV0+EV1*s:EVC0+EVC1*s));
+    if(c.dren>0&&Wres<.9){ const x=Math.min(c.dren,.03); c.dren-=x; Wres=clamp(Wres+x*.31); }   // il serbatoio tra i sassolini risale piano quando sopra si asciuga (~7 ml al giorno reale; 75 ml su 240)
+    c.dren=Math.max(0,c.dren-(ap?.04:.01));
+    c.rist=clamp(c.rist+(c.dren>.6&&Wres>.8?.15:-.08));                                          // B3 ristagno: l'acqua tra i sassolini tocca la terra fradicia
+    if(c.ap>0) c.ap--; if(c.rin>0) c.rin--; }
+  // B2 muffa: cresce con l'umido alla superficie (chiuso: l'aria resta quasi satura anche al sole, H = 0,6 + 0,4·acqua), 5–45 °C, materia morta; cala con aria, luce, collemboli
+  function climaMuffa(){ const c=clima, ap=c.apOggi;
+    const Hc=ap?H:clamp(.6+.4*w), Tc=20+4*s+(s>.6?(s-.6)/.4*(ap?5:9):0); c.Hc=Hc; c.Tc=Tc;
+    const fRH=clamp((Hc-.6)/.3), fT=clamp(1-Math.abs(Tc-25)/20), morta=clamp(.5+.4*detr+.4*(1-c.pv));
+    const cresce=MG*fRH*fT*morta*(ap?.6:1), cala=.004+(ap?.03:0)+.01*Math.max(0,s-.5)+.04*c.colle;
+    c.umG=Hc>.8?c.umG+1:0;
+    if(muffa>.45&&Hc>.8) c.colle=clamp(c.colle+.04); else if(Wres<.3||muffa<.1) c.colle=clamp(c.colle-.02);   // collemboli: arrivano dove c'è muffa e umido, se ne vanno col secco
+    return clamp(muffa+cresce-cala); }
+  // B3–B5, B8: il vaso cuoce al sole, le radici soffocano, la succulenta marcisce nel chiuso, il muschio rinasce
+  function climaPianta(p,v){ const c=clima; let x=v; if(c.Tc>TOK[p.id]) x-=.035*(c.Tc-TOK[p.id]);
+    if(c.rist>.5) x*=p.id==='succulenta'?.15:.6; if(p.id==='succulenta'&&c.umG>=5) x*=.15; if(p.id==='muschio'&&c.rin>0) x*=1.5; return Math.max(0,x); }
+  // B7 lumache: col secco si sigillano nel guscio invece di morire
+  function climaLumache(x,dp){ if(w<.35){ dp=Math.max(dp,-.01*x.pop); if(!x.est){ x.est=1; ev(d,'ambiente','🐌','Le lumache si sono sigillate nel guscio: aspettano l’umido.',['Con il secco chiudono il guscio con un velo e dormono.']); } } else x.est=0; return dp; }
+  function climaWarn(){ const c=clima, f=c.f; c.pv=plants.length?plants.reduce((a,p)=>a+clamp(p.v),0)/plants.length:.7;
+    if(c.rist>.5&&!f.rist){ f.rist=1; ev(d,'ambiente','🫧','C’è acqua ferma tra i sassolini: le radici restano senz’aria.',['Hai versato più acqua di quanta la terra ne tenga. Lascia il tappo aperto per farla uscire.']); } if(c.rist<.2) f.rist=0;
+    if(c.Tc>28&&!c.apOggi&&plants.length&&!f.serra){ f.serra=1; ev(d,'ambiente','🌡️','Al sole, col tappo chiuso, dentro fa caldo come in una serra: il muschio e la felce soffrono.',['Il sole scalda il vetro chiuso di molti gradi. Spostalo in mezza luce o apri il tappo.']); } if(c.Tc<26) f.serra=0;
+    if(c.umG===5&&plants.some(p=>p.id==='succulenta')){ ev(d,'ambiente','🌵','La succulenta è molle alla base: nell’aria chiusa e umida marcisce.',['Vuole il tappo aperto e il sole.']); }
+    if(c.colle>=.2&&!f.colle){ f.colle=1; ev(d,'ambiente','🔬','Sulla terra saltano minuscoli collemboli bianchi: mangiano la muffa.',['Arrivano da soli dove la muffa e l’umido durano a lungo.']); } if(c.colle<.05) f.colle=0; }
+  function climaCura(name){ const c=clima; c.ap=1;                                               // per curare togli il tappo: per un giorno entra aria
+    if(name==='acqua'){ const over=Wres+.3-1; if(over>0) c.dren=clamp(c.dren+over*3.2);
+      if((nw.um||Wres<.25)&&plants.some(p=>p.id==='muschio')){ c.rin=2; ev(d,'ambiente','🌿','Hai bagnato il muschio secco: in un’ora si riapre, verde come prima.',['Il muschio secco non è morto: aspetta l’acqua.']); } }
+    if(name==='terra') c.colle=clamp(c.colle+.3); }
+  function setTappo(aperto){ const a=aperto?1:0; if(a===clima.tappo) return false; clima.tappo=a; ev(d,'azione','🫙',a?'Hai tolto il tappo: entra aria e l’acqua comincia a uscire.':'Hai chiuso il tappo: dentro l’acqua torna a girare come pioggia.',[a?'Aperto il vaso si asciuga e la muffa cala.':'Chiuso il vaso resta umido più a lungo.']); return true; }
+  function climaView(){ const c=clima, r=x=>Math.round(x*100)/100; return {tappo:c.tappo?'aperto':'chiuso',aperto:!!(c.tappo||c.ap>0),T:r(c.Tc),H:r(c.Hc),ristagno:r(c.rist),drenaggio:r(c.dren),collemboli:r(c.colle),umidiGiorni:c.umG}; }
   function needWarn(){ if(Wres<.22&&!nw.um){ nw.um=true; ev(d,'ambiente','🥀','L’acqua sta finendo: le foglie si arricciano.',['L’umidità è scesa sotto il minimo.']); } if(Wres>.4) nw.um=false;
     if(detr<.1&&!nw.ter){ nw.ter=true; ev(d,'ambiente','🍂','Il terreno è stanco: per chi vive nel marcio non c’è più niente da mangiare.',['Il terreno è quasi senza nutrienti.']); } if(detr>.25) nw.ter=false;
     if(muffa>.55&&!nw.pul){ nw.pul=true; ev(d,'ambiente','🟣','Il vetro è sporco e la muffa avanza.',['Nessuno pulisce da un po’.']); } if(muffa<.3) nw.pul=false; }
@@ -274,6 +311,7 @@ function createSim(setup0,opts){
   function growMeteo(){ if(setup.meteorite>=2) return false; setup.meteorite++; recompute(); ev(d,'ambiente','☄️','Il sasso è cresciuto: ora batte con più forza.',['Un meteorite più grande accumula energia più in fretta.']); return true; }
   function setLuce(i){ if(i===setup.luce) return false; setup.luce=i; recompute(); ev(d,'azione','☀️','Hai spostato il vaso: '+LUCE[i].nome.toLowerCase()+'.',[]); return true; }
   function act(name){
+    if(NEEDS&&(name==='acqua'||name==='nutri'||name==='pulisci'||name==='terra')) climaCura(name);
     if(name==='pulisci'){ muffa=clamp(muffa-(NEEDS?.4:.25)); if(!NEEDS) detr=clamp(detr-.1); ev(d,'azione','🧽','Hai pulito il vetro e il fondo.',['La muffa cala.']); return 'Più pulito: la muffa cala.'; }
     if(name==='terra'){ detr=clamp(detr+.6); ev(d,'azione','🪴','Versi una manciata di terra nel barattolo. Il sasso si scurisce un poco, come se ascoltasse.',['Il terreno parte da zero.']); return 'Terra nel barattolo.'; }
     if(name==='acqua'){ if(NEEDS) Wres=clamp(Wres+.3); else wBoost=Math.min(.3,wBoost+.15); recompute(); ev(d,'azione','💧','Hai versato un po’ d’acqua.',['Il vaso è più umido per qualche giorno.']); return 'Più umido, per qualche giorno.'; }
@@ -292,14 +330,14 @@ function createSim(setup0,opts){
       reculture(x);
     }
     return p.type; }
-  function save(){ return JSON.parse(JSON.stringify({v:1,setup,st:{E,pulse,muffa,detr,wBoost,muffaWarn,siccita,radSum,radN,lastR,warCount,chapterStart,chapterNo,finalePending,monsterSince,lastNotable,lastFinale,lumMod,lumModLeft,evN,Wres,d},pending,wars:wars.map(g=>({key:g.key,a:g.a.id,b:g.b.id,start:g.start,end:g.end})),trade:[...trade],flags,plants,sp,series,log,rng:R_.get()})); }
+  function save(){ return JSON.parse(JSON.stringify({v:1,setup,st:{E,pulse,muffa,detr,wBoost,muffaWarn,siccita,radSum,radN,lastR,warCount,chapterStart,chapterNo,finalePending,monsterSince,lastNotable,lastFinale,lumMod,lumModLeft,evN,Wres,d,clima},pending,wars:wars.map(g=>({key:g.key,a:g.a.id,b:g.b.id,start:g.start,end:g.end})),trade:[...trade],flags,plants,sp,series,log,rng:R_.get()})); }
   function load(st){
     const rep=(arr,vals)=>{ arr.splice(0,arr.length,...vals); };
     setup.luce=st.setup.luce; setup.acqua=st.setup.acqua; setup.meteorite=st.setup.meteorite; rep(setup.piante,st.setup.piante); rep(setup.insetti,st.setup.insetti); rep(setup.oggetti,st.setup.oggetti);
     rep(plants,st.plants); rep(sp,st.sp); rep(pending,st.pending); rep(log,st.log); series.R=st.series.R; series.E=st.series.E; series.pop=st.series.pop;
     rep(wars,st.wars.map(g=>({key:g.key,a:sp.find(x=>x.id===g.a),b:sp.find(x=>x.id===g.b),start:g.start,end:g.end}))); trade.clear(); st.trade.forEach(t=>trade.add(t));
     flags.pace=st.flags.pace; flags.warEnded=st.flags.warEnded; R_.set(st.rng);
-    ({E,pulse,muffa,detr,wBoost,muffaWarn,siccita,radSum,radN,lastR,warCount,chapterStart,chapterNo,finalePending,monsterSince,lastNotable,lastFinale,lumMod,lumModLeft,evN,Wres,d}=st.st); if(Wres==null) Wres=ACQUA[setup.acqua].w; lumMod=lumMod||0; lumModLeft=lumModLeft||0; evN=evN||0; lastFinale=lastFinale||null; recompute(); }
+    ({E,pulse,muffa,detr,wBoost,muffaWarn,siccita,radSum,radN,lastR,warCount,chapterStart,chapterNo,finalePending,monsterSince,lastNotable,lastFinale,lumMod,lumModLeft,evN,Wres,d}=st.st); if(Wres==null) Wres=ACQUA[setup.acqua].w; lumMod=lumMod||0; lumModLeft=lumModLeft||0; evN=evN||0; lastFinale=lastFinale||null; clima=Object.assign(climaZero(),st.st.clima||{}); recompute(); }
   function closeChapter(){ const fp=finalePending; if(fp) lastFinale=fp.finale; chapterStart=d; chapterNo++; finalePending=null; flags.pace=false; flags.warEnded=false; sp.forEach(x=>{ if(x.society) x.society.scisma=false; }); monsterSince=0; lastNotable=d; return fp; }
   function view(){
     const alive=sp.filter(x=>x.alive); const pv=plants.length?plants.reduce((a,p)=>a+clamp(p.v),0)/plants.length:1;
@@ -307,8 +345,8 @@ function createSim(setup0,opts){
     return {d,chapter:chapterNo,setup:{luce:setup.luce,acqua:setup.acqua,meteorite:setup.meteorite,piante:setup.piante.slice(),insetti:setup.insetti.slice(),oggetti:setup.oggetti.slice()},vit:Math.round(100*clamp(.5*pv+.5*sv)),E:Math.round(E),R:lastR,muffa,H,s,w,wBoost,detr,
       plants:plants.map(p=>({id:p.id,v:p.v,mut:p.mut})),
       sp:sp.map(x=>({id:x.id,nome:x.nome,icon:x.icon,pop:x.pop,alive:x.alive,mut:x.mut.slice(),society:x.society?{name:x.society.name,cult:x.society.cult,since:x.society.since,culto:x.society.culto}:null,monster:x.monster,size:x.size,gen:x.gen,sociale:x.sociale,suit:x.suit==null?.7:x.suit})),
-      wars:wars.filter(g=>!g.end).map(g=>[g.a.id,g.b.id]),pending:pending.slice(),finalePending,age:d-chapterStart,needs:{um:NEEDS?Wres:w,ter:detr,pul:1-muffa}}; }
-  return {setup,step,steps,summary,classify,log,series,pending,sp,plants,wars,R_,addSpecies,removeSpecies,addPlant,removePlant,addObject,removeObject,setLuce,setMalus,setNeeds,charge,growMeteo,act,resolve,save,load,closeChapter,view,
+      wars:wars.filter(g=>!g.end).map(g=>[g.a.id,g.b.id]),pending:pending.slice(),finalePending,age:d-chapterStart,needs:{um:NEEDS?Wres:w,ter:detr,pul:1-muffa},clima:NEEDS?climaView():null}; }
+  return {setup,step,steps,summary,classify,log,series,pending,sp,plants,wars,R_,addSpecies,removeSpecies,addPlant,removePlant,addObject,removeObject,setLuce,setMalus,setNeeds,setTappo,charge,growMeteo,act,resolve,save,load,closeChapter,view,
     get d(){return d;}, get finalePending(){return finalePending;}, get chapter(){return chapterNo;}, get E(){return E;}, get lastR(){return lastR;} };
 }
 function run(setup,opts){ opts=opts||{}; const days=opts.days||120; const sim=createSim(setup,{seed:opts.seed}); for(let i=0;i<days;i++) sim.step(); const r=sim.summary(); r.days=days; return r; }

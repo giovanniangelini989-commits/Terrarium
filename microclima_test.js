@@ -58,5 +58,11 @@ const maxOf=(a,f)=>Math.max(...a.map(f)), minOf=(a,f)=>Math.min(...a.map(f));
 // 6. Salvataggio
 { const m=M.create({piante:['felce']}); m.step(30,amb('mezza','sole')); const s=m.save(); const m2=M.create(); m2.load(s); ok(JSON.stringify(m.view())===JSON.stringify(m2.view()),'save/load riproduce lo stato'); }
 
+// 7. Allineamento col motore: ogni cura toglie il tappo per un giorno del vaso (6 h); imposta copia i bisogni del motore
+{ const m=M.create({piante:['muschio']}); const a=m.act('bagna',30); ok(a.aperto===true,'per bagnare togli il tappo: il vaso è aperto');
+  m.step(7,amb('mezza','mezza')); ok(m.view().aperto===false,'dopo un giorno del vaso (6 h) il tappo è di nuovo chiuso');
+  const v=m.act('imposta',{um:.4,muffa:.6,tappo:'aperto',posizione:'sole',drenaggio:.5,collemboli:.2,piante:['felce']});
+  ok(Math.abs(v.acqua.terriccio-.4)<.01&&v.muffa.terra===.6&&v.tappo==='aperto'&&v.posizione==='sole'&&v.acqua.drenaggio===.5&&v.collemboli===.2&&v.piante.felce&&!v.piante.muschio,'imposta allinea acqua, muffa, tappo, posizione, drenaggio, collemboli e piante'); }
+
 console.log('\n'+(fails?fails+' controlli falliti':'tutti i controlli passano'));
 process.exit(fails?1:0);

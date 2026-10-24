@@ -7,8 +7,10 @@ Modulo autonomo: `window.__MICRO` nel browser, `module.exports` in node. Non toc
 ```js
 const m = __MICRO.create(stato0);     // stato0: {piante:['muschio','felce'], tappo:'chiuso'|'aperto', posizione:'ombra'|'mezza'|'sole', T, superficie, terriccio, drenaggio (ml), detrito, collemboli, muffa}
 m.step(ore, ambiente)                 // avanza di `ore` (sotto-passi di 15 min); ambiente = oggetto o funzione(t) → {T, Tfinestra, sole, lux, rh, letargo}
-m.act('bagna', 30) · act('terra') · act('pulisci', {zona}) · act('asciuga', {zona, v}) · act('apri') · act('chiudi') · act('sposta', 'sole') · act('collemboli', .4) · act('pianta', 'fungo') · act('togli', 'fungo')
-m.view()  → { aria:{rh, T, rugiada}, T:{aria, suolo, vetro:{tappo,alto,medio,basso}}, acqua:{superficie, terriccio, drenaggio (0–1), ml:{…}, ristagno}, condensa:{tappo,alto,medio,basso} (0–1), gocce (g/h), muffa:{terra,vetro,foglie} (0–1), detrito, sporcoVetro, collemboli, luce:{lux (migliaia), dli}, piante:{id:{vigore, crescita}}, tappo, posizione, letargo }
+m.act('bagna', 30) · act('terra') · act('nutri') · act('pulisci', {zona}) · act('asciuga', {zona?, v}) · act('apri') · act('chiudi') · act('sposta', 'sole') · act('collemboli', .4) · act('pianta', 'fungo') · act('togli', 'fungo')
+m.act('imposta', {um, muffa, tappo, posizione, drenaggio, collemboli, piante})   // allineamento ai bisogni del motore
+// bagna, terra, nutri, pulisci tolgono il tappo per 6 h (un giorno del vaso): è lì che il barattolo respira
+m.view()  → { aperto, aria:{rh, T, rugiada, Tmax (massimo dell'ultimo step)}, stanza:{T (media dell'ultimo step)}, T:{aria, suolo, vetro:{tappo,alto,medio,basso}}, acqua:{superficie, terriccio, drenaggio (0–1), ml:{…}, ristagno}, condensa:{tappo,alto,medio,basso} (0–1), gocce (g/h), muffa:{terra,vetro,foglie} (0–1), detrito, sporcoVetro, collemboli, luce:{lux (migliaia), dli}, piante:{id:{vigore, crescita}}, tappo, posizione, letargo }
 m.save() / m.load(o)
 __MICRO.ambienteDi(ora, {stagione, posizione, meteo})   // stanza con finestra, giorno/notte e stagione
 __MICRO.eSat(T), dewPoint(T, rh), absHum(e, T), PIANTE, JAR
@@ -72,7 +74,8 @@ Ogni sorgente/pozzo scambia con l'aria con una conduttanza `g` [g/(h·hPa)] vers
 ### Acqua negli strati
 - Versata: 30 % in superficie, 70 % nel terriccio.
 - Superficie > 30 g → percola nel terriccio (τ 0,5 h); terriccio > 240 g → scende nel drenaggio (τ 2 h); drenaggio → terriccio per risalita 0,3 g/h se il terriccio è sotto il 50 %; terriccio → superficie per capillarità fino a ~10 ml/giorno quando la superficie è secca.
-- **Ristagno** `marciume`: +0,004/h se drenaggio ≥ 95 % e terriccio ≥ 95 %, −0,002/h altrimenti (§2: radici senz'aria).
+- **Ristagno** `marciume`: +0,02/h se drenaggio ≥ 95 % e terriccio ≥ 95 %, −0,005/h altrimenti (§2: radici senz'aria); la risalita dal drenaggio si ferma quando il terriccio supera il 90 %.
+- **Collemboli spontanei**: nel terriccio ci sono quasi sempre; con muffa sulla terra > 0,5 e aria > 80 % salgono da soli di 0,0004/h fino a 0,1, poi crescono col cibo (studio §7).
 
 ### Luce
 - `lux` dall'ambiente: davanzale al sole 9 kl di picco, mezza luce 3 kl, ombra 0,4 kl (§4: sud 5–10 kl, nord 0,2–0,5 kl); il vetro chiuso toglie l'8 %. `luxMed` (media ~24 h) ×2,2 ≈ picco diurno equivalente, usato dalle piante così la notte non è «stress».
@@ -105,4 +108,29 @@ Semplificazioni dichiarate: una sola specie per tipo; niente dormienza invernale
 - Il barattolo aperto non ha «spiffero» variabile: una sola conduttanza; basta per distinguere aperto/chiuso.
 
 ## 7. Verifica
-`node microclima_test.js`: 6 scenari (estate al sole col tappo chiuso, inverno alla finestra, troppa acqua, trascurato + letargo + risveglio, muffa che nasce e si combatte, save/load), 29 controlli, tutti verdi al 24 ottobre 2026.
+`node microclima_test.js`: 7 scenari (estate al sole col tappo chiuso, inverno alla finestra, troppa acqua, trascurato + letargo + risveglio, muffa che nasce e si combatte, save/load, allineamento col motore), 30 controlli. `node gametest.js` §7: gli stessi fenomeni nel motore e nello strato app (18 controlli).
+
+## 8. Nel gioco (secondo giro, 24 ottobre 2026)
+
+Due livelli, perché il motore deve restare equivalente allo storico (`equiv.js` confronta 600 vasi senza bisogni):
+1. **Motore** (`sim.js`, solo ramo `needs`): regole a passo giornaliero che decidono vita e morte. Fanno parte del gioco anche senza 3D.
+2. **Microclima** (`app/microclima.js`): fisica oraria che decide ciò che si **vede** (condensa per zona, gocce, temperatura, muffa sul vetro). Prima di ogni passo copia dal motore acqua, muffa, tappo, posizione, piante, drenaggio e collemboli (`act('imposta')`): ciò che il giocatore vede e le pillole dei bisogni non si contraddicono mai.
+
+### Regole del motore (un giorno del vaso = 6 ore reali)
+| Proposta | Regola | Numeri | Perché così |
+|---|---|---|---|
+| B1 evaporazione | aperto (tappo tolto o giorno dopo una cura): `Wres −= 0,034 + 0,044·s` come prima; chiuso: `Wres −= 0,018 + 0,02·s` | chiuso perde ~la metà | Un barattolo chiuso vero non perde quasi nulla (studio §1); il nostro ha un tappo da bambino, non ermetico: metà è il compromesso che lascia vivo il bisogno d'acqua. Chi cura ogni giorno apre il vaso un giorno su quattro. |
+| B2 muffa | `muffa += 0,065·f_RH·f_T·morta·(aperto ? 0,6 : 1) − (0,004 + 0,03·aperto + 0,01·max(0, s − 0,5) + 0,04·collemboli)` | `f_RH = (H_c − 0,6)/0,3`, `H_c = 0,6 + 0,4·acqua` se chiuso (aria quasi satura anche al sole), `H` del motore se aperto; `f_T = 1 − |T − 25|/20`; `morta = 0,5 + 0,4·nutrienti + 0,4·(1 − vigore medio)` | Soglia di umidità, temperatura, materia morta e aria ferma (studio §6). La soglia 0,6 e non 0,8 perché `H` del motore è un indice grezzo che sottostima il chiuso (oggi.md). Il vecchio `+0,013` fisso è sparito: la muffa ora ha una causa. |
+| B2 collemboli | `+0,04`/giorno se muffa > 0,45 e `H_c` > 0,8; `−0,02` col secco o senza muffa; `terra` ne porta 0,3 | mangiano 0,04·collemboli al giorno | Non serve una specie nuova (B6 rimandata): sono la cura «viva» e arrivano da soli, come nei vasi veri. Avviso «Sulla terra saltano minuscoli collemboli…». |
+| B3 ristagno | l'acqua oltre il pieno va nel drenaggio (`dren += eccesso·3,2`, 75 ml su 240); `rist += 0,15` al giorno se `dren > 0,6` e `Wres > 0,8`, altrimenti `−0,08`; il drenaggio risale di 0,03/giorno quando la terra scende sotto 0,9 | `rist > 0,5`: piante ×0,6, succulenta ×0,15 | Studio §2. Cinque bicchieri di fila → ristagno in 4 giorni del vaso, avviso «acqua ferma tra i sassolini». Col tappo aperto passa in ~2 giorni reali. |
+| B4 serra | `T = 20 + 4·s + (s > 0,6 ? (s − 0,6)/0,4 · (aperto ? 5 : 9) : 0)` °C; vigore `−0,035` per grado sopra `TOK` | `TOK`: muschio 24, felce 26, fungo 23, carnivora 30, succulenta 34 | Ombra 21 °C, mezza 22 °C, sole chiuso 33 °C, sole aperto 29 °C: è il +8/+9 °C del microclima (stima, studio §4). Avviso «dentro fa caldo come in una serra». |
+| B5 succulenta | `H_c > 0,8` per 5 giorni di fila → ×0,15 | avviso «molle alla base» | Studio §5. Chi cura ogni giorno apre il vaso e la salva; muore solo nel vaso sempre chiuso. |
+| B7 lumache | con `w < 0,35` calano al massimo dell'1 % al giorno | avviso «sigillate nel guscio» | Studio §7: estivano invece di morire. |
+| B8 muschio | prima acqua dopo la sete: muschio ×1,5 per 2 giorni | avviso «si riapre in un'ora» | Studio §5: premio visibile della cura. |
+| tappo | `setTappo(true/false)`; cure = aperto per un giorno | | L'azione più fisica che mancava. |
+
+### Strato app (`app1.js`, blocco in coda)
+- `G.micro` salvato (~1,5 KB); salvataggi vecchi migrano da soli.
+- Un `sim.step()` riuscito = `micro.step(6)` con ambiente `ambienteDi(ora, stagione del mese, posizione)`; l'ora parte dall'ora reale della prima partita (`ofs`).
+- **Letargo coerente** (DECISIONI §1): in assenza il microclima ha `letargo:true` e il ristagno del motore non supera 0,3. Corretto un difetto che c'era già: se una decisione fermava il recupero dei giorni di assenza, la cura che svegliava il vaso toglieva la protezione ai giorni ancora da recuperare (il vaso poteva spegnersi «per assenza»; era la causa del fallimento casuale di `gametest.js`).
+
