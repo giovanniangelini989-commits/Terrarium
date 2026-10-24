@@ -292,9 +292,10 @@ canvas.v3d{display:block;width:100%;border-radius:18px}
 .fx-ghost *{pointer-events:none}
 .btn,.cta{position:relative;overflow:hidden}
 .bar.np{position:relative}
-.np.crit::after{content:'';position:absolute;inset:0;border-radius:999px;box-shadow:0 0 0 4px rgba(232,115,90,.32);opacity:0;pointer-events:none;animation:fxcrit 2.4s ease-in-out 3}
+.np.crit{border-color:rgba(232,115,90,.7)}
+.np.warn::after{content:'';position:absolute;inset:0;border-radius:999px;box-shadow:0 0 0 4px rgba(232,115,90,.4);opacity:0;pointer-events:none;animation:fxcrit 1.1s ease-in-out 2}
 @keyframes fxcrit{0%,100%{opacity:0}50%{opacity:1}}
-@media (prefers-reduced-motion: reduce){.np.crit::after,.nf::after,.cta::after{animation:none!important}}
+@media (prefers-reduced-motion: reduce){.np.warn::after,.nf::after,.cta::after{animation:none!important}}
 /* modalità leggera: la guardia prestazioni spegne i vetri sfocati */
 body.lite *,body.lite *::before,body.lite *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 body.lite .hud .day,body.lite .bar.np,body.lite .vsb,body.lite .nf,body.lite .rb,body.lite .v3t,body.lite .demoov .seg{background:rgba(10,15,21,.82)}
@@ -305,3 +306,20 @@ body.v3load .stage.full .vasebox.hero canvas{opacity:0}
 body.v3load .stage.full .vasebox.hero::before{content:'';position:absolute;left:50%;top:50%;width:46%;aspect-ratio:3/4;transform:translate(-50%,-50%);border-radius:22% 22% 18% 18%;border:1.5px solid rgba(190,215,230,.5);background:linear-gradient(180deg,rgba(190,215,230,.14),rgba(190,215,230,.04));pointer-events:none;animation:v3glow 2.2s ease-in-out infinite}
 @keyframes v3glow{0%,100%{opacity:.25}50%{opacity:.7}}
 @media (prefers-reduced-motion: reduce){body.v3load .stage.full .vasebox.hero::before{animation:none;opacity:.5}}
+
+/* ===== v2 interfaccia: etichette, salto, riepilogo, contrasto ===== */
+.stage.full .hud .day{background:rgba(6,10,15,.78);border-color:rgba(255,255,255,.3);text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.stage.full .hud .day span{color:#fff;font-size:10px}
+.stage.full .dock{bottom:calc(env(safe-area-inset-bottom) + 58px)}
+.toolbar.round{gap:clamp(5px,2vw,12px)}
+.rb{width:min(56px,12.4vw);height:min(56px,12.4vw)}
+.rb .lb{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);font:700 10.5px/1 Manrope,system-ui,sans-serif;font-style:normal;color:#fff;white-space:nowrap;text-shadow:0 1px 4px #000,0 0 2px #000;pointer-events:none}
+.rb small{min-width:18px}
+.rb.pw small{background:var(--green);color:#06221a;right:-6px;padding:0 5px}
+.rb.pw{border-color:rgba(124,245,200,.6)}
+.rb.pw.veil{opacity:.55;border-style:dashed}
+.rb.pw.veil small{background:rgba(255,255,255,.75)}
+.rb.pw svg{transform-origin:50% 50%}
+.rstate{margin:10px 0 0;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.rstate div{display:flex;gap:8px;font-size:13.5px;color:var(--body);padding:2px 0}
+body:has(.stage.full) .toast{bottom:calc(env(safe-area-inset-bottom) + 170px)}
