@@ -1,6 +1,6 @@
 # Terrario — regole del progetto
 
-Leggi prima `docs/STORIA.md` (cosa è stato deciso e perché) e `docs/CONTRATTI.md` (le interfacce tra le parti).
+Leggi prima `docs/STORIA.md` (cosa è stato deciso e perché), `docs/DECISIONI.md` (le scelte aperte, già chiuse) e `docs/CONTRATTI.md` (le interfacce tra le parti).
 
 ## Chi decide
 - **Giovanni** (art director, product owner) decide direzione creativa e approva. Parla italiano.
@@ -28,7 +28,8 @@ Leggi prima `docs/STORIA.md` (cosa è stato deciso e perché) e `docs/CONTRATTI.
 | Game e systems designer | motore | Sonnet |
 | UI/UX designer | interfaccia | Sonnet |
 | Regista delle cinematiche | finali | Sonnet |
-| Sound designer e compositore | suono | Sonnet |
+| Sound designer (integrazione audio) | suono | Sonnet |
+| Compositore (musica con Magnific) | musicista | Sonnet |
 | Playtest e user research | giocatore | Sonnet |
 | Ricerca di mercato | ricerca | Sonnet |
 | Lancio e App Store | lancio | Sonnet |
@@ -61,7 +62,7 @@ L'orchestratore agisce senza chiedere conferma; chiede a Giovanni solo le scelte
 - **Micro-interazioni**: 100–250 ms, si anima la scala non le dimensioni, ogni effetto torna a riposo. Tre livelli di risposta (piccolo: tocco pulsante · medio: arrivo, scelta · grande: finale, popolo fondato).
 
 ## Vincoli tecnici
-- Pagina pubblicata = un solo file HTML autonomo. Script esterni solo da cdnjs, jsDelivr, cdn.tailwindcss.com, code.jquery.com (versioni fissate, vecchie ≥ 14 giorni). Niente immagini remote, niente fetch verso altri siti.
+- Pagina pubblicata = un solo file HTML autonomo (eccezione decisa in docs/DECISIONI.md §5: modelli hero e musica in file separati sullo stesso sito, caricati solo quando servono). Script esterni solo da cdnjs, jsDelivr, cdn.tailwindcss.com, code.jquery.com (versioni fissate, vecchie ≥ 14 giorni). Niente immagini remote, niente fetch verso altri siti.
 - Three.js 0.184. Budget: iPhone 12 a 60 fps, ≤ 90k triangoli nel caso peggiore, guardia prestazioni già attiva (abbassa risoluzione, poi spegne ombre, poi il 3D).
 - Su iPhone la vibrazione dal browser non funziona (Apple ha chiuso il trucco in iOS 26.5): solo suono e risposta visiva finché non c'è l'app nativa.
 - Salvataggio in localStorage: tenere il salvataggio leggero (l'albero limita a 36 foto da ~5 KB).

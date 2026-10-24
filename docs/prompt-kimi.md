@@ -28,8 +28,8 @@ applied by the game, not by you.
 Follow the passes of brief §8, in this order, one asset at a time:
 - Pass A: formiche FIRST, then termiti, coleotteri, ragni, lumache, mosche.
 - Pass B: statuina, orologio, giocattolo, specchio, libro, moneta, radio, candela.
-- Pass C: felce, fungo, succulenta, carnivora. SKIP meteorite: its design is still being
-  defined by the art lead; it will come with its own references.
+- Pass C: felce, fungo, succulenta, carnivora, meteorite (stone-iron, dark fusion crust,
+  regmaglypts, fine crack network as `_EMIT` mask, NO crystals: brief §7).
 - Pass D: capanna (4 growth stages). Landmarks only when their prompts arrive.
 - Pass E: biscotto (the cat).
 
@@ -90,6 +90,10 @@ conservative option, write the choice in the report, and continue.
   marked as NOT APPROVED, with the reason;
 - the kit, the tools or the brief are missing or contradict each other in a way that
   changes the result.
+
+## Include the kit in your first delivery
+Put reference/ and golden/ (exactly as you received them) next to the ant, so our
+acceptance check uses the same quality bar and the same scene as you.
 
 ## Delivery format
 Exactly brief §6: one folder per id with hero.glb / close.glb / swarm.glb (hero optional

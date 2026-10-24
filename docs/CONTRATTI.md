@@ -7,6 +7,7 @@
 | storia | `app/story.js`, `app/notti.js`, testi dentro `app/app1.js` (solo stringhe) |
 | interfaccia | `app/app3.js`, `app/app.css`, `app/film.js`, `app/fx.js` |
 | suono | `app/audio.js` |
+| musicista | `docs/musica/`, `audio/` |
 | tre-d | `app/v3d.js`, `app/app2.js`, `app/materials.js`, `app/kimi.js`, `app/tex.js`, `vendor/` |
 | finali | nuovo `app/finali.js` (lettore dei mini video) |
 | logica di gioco (orchestratore) | `app/app1.js`, `build_app.py` |
