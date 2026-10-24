@@ -76,6 +76,30 @@ Vincoli che valgono per tutte (da `docs/ricerca/regole.md` e `docs/DECISIONI.md`
 
 ---
 
+## 6. La festa del popolo (ricompensa che cambia il vaso, nata dal calendario) — secondo giro, 24 ottobre
+
+**Cosa fa.** Ogni popolo ricorda il giorno in cui è nato (`society.since`, già in `view()`). Ogni 30 notti del vaso torna la sua festa: per una notte il popolo fa qualcosa di visibile secondo la sua cultura (il «sacro» accende lumini intorno alla statuina, il «fuoco» un fuocherello sul muschio, il «gioco» un girotondo) e lascia **un segno permanente** nel vaso (una pietra incisa, un filo teso tra due foglie: `__vase.fx` + un oggetto `G.tree` con foto). Il calendario (`docs/gameplay/tempo.md`) segna la festa in anticipo con una tacca, senza testo: chi la nota, la aspetta.
+
+**Perché funziona.** È l'unico «evento in calendario» che non chiede niente: si ottiene vivendo. Animal Crossing tiene i giocatori per anni con feste a data fissa (`concorrenti.md`); da noi la data la fissa il vaso, non il negozio. Dà ai popoli una vita rituale che oggi manca (giocatore: «dopo il giorno 20 si ripete»).
+
+**Rischi etici.** Bassi: se la festa cade in un giorno di assenza, si vede al risveglio nel riassunto e il segno resta lo stesso. Nessun «l'hai persa».
+
+**Costo.** Medio. Motore: ½ giorno (evento `festa` in `sim.js` con `decisions:true`, `equiv.js` a 0). Storia: 10 culture × 1 riga. Tre-d/interfaccia: un effetto e un segno per cultura (può partire con 3 culture).
+
+**Chi.** Motore, storia, tre-d, interfaccia.
+
+## 7. Il biglietto di domani (obiettivo a breve termine scelto da te, dal calendario)
+
+**Cosa fa.** La sera (dopo le 20 reali) il quaderno ti chiede una riga: «Domani vorrei…» con tre scelte prese dallo stato del vaso («che le formiche facciano pace», «che il muschio torni verde», «vedere cosa c’è sotto il sasso»). Il biglietto va nella casella di domani del calendario. Il giorno dopo, se la cosa è successa, la casella si colora e il quaderno scrive una pagina in prima persona; se non è successa, il biglietto resta lì, senza colore e senza commento. Un solo biglietto per giorno, mai obbligatorio.
+
+**Perché funziona.** Dà un motivo di ritorno a 24 ore che nasce da una curiosità, non da un premio (SINTESI ricerca, azione 1 e 3). Usa le notti a orario del nuovo tempo: tra sera e mattina passano 2 notti, abbastanza perché qualcosa accada. È la versione «a un giorno» della proposta 2, più leggera.
+
+**Rischi etici.** Medi se mal fatto: niente notifica, niente serie di biglietti, niente conteggio dei biglietti non avverati. Il testo non deve mai dire «non ce l'hai fatta».
+
+**Costo.** Basso. Motore: ½ giorno (12 predicati su `view()` come le notti). Storia: 12 frasi + 12 pagine brevi. Interfaccia: la scheda serale e la casella colorata (½ giorno, sopra il calendario).
+
+**Chi.** Motore, storia, interfaccia.
+
 ## Riepilogo
 
 | # | Meccanica | Impatto | Costo | Rischio etico |
@@ -85,5 +109,7 @@ Vincoli che valgono per tutte (da `docs/ricerca/regole.md` e `docs/DECISIONI.md`
 | 3 | Dono della nonna | medio-alto | basso | basso |
 | 4 | Il patto | medio-alto | medio-alto | basso |
 | 5 | Clima del davanzale | medio | medio | basso |
+| 6 | La festa del popolo | medio-alto | medio | basso |
+| 7 | Il biglietto di domani | medio | basso | medio (se diventa una serie) |
 
-Ordine consigliato: 3 (costa poco, chiude il tema del ritorno gentile con la power card), poi 1, poi 2.
+Ordine consigliato: prima il sistema «Tempo e calendario» (`tempo.md`: è la base di 6 e 7), poi 3, poi 1, poi 7, poi 2.
