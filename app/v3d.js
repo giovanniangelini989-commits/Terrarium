@@ -197,7 +197,7 @@ function build(THREE){
     for(let i=0;i<huts;i++){ const th=base+(i-(huts-1)/2)*.72, r=.3+(i%2)*.06, hx=Math.cos(th)*r, hz=Math.sin(th)*r; const h=new THREE.Mesh(new THREE.SphereGeometry(.16,16,10,0,6.283,0,1.5708),mat([0x6b4a30,0x7a5636,0x5d4029][i%3])); h.position.set(hx,0,hz); h.scale.set(1,.75,1); g.add(h); const d=new THREE.Mesh(new THREE.PlaneGeometry(.07,.08),new THREE.MeshBasicMaterial({color:0x140a05})); const dir=Math.atan2(-hx,-hz); d.position.set(hx+Math.sin(dir)*.159,.04,hz+Math.cos(dir)*.159); d.rotation.y=dir; g.add(d); }
     const lm=landmark(cult,anim); lm.scale.setScalar(1.25+st*.2); g.add(lm); return {g,anim}; }
   // ---------- creature 3D (una mesh istanziata per specie) ----------
-  const crt={}; const SIZE=x=>.22+Math.min(.12,.03*x.size); const rnd=(a,b)=>a+Math.random()*(b-a);
+  const SIZE=x=>.22+Math.min(.12,.03*x.size); const rnd=(a,b)=>a+Math.random()*(b-a);
   const SPH=new THREE.SphereGeometry(.5,12,9), CYL=new THREE.CylinderGeometry(.5,.5,1,6), TOR=new THREE.TorusGeometry(.5,.16,6,14);
   const MM=(x,y,z,sx=1,sy=1,sz=1,rx=0,ry=0,rz=0,ord='XYZ')=>new THREE.Matrix4().compose(new V3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx,ry,rz,ord)),new V3(sx,sy,sz));
   function mk(parts){ const pos=[],nor=[],col=[],idx=[]; let off=0; parts.forEach(({g,m,c})=>{ const geo=g.clone(); geo.applyMatrix4(m); const p=geo.attributes.position, n=geo.attributes.normal; for(let i=0;i<p.count;i++){ pos.push(p.getX(i),p.getY(i),p.getZ(i)); nor.push(n.getX(i),n.getY(i),n.getZ(i)); col.push(c.r,c.g,c.b); } if(geo.index){ for(let i=0;i<geo.index.count;i++) idx.push(geo.index.getX(i)+off); } else for(let i=0;i<p.count;i++) idx.push(i+off); off+=p.count; }); const o=new THREE.BufferGeometry(); o.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); o.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3)); o.setAttribute('color',new THREE.Float32BufferAttribute(col,3)); o.setIndex(idx); return o; }
@@ -212,22 +212,10 @@ function build(THREE){
    _:()=>mk([{g:SPH,m:MM(0,.2,0,.6,.4,.4),c:new Col(0x888888)}])};
   const KM=(function(){ try{ return window.__KIMI?window.__KIMI(THREE):null; }catch(e){ console.warn('modelli Kimi non caricati',e&&e.message); return null; } })(); const MATL=window.__MATLIB?window.__MATLIB(THREE):null; const KLEN={formiche:.20,termiti:.24,coleotteri:.34,ragni:.30,lumache:.38,mosche:.19};
   function kimiGeo(id){ if(!KM||!KM.creatures||!KM.creatures[id]) return null; const g=KM.creatures[id].build(THREE,{seed:1}).geometry; g.computeBoundingBox(); const len=g.boundingBox.max.x-g.boundingBox.min.x, f=(KLEN[id]||len)/len; g.scale(f,f,f); g.userData.final=true; return g; }
-  function ensureSpecies(x){ let c=crt[x.id]; if(c) return c; const geo=kimiGeo(x.id)||(MODEL[x.id]||MODEL._)(), glossy=x.id==='coleotteri', mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:glossy?.3:.72,metalness:glossy?.45:.05}), im=new THREE.InstancedMesh(geo,mat,16); im.count=0; im.frustumCulled=false; im.castShadow=true; im.setColorAt(0,new Col(1,1,1)); critG.add(im); return crt[x.id]={im,items:[],x,tint:'',final:!!geo.userData.final}; }
-  const crumbGeo=new THREE.SphereGeometry(.014,6,5), crumbMat=new THREE.MeshBasicMaterial({color:0xe8d8a0});
-  function dropItem(it){ if(it.cr) critG.remove(it.cr); if(it.gl) critG.remove(it.gl); }
-  function syncCreatures(v){ const alive=new Set(); v.sp.forEach(x=>{ if(!x.alive) return; alive.add(x.id); const c=ensureSpecies(x); c.x=x; const n=clamp(Math.round(x.pop/7),1,14); while(c.items.length<n){ const a=Math.random()*6.283,d=Math.sqrt(Math.random())*.7; c.items.push({px:Math.cos(a)*d,pz:Math.sin(a)*d,tx:0,tz:0,nt:0,ph:Math.random()*6.28,ang:Math.random()*6.283,carry:false}); } while(c.items.length>n) dropItem(c.items.pop()); });
-    Object.keys(crt).forEach(id=>{ if(!alive.has(id)){ const c=crt[id]; critG.remove(c.im); c.items.forEach(dropItem); c.im.dispose&&c.im.dispose(); delete crt[id]; } }); }
-  const _m=new THREE.Matrix4(), _q=new THREE.Quaternion(), _p=new V3(), _s=new V3(), _e=new THREE.Euler();
-  function moveCreatures(dt,t){ const v=S.v; if(!v) return; Object.entries(crt).forEach(([id,c])=>{ const x=c.x, fly=id==='mosche', soc=!!x.society&&!fly, an=soc?anchorOf(id):null, war=v.wars.find(w=>w.includes(id)), wi=war?war.indexOf(id):0, sp=(fly?.55:.28)*(war?2:1), mut=x.mut||[], glow=mut.includes('radioattivo')||mut.includes('bioluminescenza');
-      const tint=(x.monster?'m':'')+(mut.includes('radioattivo')?'r':'')+(mut.includes('bioluminescenza')?'b':'')+(mut.includes('velenoso')?'v':''); if(tint!==c.tint){ c.tint=tint; const col=new Col(1,1,1); if(x.monster) col.multiply(new Col(1,.55,.55)); if(mut.includes('radioattivo')) col.multiply(new Col(.7,1.2,.7)); if(mut.includes('bioluminescenza')) col.multiply(new Col(.7,1,1.25)); if(mut.includes('velenoso')) col.multiply(new Col(1.1,.7,1.25)); for(let i=0;i<16;i++) c.im.setColorAt(i,col); c.im.instanceColor.needsUpdate=true; }
-      c.items.forEach((it,i)=>{ if(t>it.nt){ if(soc){ if(war){ it.tx=(wi?.1:-.1)+rnd(-.1,.1); it.tz=an[1]*.4+rnd(-.12,.12); } else { const edge=Math.random()<.15; it.tx=edge?rnd(-.8,.8):an[0]+rnd(-.28,.28); it.tz=edge?rnd(-.5,.5):an[1]+rnd(-.2,.2); it.carry=!edge&&Math.random()<.4; } } else { const a=Math.random()*6.283,d=Math.sqrt(Math.random())*.78; it.tx=Math.cos(a)*d; it.tz=Math.sin(a)*d; } it.nt=t+1.5+Math.random()*3.5; }
-        const dx=it.tx-it.px, dz=it.tz-it.pz, d=Math.hypot(dx,dz)||1, st=Math.min(d,sp*dt); it.px+=dx/d*st; it.pz+=dz/d*st; const rr=Math.hypot(it.px,it.pz); if(rr>.84){ it.px*=.84/rr; it.pz*=.84/rr; }
-        if(d>.02){ const ta=Math.atan2(dz,dx); let da=ta-it.ang; while(da>Math.PI) da-=6.283; while(da<-Math.PI) da+=6.283; it.ang+=da*Math.min(1,dt*7); }
-        const sz=(c.final?(1+Math.min(.5,.12*Math.max(0,(x.size||1)-1))):SIZE(x))*(x.monster?1.7:1), vis=c.final?(KLEN[id]||.2)*sz:sz, y=fly?S.soilTop+.35+Math.sin(t*1.1+it.ph)*.3:S.soilTop+Math.abs(Math.sin(t*(war?9:4)+it.ph))*(war?.03:.006);
-        _e.set(0,-it.ang,0); _q.setFromEuler(_e); _p.set(it.px,y,it.pz); _s.set(sz,sz,sz); _m.compose(_p,_q,_s); c.im.setMatrixAt(i,_m);
-        if(it.carry&&!war){ if(!it.cr){ it.cr=new THREE.Mesh(crumbGeo,crumbMat); critG.add(it.cr); } it.cr.visible=true; it.cr.position.set(it.px,y+vis*.55,it.pz); } else if(it.cr) it.cr.visible=false;
-        if(glow){ if(!it.gl){ it.gl=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex('rgba(150,255,120,.9)'),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})); it.gl.scale.set(.4,.4,1); it.gl.renderOrder=2; critG.add(it.gl); } it.gl.material.color.set(mut.includes('bioluminescenza')?0x78e6ff:0xaaff80); it.gl.position.set(it.px,y+vis*.3,it.pz); it.gl.material.opacity=.55; } else if(it.gl){ critG.remove(it.gl); it.gl=null; } });
-      c.im.count=c.items.length; c.im.instanceMatrix.needsUpdate=true; }); }
+  // creature: conta esatta, instancing, livelli di dettaglio e animazione vivono in app/modelli.js (agente tre-d)
+  const MOD=window.__MODELLI(THREE,{critG,S,KLEN,camera,viewH:()=>H,level:()=>level,anchorOf,kimiGeo,fallbackGeo:id=>(MODEL[id]||MODEL._)(),SIZE}); const crt=MOD.crt;
+  function syncCreatures(v){ MOD.sync(v); }
+  function moveCreatures(dt,t){ if(S.v) MOD.move(dt,t,S.v,S.dry); }
   // ---------- bolle ----------
   const bubbles=[]; function bubble(id,em){ const s=mkSprite(em,.3,true); s.renderOrder=9; bubG.add(s); bubbles.push({s,id,t0:S.t}); }
   // ---------- gruppi (posizione, hit, zoom) ----------
@@ -294,7 +282,7 @@ function build(THREE){
   canvas.addEventListener('webglcontextlost',e=>{ e.preventDefault(); if(window.__vase) window.__vase.set3d(false).then(()=>{ if(window.__ui) window.__ui.render(); }); });
   const proj=p=>{ const q=p.clone().project(camera), r=canvas.getBoundingClientRect(); return {x:r.left+(q.x*.5+.5)*r.width,y:r.top+(-q.y*.5+.5)*r.height,z:q.z}; };
   function groups(){ const o={}; (S.v?S.v.sp:[]).forEach(x=>{ const c=center(x.id); if(c&&x.alive) o[x.id]={x:c.x,y:c.y,z:c.z}; }); return o; }
-  const api={glassState:()=>glassFX.state(),snap,canvas,fit,zoomTo,bubble,groups,fx:fxStart,
+  const api={glassState:()=>glassFX.state(),snap,canvas,fit,zoomTo,bubble,groups,fx:fxStart,modelli:MOD,
     start(){ if(running) return; running=true; setNight(!!(window.__vase&&window.__vase.isNight&&window.__vase.isNight())); fit(); home(); cam.az=cam.gaz; cam.pol=cam.gpol; cam.dist=cam.gdist; cam.tx=cam.gtx; cam.ty=cam.gty; cam.tz=cam.gtz; raf=requestAnimationFrame(frame); },
     stop(){ running=false; cancelAnimationFrame(raf); },
     reset(){ userT=0; home(); },

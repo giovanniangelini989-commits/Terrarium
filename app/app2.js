@@ -43,15 +43,17 @@ function drawSettle(v,x,t,night){ const a=anchorFor(v,x.id), st=stageOf(v,x), ps
   for(let i=0;i<huts;i++) hut(a+hx[i]*ps,base+1,(i>3?.78:.95)*(.9+.12*ps),['#6b4a30','#7a5636','#5d4029'][i%3],lit);
   landmark(x.society.cult,a,base,(.78+st*.2)*ps,t,night);
   if(x.society.culto){ ctx.font='11px serif'; ctx.textAlign='center'; ctx.globalAlpha=.85; ctx.fillText(x.society.culto==='giocatore'?'👁️':'☄️',a,base-46-Math.sin(t/600)*2); ctx.globalAlpha=1; } }
+// glifi delle creature in cache (un'immagine per icona/misura/verso): con popolazioni di 100 individui per specie il testo emoji per ogni individuo costerebbe troppo
+const glyphs={}; function glyph(icon,px,face,gx,gy){ const k=icon+'|'+px+'|'+face; let g=glyphs[k]; if(!g){ const s=Math.ceil(px*1.5), c=document.createElement('canvas'); c.width=c.height=Math.ceil(s*dpr); const x=c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); x.font=px+'px serif'; x.textAlign='center'; x.textBaseline='middle'; x.translate(s/2,s/2); if(face<0) x.scale(-1,1); x.fillText(icon,0,0); g=glyphs[k]={c,s}; } ctx.drawImage(g.c,gx-g.s/2,gy-g.s/2,g.s,g.s); }
 function drawCreatures(v,t,night){ groups={}; v.sp.forEach(x=>{ if(x.alive&&x.society) drawSettle(v,x,t,night); });
-  v.sp.forEach(x=>{ if(!x.alive) return; const n=Math.max(1,Math.min(14,Math.round(x.pop/7))); const arr=anim[x.id]||(anim[x.id]=[]); while(arr.length<n) arr.push({x:rnd(92,208),dx:rnd(-.35,.35)||.2,ph:rnd(0,6)}); arr.length=n;
+  v.sp.forEach(x=>{ if(!x.alive) return; const n=Math.max(1,Math.round(x.pop)); /* conta esatta: un individuo per unità di popolazione */ const arr=anim[x.id]||(anim[x.id]=[]); while(arr.length<n) arr.push({x:rnd(92,208),dx:rnd(-.35,.35)||.2,ph:rnd(0,6),y0:rnd(-9,9)}); arr.length=n;
     const px=11+Math.min(18,4.5*x.size), fly=x.id==='mosche', soc=!!x.society&&!fly, a=soc?anchorFor(v,x.id):0, war=v.wars.find(w=>w.includes(x.id)), wi=war?war.indexOf(x.id):0;
     arr.forEach((c,i)=>{ let face;
       if(soc){ if(!c.tx||t>c.nt){ const edge=Math.random()<.16; c.tx=war?(wi===0?a-6:a+6)+rnd(-12,12):edge?(Math.random()<.5?90:210):a+rnd(-28,28); c.carry=!war&&Math.random()<.35; c.nt=t+rnd(1800,4200); } const dd=c.tx-c.x; c.dx=Math.abs(dd)<1.5?0:Math.sign(dd)*(war?.6:.4); c.x+=c.dx; face=war?(wi===0?1:-1):(c.dx?Math.sign(c.dx):(c.face||1)); c.face=face; }
       else { c.x+=c.dx*(fly?2:1); if(c.x<90||c.x>210) c.dx*=-1; face=c.dx<0?-1:1; }
-      const gx=c.x, gy=fly?100+Math.sin(t/500+c.ph)*34+i*2:170+Math.sin(t/200+c.ph)*1.2+(war?Math.sin(t/90+c.ph)*1.5:0);
+      const gx=c.x, gy=fly?100+Math.sin(t/500+c.ph)*34+(i%12)*2:170+c.y0+Math.sin(t/200+c.ph)*1.2+(war?Math.sin(t/90+c.ph)*1.5:0);
       if(x.mut.includes('radioattivo')) glow(gx,gy,16,'rgba(150,255,120,A)',.55); if(x.mut.includes('bioluminescenza')) glow(gx,gy,16,'rgba(120,230,255,A)',.55); if(x.mut.includes('velenoso')) glow(gx,gy,14,'rgba(190,140,255,A)',.4);
-      ctx.font=px+'px serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.save(); ctx.translate(gx,gy); if(face<0) ctx.scale(-1,1); ctx.fillText(x.icon,0,0); ctx.restore();
+      glyph(x.icon,px,face,gx,gy);
       if(x.mut.includes('corazza')){ ctx.strokeStyle='rgba(200,210,220,.6)'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.arc(gx,gy,px*.62,0,6.28); ctx.stroke(); }
       if(c.carry&&c.dx) circ(gx+face*2.5,gy-px*.58,1.7,'#e8d8a0'); });
     if(!x.society){ const cx=arr.reduce((s,c)=>s+c.x,0)/arr.length; groups[x.id]={x:cx,y:fly?118:166,r:22}; }

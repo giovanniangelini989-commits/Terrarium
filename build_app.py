@@ -1,6 +1,19 @@
 sim=open('sim.js').read(); css=open('app/app.css').read()
 a1=open('app/app1.js').read(); a2=open('app/app2.js').read(); a3=open('app/fx.js').read()+'\n'+open('app/app3.js').read()+'\n'+open('app/scenari.js').read()
-st=open('app/story.js').read()+'\n'+open('app/notti.js').read(); au=open('app/audio.js').read(); fl=open('app/film.js').read(); v3=open('app/v3d.js').read(); km=open('app/kimi.js').read()+'\n'+open('app/materials.js').read()+'\n'+open('app/tex.js').read()
+st=open('app/story.js').read()+'\n'+open('app/notti.js').read(); au=open('app/audio.js').read(); fl=open('app/film.js').read(); v3=open('app/modelli.js').read()+'\n'+open('app/v3d.js').read(); km=open('app/kimi.js').read()+'\n'+open('app/materials.js').read()+'\n'+open('app/tex.js').read()
+# Modelli di Kimi incorporati (tier swarm e close + LOD derivati in vendor/lod): il gioco resta un solo file HTML
+import base64, json, os
+def _b64(path): return base64.b64encode(open(path,'rb').read()).decode('ascii')
+GLB={}
+for sp in sorted(os.listdir('assets/kimi')):
+    d='assets/kimi/'+sp
+    if not os.path.exists(d+'/swarm.glb') or sp=='meteorite': continue  # il meteorite aspetta la correzione di Kimi
+    GLB[sp]={t:_b64(d+'/'+t+'.glb') for t in ('swarm','close') if os.path.exists(d+'/'+t+'.glb')}
+    for t in ('lod1','lod2'):
+        f='vendor/lod/'+sp+'_'+t+'.glb'
+        if os.path.exists(f): GLB[sp][t]=_b64(f)
+glb='window.__GLB='+json.dumps(GLB,separators=(',',':'))+';'
+print('modelli incorporati:',{k:sorted(v) for k,v in GLB.items()},'base64',len(glb),'byte')
 html=f'''<!doctype html>
 <html lang="it">
 <head>
@@ -38,6 +51,9 @@ html=f'''<!doctype html>
 </script>
 <script>
 {fl}
+</script>
+<script>
+{glb}
 </script>
 <script>
 {km}
