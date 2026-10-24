@@ -108,3 +108,49 @@ G.cal = { v:1, r:[[t, d0, f], ...] }
 | 7 | QA visivo su iPhone: griglia a 390 px, tacche leggibili, contrasto «Giorno» | qa, direttore-artistico | ½ g | approvazione |
 
 Ordine consigliato: 2 → 3 → 4 insieme in una PR (sono tutte in `app1.js`), poi 5, poi 6. Il passo 4 può slittare se il botanico cambia il calo dei bisogni: le soglie del «gratis» vanno rimisurate sulle sue curve.
+
+## 7. Fine del vaso: si riparte dal sasso (richiesta di Giovanni, 24 ottobre)
+
+**La regola.** Quando chiudi un capitolo, il vaso si svuota: resta solo il meteorite sul fondo del barattolo. Si riparte dalla fase 0 («Il barattolo è vuoto» → Metti la terra → Bagna → muschio → felce → formica). **Un capitolo = un vaso.** Il contatore diventa «Vaso 2 · Giorno 3».
+
+**Lo decidi tu, mai il gioco.** Il finale pronto aspetta come oggi («Più tardi» lo rimanda di 3 giorni, il vaso intanto vive). Nessun azzeramento durante l'assenza, in letargo o con una decisione aperta: lo scatena solo il tocco su «Chiudi il capitolo». La scheda lo dice prima, senza drammi: «Il vaso si addormenterà per sempre. Il sasso resta con te.»
+
+**Cosa si conserva (tutto ciò che sta fuori dal vetro)**
+| Cosa | Dove | Note |
+|---|---|---|
+| Album delle carte, Libro dei finali | `G.mazzo`, `G.libro` | + la carta estratta al finale |
+| Quaderno (pagine) | `G.quaderno` | restano, con un separatore «Vaso 1» |
+| Specie e culture scoperte | `G.codex` | l'enciclopedia è tua, non del vaso |
+| Livello, XP, serie, protezioni | `G.player` | la serie segue i giorni della stanza |
+| Power card, mani | `G.power`, `G.real.cure` | `G.power.resto` torna 0 |
+| Biscotto (capitolo, destino, scudo) | `G.ui.gatto*`, `G.ui.scudo` | il gatto vive in casa, non nel vaso |
+| Il meteorite: grandezza | `setup.meteorite` | la carta «Il sasso cresce» vale per sempre |
+| Calendario | `G.cal` | continuo tra un vaso e l'altro |
+| **La mensola dei vasi** (nuovo) | `G.vasi[]` | vedi sotto |
+
+**Cosa si perde (tutto ciò che sta dentro il vetro):** specie, piante, oggetti, bisogni (terra e acqua a 0), mutazioni, popoli, guerre, carica del sasso (`E` riparte da 20), decisioni in sospeso (scartate), arrivi programmati, richiesta del giorno, albero del vaso (archiviato), `G.ui.fase` → 0.
+
+**La mensola dei vasi** (la ricompensa che resta). Nel quaderno, segmento «Vasi»: un barattolo per ogni vaso finito, con la foto del finale, il nome del finale, «12 ottobre – 9 novembre · 112 giorni nel vaso · 2 popoli · 7 mutazioni». Toccandolo si riapre il suo albero (solo nodi maggiori). Dati: `G.vasi = [{n, k, dal, al, dv, popoli, mut, specie:[id], img?, nodi:[{k,t,d}] (max 24 maggiori)}]`, ~600 B a vaso senza foto. Foto: una sola per vaso (lo scatto del finale), dentro il tetto globale di 36 dell'albero; oltre 12 vasi le foto più vecchie si tolgono e resta il testo.
+
+**Il sasso ricorda** (piccolo, visibile, non è potere): ogni finale **diverso** accende una crepa del meteorite in più (`_EMIT`, fino a 15, agente tre-d); e la famiglia dell'ultimo finale lascia un'eredità al vaso nuovo: Quiete → la terra parte già umida (um .3); Società → il primo oggetto offerto è quello del culto; Mostri → il sasso parte carico (E 40); Conflitti → la prima specie arriva un giorno prima. Si dice in una riga al risveglio del vaso nuovo.
+
+**Sequenza (si lega al finale animato).**
+1. «Un finale ti aspetta» → `playEnding(data)` (`app/finali.js`) con `data.nodi = G.tree.nodes` **prima** dell'azzeramento.
+2. Carta estratta (`cardReveal`), poi la conferma «Chiudi il capitolo».
+3. `closeChapter()` archivia e azzera; transizione grande (≤ 1,2 s): la vita si dissolve, la terra scende, resta il sasso che batte viola.
+4. Fase 0 come al primo avvio, senza il video iniziale; il primo pulsante dice «Ricomincia: metti la terra».
+Oggi `fin-close` chiama `closeChapter` prima della carta: va invertito (interfaccia).
+
+**Nel calendario.** Il giorno della chiusura ha l'icona del finale con bordo viola e una linea verticale sottile dopo la casella; da lì `d0` riparte da 0. `G.cal.r` aggiunge il bit 16 «nuovo vaso»: il numero del vaso di una riga = quanti bit 16 la precedono. Per i giorni dei vasi passati la scheda del giorno mostra solo i nodi archiviati in `G.vasi[n].nodi` (il log del vaso vecchio non si conserva). In cima al mese: «Vaso 3 · dal 9 novembre».
+
+**Cosa cambia nel codice.**
+- `sim.js` (motore): `createSim` accetta due opzioni nuove e facoltative `{capitolo, eredita}` (numero del capitolo di partenza; `{um, E, anticipo}`). Senza opzioni il comportamento è identico: `equiv.js` resta a 0. Va scritto prima in docs/CONTRATTI.md.
+- `app1.js` (orchestratore): `closeChapter0` = libro + pagina epilogo + carta, poi `archiviaVaso()` → `G.vasi.push`, nuovo `sim` con `{luce, acqua, meteorite}` del vecchio setup e liste vuote, nuovo seme, `setNeeds({um:0,ter:0})` + eredità, `G.tree` nuovo con il nodo «Il vaso ricomincia dal sasso», `G.arrivi` vuoto, `G.ui.fase=0`, `G.req=makeRequest()`, `G.power.resto=0`, riga di `G.cal` con bit 16. Ritorna `{k, first, culto, carta, vaso}`. `loadSave` crea `G.vasi=[]` nei salvataggi vecchi (il vaso attuale resta com'è).
+- `app3.js` (interfaccia): ordine finale → carta → chiudi → transizione; segmento «Vasi»; contatore «Vaso N · Giorno D».
+- `story.js` (storia): testi della conferma, della transizione, delle 4 eredità, della mensola.
+
+**Test (`gametest.js`, blocco 8 «nuovo vaso»).** Dopo `closeChapter()`: nessuna specie, pianta, oggetto; `needs.um=0, ter=0`; `sim.d===0`; `chapter` +1; meteorite della stessa grandezza; `G.ui.fase===0`; `G.vasi.length` +1 con il finale giusto; `G.mazzo` +1 carta; `G.libro`, `G.codex`, `G.player.serie`, `G.power.salto`, `G.ui.gatto` invariati; `G.tree.nodes.length ≤ 2`; nessuna decisione in sospeso; salvataggio e ripresa conservano tutto. Poi `doAct('terra')`, `doAct('acqua')` → arriva il muschio (fase 2). Con un finale Quiete il vaso nuovo ha `um ≥ .3`. Il salvataggio dopo 10 vasi resta sotto quello di oggi. `equiv.js` a 0.
+
+**Metriche bot (prima → dopo da riportare).** Oggi (100 giorni, 32 vasi per profilo): capitoli chiusi 57–258, finali distinti 9–12, salvataggio max **70–99 KB**, 0 errori. Nuove colonne: `vasi per 100 giorni`, `giorni reali per vaso` (mediana), `giorni reali dalla chiusura alla fase 4` (atteso ≤ 3), `finali uguali di fila`, `byte mensola`. Attese: finali distinti invariati (± 1), salvataggio max in calo (l'albero riparte a ogni vaso), capitoli chiusi un po' più bassi (ogni vaso rifà l'avvio). Tutti i profili devono saper rifare l'avvio (`terra`, `acqua` quando `fase<2`): oggi lo fa solo «da zero».
+
+**Passo nel piano.** Passo 8, dopo il 6: contratto (motore, ½ g) → `createSim{capitolo,eredita}` + test + bot (motore, 1 g) → `closeChapter`/`G.vasi` (orchestratore, 1 g) → sequenza e mensola (interfaccia 1,5 g, finali, tre-d per le crepe, storia per i testi). Se il finale animato non è pronto, la sequenza parte dalla carta: l'azzeramento non dipende da `finali.js`.
