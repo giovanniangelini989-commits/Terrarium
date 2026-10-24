@@ -2,7 +2,7 @@
 # Uso: python3 qa_luci.py [cartella_uscita] [pagina.html]   (default screenshots/luci, dist/terrario-gioco.html)
 # Se esiste /tmp/claude-0/three/package, Three.js viene servito da lì (sessioni senza jsDelivr).
 from playwright.sync_api import sync_playwright
-import os, sys, json
+import os, sys, json, math
 OUT=sys.argv[1] if len(sys.argv)>1 else 'screenshots/luci'; os.makedirs(OUT,exist_ok=True)
 PAGE=sys.argv[2] if len(sys.argv)>2 else 'dist/terrario-gioco.html'
 B='/tmp/claude-0/three/package'
@@ -40,9 +40,11 @@ with sync_playwright() as p:
     pg.evaluate("document.getElementById('film')&&document.getElementById('film').remove(); __app.newGame('Q',{luce:1,acqua:1,meteorite:1,piante:['muschio','felce','fungo'],insetti:['formiche','coleotteri'],oggetti:['statuina']}); __app.G.settings.tempo='giorno'; __ui.mode='game'; __ui.render()"); pg.wait_for_timeout(500)
     print('carico il 3D…',flush=True); pg.evaluate("__vase.set3d(true)")
     for i in range(480):
-        st=pg.evaluate("JSON.stringify({ok:!!(__vase.is3d&&window.__cap&&__cap.camera),f:window.__cap&&__cap.renderer?__cap.renderer.info.render.frame:-1})")
+        st=pg.evaluate("JSON.stringify({is3d:__vase.is3d,conn:!!document.querySelector('canvas.v3d'),ok:!!(__vase.is3d&&window.__cap&&__cap.camera),f:window.__cap&&__cap.renderer?__cap.renderer.info.render.frame:-1})")
         if '"ok":true' in st: break
-        if i%10==0: print('  attendo il 3D',st,errs[:3],flush=True)
+        if i%10==0:
+            print('  attendo il 3D',st,errs[:3],flush=True)
+            if i: pg.evaluate("(()=>{ __ui.mode='game'; __ui.render(); return __vase.set3d(true); })()")   # a volte la tela 3D resta staccata: la rimonto
         pg.wait_for_timeout(500)
     print('3D pronto',flush=True); pg.wait_for_timeout(2500)
     pg.evaluate(CAMHOOK)
@@ -58,6 +60,9 @@ with sync_playwright() as p:
     for name,tempo,az,pol,dist,tgt in SHOTS:
         pg.evaluate(f"__app.G.settings.tempo='{'notte' if tempo=='notte' else 'giorno'}'"); frames(5)   # il gioco legge il tempo ogni 0,25 s
         if tempo=='sera': pg.evaluate("window.__luci&&window.__luci.set('sera')")
+        if name=='zoom':   # zoom sulla formica di Kimi: bersaglio = centro del gruppo delle formiche
+            g=pg.evaluate("(()=>{ const g=__v3d.groups().formiche; return g?[g.x,g.y,g.z]:null; })()")
+            if g: tgt=[g[0],g[1]+.02,g[2]]; az=math.atan2(g[0],g[2]) if abs(g[0])+abs(g[2])>.05 else az; dist=1.15; pol=.72
         shot(name,[az,pol,dist,tgt])
     # livelli della guardia: costo a ogni livello (inquadratura giorno)
     if pg.evaluate("!!window.__luci"):
