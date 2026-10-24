@@ -5,7 +5,8 @@
 |---|---|
 | motore | `sim.js`, `engine_old.js`, `equiv.js`, `gametest.js`, `calib.js`, `app/bots.js` |
 | storia | `app/story.js`, `app/notti.js`, testi dentro `app/app1.js` (solo stringhe) |
-| interfaccia | `app/app3.js`, `app/app.css`, `app/film.js`, `app/audio.js` |
+| interfaccia | `app/app3.js`, `app/app.css`, `app/film.js`, `app/fx.js` |
+| suono | `app/audio.js` |
 | tre-d | `app/v3d.js`, `app/app2.js`, `app/materials.js`, `app/kimi.js`, `app/tex.js`, `vendor/` |
 | finali | nuovo `app/finali.js` (lettore dei mini video) |
 | logica di gioco (orchestratore) | `app/app1.js`, `build_app.py` |
@@ -13,6 +14,9 @@
 | luci | `app/luci.js`, `qa_luci.py` (in `app/v3d.js` solo la chiamata a `__LUCI`) |
 | giocatore | `tools/giocatore.py`, `docs/giocatore/`, `screenshots/giocatore/` (sul gioco sola lettura) |
 | ricerca | `docs/ricerca/` |
+| showrunner | `docs/regia/` (sul gioco sola lettura: note a storia e finali) |
+| direttore-artistico | nessuno (sola lettura: approva o respinge le schermate) |
+| lancio | `docs/lancio/`, `store/` |
 
 ## Motore → app (`sim.js`)
 `createSim(setup,{seed,game,decisions,needs})` → `{step, view, act, resolve, addSpecies, removeSpecies, addPlant, removePlant, addObject, removeObject, setNeeds, charge, growMeteo, setMalus, closeChapter, save, load, log, pending, d, chapter, E}`.
