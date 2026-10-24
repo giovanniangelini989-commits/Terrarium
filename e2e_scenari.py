@@ -42,7 +42,7 @@ with sync_playwright() as p:
         t(sid+': chiude il pannello',pg.locator('#tst-pan').count()==0)
         if sid not in('esporta','azzera','video','importa'):
             tx=pg.evaluate("(document.getElementById('toast')||{}).textContent||''")
-            t(sid+': toast «Scenario»',tx.startswith('Scenario') or sid=='fps',tx)
+            t(sid+': toast «Scenario»',tx.startswith('Scenario') or sid=='fps' or sid.startswith('finale-'),tx)  # nei finali la schermata del finale può sostituire il toast
         t(sid+': zero errori',len(errs)==n0,errs[n0:])
         if sid=='popolo':
             pg.wait_for_timeout(500); pg.screenshot(path='screenshots/test/scenario_popolo.png')
