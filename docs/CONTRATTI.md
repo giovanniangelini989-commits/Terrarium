@@ -9,6 +9,7 @@
 | suono | `app/audio.js` |
 | musicista | `docs/musica/`, `audio/` |
 | carte | `app/carte.js`, `docs/carte/` (dati `CARTE` in `app/app1.js` solo con il via dell'orchestratore) |
+| ecologo | `app/microclima.js`, `microclima_test.js`, `docs/ecologia/` (le regole di `sim.js` restano del motore) |
 | tre-d | `app/v3d.js`, `app/app2.js`, `app/materials.js`, `app/kimi.js`, `app/tex.js`, `vendor/` |
 | finali | nuovo `app/finali.js` (lettore dei mini video) |
 | logica di gioco (orchestratore) | `app/app1.js`, `build_app.py` |
