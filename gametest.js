@@ -33,15 +33,15 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   P.G.dev.offset+=1; P.checkNewDay(); P.G.dev.offset+=1; P.checkNewDay(); t('tetto a 6',P.G.power.salto===6&&P.powerCards().nuove===0);
   P.G.dev.offset+=5; P.popups.length=0; P.checkNewDay(); t('dopo 5 giorni di assenza resta 6: il dono non si accumula',P.G.power.salto===6);
   t('in letargo la carta si blocca',!!P.G.letargo&&P.usaSalto().ok===false&&P.powerCards().why==='letargo'&&P.G.power.salto===6);
-  const settle=()=>{ let k=0; while(k++<20&&(P.sim.pending.length||P.sim.finalePending)){ if(P.sim.finalePending) P.closeChapter(); const q=P.sim.pending[0]; if(q) P.resolveDecision(q.id,q.type==='mutazione'?'proteggi':q.type==='societa'?'nascosto':'lascia'); } P.popups.length=0; };
+  const settle=()=>{ let k=0; while(k++<20&&(P.sim.pending.length||P.sim.finalePending)){ if(P.sim.finalePending){ P.closeChapter(); P.skipStart(); } const q=P.sim.pending[0]; if(q) P.resolveDecision(q.id,q.type==='mutazione'?'proteggi':q.type==='societa'?'nascosto':'lascia'); } P.popups.length=0; };
   P.doAct('acqua'); t('una cura sveglia il vaso',!P.G.letargo); settle(); t('senza decisioni in sospeso la carta è usabile',P.powerCards().why==='',P.powerCards().why);
   const d0=P.sim.d, r=P.usaSalto(); t('due giorni avanzati',r.ok&&((r.passi===2&&P.sim.d===d0+2&&r.resto===0)||(r.pausa&&r.passi+r.resto===2)),JSON.stringify(Object.assign({},r,{eventi:r.eventi.length})));
   t('carta consumata, una sola notte viva in coda',P.G.power.salto===5&&P.popups.filter(p=>p.t==='notte').length<=1);
-  let g=0; while(!P.sim.pending.length&&g++<400){ if(P.sim.finalePending) P.closeChapter(); P.autoCare(); P.passaNotte(); P.popups.length=0; }
+  let g=0; while(!P.sim.pending.length&&g++<400){ if(P.sim.finalePending){ P.closeChapter(); P.skipStart(); } P.autoCare(); P.passaNotte(); P.popups.length=0; }
   t('una decisione arriva',P.sim.pending.length>0,g); if(!P.sim.pending.length){ console.log(ok,'ok',bad+1,'falliti'); process.exit(1); }
   const rb=P.usaSalto(); t('con una decisione in sospeso la carta non si usa',rb.ok===false&&rb.why==='decisione'&&P.G.power.salto===5);
   const p0=P.sim.pending[0]; P.resolveDecision(p0.id,p0.type==='mutazione'?'proteggi':p0.type==='societa'?'nascosto':'lascia'); t('risolta la decisione la carta torna usabile',P.powerCards().why===''||P.powerCards().why==='finale');
-  let resto=null; for(let gi=0;gi<12&&resto==null;gi++){ P.newGame('T',JSON.parse(JSON.stringify(su))); P.popups.length=0; for(let i=0;i<120&&resto==null;i++){ if(P.sim.finalePending) P.closeChapter(); if(P.sim.pending.length){ const q=P.sim.pending[0]; P.resolveDecision(q.id,'lascia'); } P.autoCare(); P.G.power.salto=6; const rr=P.usaSalto(); P.popups.length=0; if(rr.ok&&rr.pausa){ resto=rr.resto; const dd=P.sim.d, q=P.sim.pending[0]; P.resolveDecision(q.id,q.type==='mutazione'?'proteggi':q.type==='societa'?'nascosto':'lascia'); t('la notte rimasta si svolge da sola dopo la decisione',P.G.power.resto===0&&P.sim.d>=dd+resto,P.sim.d+' '+dd+' '+resto); } } }
+  let resto=null; for(let gi=0;gi<12&&resto==null;gi++){ P.newGame('T',JSON.parse(JSON.stringify(su))); P.popups.length=0; for(let i=0;i<120&&resto==null;i++){ if(P.sim.finalePending){ P.closeChapter(); P.skipStart(); } if(P.sim.pending.length){ const q=P.sim.pending[0]; P.resolveDecision(q.id,'lascia'); } P.autoCare(); P.G.power.salto=6; const rr=P.usaSalto(); P.popups.length=0; if(rr.ok&&rr.pausa){ resto=rr.resto; const dd=P.sim.d, q=P.sim.pending[0]; P.resolveDecision(q.id,q.type==='mutazione'?'proteggi':q.type==='societa'?'nascosto':'lascia'); t('la notte rimasta si svolge da sola dopo la decisione',P.G.power.resto===0&&P.sim.d>=dd+resto,P.sim.d+' '+dd+' '+resto); } } }
   t('un salto interrotto da una decisione lascia 1 notte in sospeso',resto===1,resto);
   t('salvataggio e ripresa conservano le carte',(()=>{ P.persist(); const s=P.G.power.salto; P.loadSave(); return P.G.power.salto===s; })()); }
 // 7) microclima (ecologo): troppa acqua → ristagno, sole col tappo chiuso → caldo, muffa che nasce e si combatte, tappo e salvataggio
@@ -75,4 +75,65 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   P.persist(); t('G.micro nel salvataggio, leggero',!!P.G.micro&&JSON.stringify(P.G.micro).length<4000,JSON.stringify(P.G.micro||'').length);
   const sv=JSON.parse(localStorage.getItem('terrario.save.v2')); delete sv.micro; localStorage.setItem('terrario.save.v2',JSON.stringify(sv)); t('un salvataggio vecchio senza microclima si apre',P.loadSave()&&!!P.micro()&&!!P.G.micro);
   P.doAct('acqua'); t('le cure passano al microclima',P.micro().aperto===true); }
+// 8) tempo e calendario (motore, docs/gameplay/tempo.md §1–5): una notte ogni 6 ore, letargo, salto nel calendario, mani, carta «Tempo in bottiglia», salvataggi vecchi, calendario()
+{ const P=window.__app, dec=()=>{ let k=0; while(k++<20&&(P.sim.pending.length||P.sim.finalePending)){ if(P.sim.finalePending){ P.closeChapter(); P.skipStart(); } const q=P.sim.pending[0]; if(q) P.resolveDecision(q.id,q.type==='mutazione'?'proteggi':q.type==='societa'?'nascosto':'lascia'); } P.popups.length=0; };
+  P.newGame('T',JSON.parse(JSON.stringify(su))); P.popups.length=0; const d0=P.sim.d; P.G.dev.offset+=1; P.checkNewDay(); dec(); t('un giorno della stanza = 4 notti del vaso',P.sim.d===d0+4,P.sim.d-d0);
+  const o=P.orologio(); t('orologio(): quarto 0..3, prossima notte entro 6 ore',o.quarto>=0&&o.quarto<4&&o.prossimaNotteMs>0&&o.prossimaNotteMs<=6*3600000&&o.notti===4&&/^\d{4}-\d{2}-\d{2}$/.test(o.oggi.data),JSON.stringify(o));
+  const d1=P.sim.d; P.G.dev.offset+=(o.prossimaNotteMs-60000)/864e5; const r0=P.checkNewDay(); t('un minuto prima della notte: niente',P.sim.d===d1&&r0===null,P.sim.d-d1);
+  P.G.dev.offset+=120000/864e5; const r1=P.checkNewDay(); dec(); t('passata l’ora: una notte sola, popup notte-ora o risveglio',P.sim.d===d1+1&&r1&&r1.notti===1,JSON.stringify({d:P.sim.d-d1,r1}));
+  P.popups.length=0; P.G.dev.offset+=.25; P.checkNewDay(); dec(); t('6 ore dopo: un’altra notte',P.sim.d===d1+2,P.sim.d-d1);
+  // assenza di 3 giorni: 12 notti, 8 in letargo, i bisogni si fermano alle soglie
+  const d2=P.sim.d; P.sim.setNeeds({um:.9,ter:.9,pul:.9}); P.G.dev.offset+=3; P.popups.length=0; P.checkNewDay(); dec(); const nd=P.sim.view().needs;
+  t('3 giorni di assenza: 12 notti, letargo di 2 giorni',P.sim.d===d2+12&&!!P.G.letargo&&P.G.letargo.giorni===2,JSON.stringify({d:P.sim.d-d2,l:P.G.letargo}));
+  t('in letargo i bisogni non scendono sotto le soglie',nd.um>=.3-1e-9&&nd.ter>=.2-1e-9&&nd.pul>=.5-1e-9,JSON.stringify(nd));
+  const rowsL=P.G.cal.r.filter(r=>r[2]&2).length; t('il calendario segna i giorni dormiti',rowsL>=2,rowsL);
+  P.doAct('acqua'); t('la cura sveglia il vaso e segna il risveglio',!P.G.letargo&&(P.G.cal.r[P.G.cal.r.length-1][2]&8)>0);
+  // salto nel calendario
+  dec(); P.G.power.salto=6; const cal0=P.calendario(), g0=cal0.mese.giorni.find(g=>g.oggi); const rs=P.usaSalto(); dec(); const g1=P.calendario().mese.giorni.find(g=>g.oggi);
+  t('dopo un salto la casella di oggi ha 2 notti in più, viola',rs.ok&&g1.salti&&g1.notti>=g0.notti+2&&P.calendario().saltiOggi===2,JSON.stringify({rs:rs.ok,n0:g0.notti,n1:g1.notti,s:g1.salti}));
+  // mani: 6 cure passano, la 7ª no; a bisogno basso passa gratis; dopo 20 minuti torna 1; livello 3 → 8; nuovo giorno → piene
+  P.newGame('T',JSON.parse(JSON.stringify(su))); P.popups.length=0; P.G.req.done=true; P.sim.setNeeds({um:.9,ter:.9,pul:.9}); let okN=0; for(let i=0;i<6;i++){ const r=P.doAct('nutri'); if(r.ok&&!r.gratis) okN++; P.sim.setNeeds({ter:.9}); }
+  const r7=P.doAct('nutri'); t('6 mani: sei cure passano, la settima no con i bisogni alti',okN===6&&r7.ok===false&&r7.why==='zero'&&P.mani().n===0&&P.mani().why==='zero',JSON.stringify({okN,r7:r7.why,m:P.mani()}));
+  P.sim.setNeeds({um:.2}); const rg=P.doAct('acqua'); t('a zero mani la cura passa lo stesso se il vaso ha sete (gratis)',rg.ok&&rg.gratis===true,JSON.stringify(rg));
+  P.G.real.cureT-=20*60000; t('dopo 20 minuti torna una mano',P.mani().n===1&&P.mani().minuti<=20,JSON.stringify(P.mani()));
+  P.G.player.xp=P.XPT[2]; t('al livello 3 il massimo è 8',P.maniMax()===8&&P.mani().max===8); P.G.player.xp=P.XPT[4]; t('al livello 5 il massimo è 10',P.maniMax()===10); P.G.player.xp=0;
+  P.G.dev.offset+=1; P.popups.length=0; P.checkNewDay(); dec(); t('nuovo giorno: mani piene',P.mani().n>=6,P.mani().n);
+  P.sim.setNeeds({um:.97}); P.G.real.cure=6; const p0=P.sim.view().needs.pul; const rt=P.doAct('acqua'); t('troppa acqua: vetro appannato, pulizia −.05',rt.troppa===true&&P.sim.view().needs.pul<p0-.04&&P.sim.log.some(e=>e.icon==='🌫️'),JSON.stringify({rt,p0,p1:P.sim.view().needs.pul}));
+  // carta «Tempo in bottiglia» → +2 salti, mai oltre 6
+  P.G.mazzo.tempo=2; P.G.power.salto=5; P.playCard('tempo'); t('«Tempo in bottiglia» dà +2 salti entro il tetto 6',P.G.power.salto===6); P.G.power.salto=0; P.playCard('tempo'); t('… e +2 da zero',P.G.power.salto===2&&!P.G.mazzo.tempo);
+  // salvataggio vecchio: via tempo e coda, calendario e mensola nascono
+  P.persist(); const sv=JSON.parse(localStorage.getItem('terrario.save.v2')); sv.real.tempo=3; sv.real.tempoT=1; delete sv.real.lastSlot; sv.coda={n:0,slots:[]}; delete sv.cal; delete sv.vasi; delete sv.ui.vasoN; localStorage.setItem('terrario.save.v2',JSON.stringify(sv));
+  t('un salvataggio vecchio si apre senza scorta tempo né banco, con calendario e mensola',P.loadSave()&&P.G.real.tempo===undefined&&P.G.coda===undefined&&Array.isArray(P.G.cal.r)&&Array.isArray(P.G.vasi)&&P.G.ui.vasoN===1&&typeof P.G.real.lastSlot==='number');
+  const dv=P.sim.d; P.checkNewDay(); t('…e il tempo non corre all’indietro né fa scatti',P.sim.d===dv,P.sim.d-dv);
+  // calendario(): un mese senza righe, poi un anno di gioco entro 5 KB
+  let okCal=true, cv=null; try{ cv=P.calendario('2020-01'); }catch(e){ okCal=false; } t('calendario() di un mese vuoto: 31 giorni, nessun evento, nessuna eccezione',okCal&&cv.mese.giorni.length===31&&cv.mese.giorni.every(g=>!g.notti&&!g.eventi.length&&!g.visitato)&&cv.mese.primo===2,cv&&JSON.stringify(cv.mese.giorni[0]));
+  P.G.dev.offset+=1; P.checkNewDay(); dec(); const cm=P.calendario(); t('calendario() del mese corrente ha oggi, notti e un’icona dove è successo qualcosa',cm.mese.giorni.some(g=>g.oggi)&&cm.mese.giorni.some(g=>g.notti>0)&&cm.mese.giorni.some(g=>g.icona)&&cm.vaso.n===1,JSON.stringify(cm.mese.giorni.filter(g=>g.notti).map(g=>[g.data,g.notti,g.icona])));
+  for(let i=0;i<365;i++){ P.G.dev.offset+=1; P.checkNewDay(); dec(); if((P.G.ui.fase||0)<1) P.doAct('terra'); if((P.G.ui.fase||0)<2) P.doAct('acqua'); P.inbox().forEach(a=>P.takeArrival(a.id,a.kind==='oggetto'?a.alt[0]:'si')); P.popups.length=0; }
+  const cb=JSON.stringify(P.G.cal).length; t('un anno di calendario pesa meno di 5 KB',cb<=5000&&P.G.cal.r.length<=400,cb+' byte, '+P.G.cal.r.length+' righe'); P.persist(); console.log('calendario dopo un anno:',cb,'byte ·',P.G.cal.r.length,'righe · vasi',P.G.vasi.length,'· salvataggio',Math.round(localStorage.getItem('terrario.save.v2').length/1024),'KB');
+  const sumD=P.G.vasi.reduce((a,v)=>a+v.dv,0)+P.sim.d; t('in un anno il vaso ha vissuto 4 notti al giorno (meno le pause delle decisioni)',sumD>=366*4-40&&sumD<=366*4+4,sumD);
+  // diario della storia
+  t('il diario della storia scrive pagine nel quaderno',P.G.quaderno.some(p=>/^diario-/.test(p.id)),P.G.quaderno.length); }
+// 9) fine del vaso: si riparte dal sasso (tempo.md §7)
+{ const P=window.__app; P.newGame('T',JSON.parse(JSON.stringify(su))); P.popups.length=0; let g=0; while(!P.sim.finalePending&&g++<600){ if(P.sim.pending.length){ const q=P.sim.pending[0]; P.resolveDecision(q.id,q.type==='mutazione'?'proteggi':q.type==='societa'?'nascosto':'lascia'); } P.autoCare(); P.passaNotte(); P.popups.length=0; }
+  t('arriva un finale',!!P.sim.finalePending,g); if(!P.sim.finalePending){ console.log(ok,'ok',bad+1,'falliti'); process.exit(1); }
+  const before={libro:JSON.stringify(P.G.libro),codex:JSON.stringify(P.G.codex),serie:P.G.player.serie,salto:P.G.power.salto,gatto:P.G.ui.gatto,mazzo:P.mazzoTot(),met:P.sim.view().setup.meteorite,cap:P.sim.view().chapter,d:P.sim.d,luce:P.sim.view().setup.luce,pag:P.G.quaderno.length,cal:P.G.cal.r.length};
+  const r=P.closeChapter(); const v=P.sim.view(), fam=P.T.FINALI[r.k].fam;
+  t('closeChapter() restituisce il vaso archiviato',r.vaso&&r.vaso.k===r.k&&r.vaso.dv===before.d&&r.vaso.n===1&&Array.isArray(r.vaso.nodi)&&r.vaso.nodi.length<=24,JSON.stringify(r.vaso&&{k:r.vaso.k,dv:r.vaso.dv,n:r.vaso.n,nodi:r.vaso.nodi.length}));
+  t('dentro il vetro resta solo il sasso: niente specie, piante, oggetti',v.sp.length===0&&v.plants.length===0&&v.setup.oggetti.length===0&&v.setup.piante.length===0&&v.setup.insetti.length===0);
+  t('terra e acqua a zero (Quiete: terra già un po’ umida)',v.needs.ter===0&&(fam==='Quiete'?v.needs.um>=.3-1e-9:v.needs.um===0),JSON.stringify(v.needs)+' '+fam);
+  t('giorno 0, capitolo +1, stesso meteorite e stessa luce, fase 0',P.sim.d===0&&v.chapter===before.cap+1&&v.setup.meteorite===before.met&&v.setup.luce===before.luce&&P.G.ui.fase===0&&P.G.ui.vasoN===2&&P.G.req.kind==='terra');
+  t('la mensola ha un vaso con il finale giusto',P.G.vasi.length===1&&P.G.vasi[0].k===r.k&&P.G.vasi[0].dv===before.d);
+  t('album +1 carta; libro, codex, serie, salti e Biscotto invariati',P.mazzoTot()===before.mazzo+1&&!!P.G.libro[r.k]&&JSON.stringify(P.G.codex)===before.codex&&P.G.player.serie===before.serie&&P.G.power.salto===before.salto&&P.G.power.resto===0&&P.G.ui.gatto===before.gatto);
+  t('albero nuovo con il solo nodo d’inizio, nessuna decisione in sospeso, quaderno conservato',P.G.tree.nodes.length<=2&&P.G.tree.nodes[0].k==='inizio'&&P.sim.pending.length===0&&P.G.quaderno.length>=before.pag+1&&P.G.quaderno.some(p=>p.id==='vaso-2'&&p.vaso===2)&&P.G.quaderno.length<=240);
+  t('il calendario segna il vaso nuovo',(P.G.cal.r[P.G.cal.r.length-1][2]&16)>0&&P.calendario().vaso.n===2&&P.calendario().mese.giorni.some(g=>g.nuovoVaso));
+  t('l’eredità del finale è annotata',P.G.ui.eredita&&P.G.ui.eredita.fam===fam&&typeof P.G.ui.eredita.testo==='string'&&P.G.ui.eredita.testo.length>10,JSON.stringify(P.G.ui.eredita));
+  P.persist(); t('salvataggio e ripresa conservano mensola, fase e vaso nuovo',P.loadSave()&&P.G.vasi.length===1&&P.G.ui.fase===0&&P.sim.d===0&&P.sim.view().chapter===before.cap+1&&P.G.ui.vasoN===2);
+  P.popups.length=0; const r1=P.doAct('terra'); const r2=P.doAct('acqua'); t('terra e acqua: si riparte (fase 2) e il muschio bussa',r1.ok&&r2.ok&&P.G.ui.fase===2&&P.inbox().some(a=>a.kind==='pianta'&&a.param==='muschio'),JSON.stringify({f:P.G.ui.fase,inbox:P.inbox().map(a=>a.param)}));
+  const am=P.inbox()[0]; P.takeArrival(am.id,'si'); t('accolto il muschio il vaso nuovo vive (fase 3)',P.G.ui.fase===3&&P.sim.view().plants.some(p=>p.id==='muschio'));
+  for(let i=0;i<12;i++){ P.passaNotte(); P.inbox().forEach(a=>P.takeArrival(a.id,'si')); P.popups.length=0; } t('felce e formiche arrivano: fase 4, eredità esaurita',P.G.ui.fase===4&&P.G.ui.eredita==null&&P.sim.view().sp.some(x=>x.id==='formiche'),P.G.ui.fase);
+  // eredità per famiglia (archiviaVaso diretto)
+  P.archiviaVaso({k:'equilibrio'}); t('Quiete → la terra nuova parte umida (.3)',P.sim.view().needs.um>=.3-1e-9&&P.G.ui.vasoN===3,P.sim.view().needs.um);
+  P.archiviaVaso({k:'gigante'}); t('Mostri → il sasso parte carico (E 40)',P.sim.E===40&&P.sim.view().needs.um===0,P.sim.E);
+  P.archiviaVaso({k:'conquista'}); P.doAct('terra'); P.doAct('acqua'); P.inbox().forEach(a=>P.takeArrival(a.id,'si')); const fa=P.G.arrivi.list.find(a=>a.force==='formiche'); t('Conflitti → la prima specie arriva un giorno prima',fa&&fa.due===P.G.ui.d3+6,JSON.stringify(fa));
+  for(let i=0;i<8;i++) P.archiviaVaso({k:'fede'}); P.persist(); const kb=localStorage.getItem('terrario.save.v2').length; t('dopo 12 vasi il salvataggio resta leggero (< 60 KB)',P.G.vasi.length===12&&kb<60000,kb); console.log('mensola di 12 vasi:',JSON.stringify(P.G.vasi).length,'byte · salvataggio',Math.round(kb/1024),'KB'); }
 console.log(ok,'ok',bad,'falliti');

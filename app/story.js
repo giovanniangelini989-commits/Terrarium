@@ -262,5 +262,27 @@ function atto(v){ if(v.finalePending) return {n:4,t:'Il destino',x:'Il vaso ha t
   if(v.sp.some(x=>x.mut.length)) return {n:2,t:'Qualcosa cambia',x:'Il sasso sta cambiando chi lo tocca. Nessuno sa ancora dove porta.'};
   return {n:1,t:'Il sasso che batte',x:'Il meteorite è appena arrivato. Il vaso si sta svegliando: osserva, cura, aspetta.'}; }
 function biscotto(){ return {intro:'Un’ombra sul muro. Poi una zampa sul coperchio. Biscotto ha deciso che il barattolo è suo.',pallina:'Biscotto insegue la pallina e dimentica il vaso. Tu respiri.',pallinaNo:'Biscotto ignora la pallina e dà una zampata al coperchio.',davanzale:'Sposti il vaso sul davanzale, fuori portata. Qui il sole è più forte: il sasso lo sente.',ok:'Il vaso è salvo. Per questa volta.',male:'Il barattolo cade sul ripiano. Non si rompe, ma il vetro si scheggia: per qualche giorno entrerà meno luce.'}; }
-window.__story={the,cap,pick,TITOLI,PRO,OGG_VOCE,ARR,REQ,REQV,narra,osserva,ambient,PAG,DIARIO,diario,MITO,EPI,epilogo,atto,biscotto,MUTMAP,MUTFX,LETARGO,letargo,SALTO_NO,SALTO_DONO,SALTO_FATTO,FILM_FEDE};
+// ---------- tempo, mani, calendario, fine del vaso (bozze in seconda persona; motore + storia) ----------
+const TEMPO={
+ prossima:ore=>ore<=0?'La prossima notte sta arrivando.':ore===1?'La prossima notte arriva tra un’ora.':'La prossima notte arriva tra '+ore+' ore.',
+ prossimaAlle:h=>'La prossima notte arriva alle '+h+'.',
+ notteOra:'Mentre guardavi, nel vaso è scesa la notte. Poi è tornato il giorno.',
+ nottiOra:n=>'Mentre non guardavi, nel vaso sono passate '+n+' notti.',
+ maniZero:'Hai le mani piene di terra. Il vaso sta bene: aspetta un po’.',
+ maniGratis:'Hai le mani stanche, ma il vaso ha bisogno: lo curi lo stesso.',
+ troppaAcqua:'Troppa acqua: il vetro si appanna e l’acqua cola sul fondo.',
+ salto2:'Chiudi gli occhi. Quando li riapri, nel vaso sono passati due giorni.',
+ saltiOggi:n=>n===1?'1 notte saltata oggi':n+' notti saltate oggi',
+ letargoCal:'Il vaso dormiva: quel giorno non sei venuto.',
+ risveglioCal:'Il vaso si è svegliato con la tua prima cura.',
+ giornoVaso:(v,d)=>(v>1?'Vaso '+v+' · ':'')+'Giorno '+d+' del vaso',
+ chiudiConferma:'Il vaso si addormenterà per sempre. Il sasso resta con te.',
+ chiudiBottone:'Chiudi il capitolo',
+ nuovoVaso:n=>'Svuoti il barattolo nel giardino, piano. Sul fondo resta solo il sasso, e batte. Vaso '+n+': si ricomincia dalla terra.',
+ nuovoVasoTitolo:'Il vaso ricomincia dal sasso',
+ ricomincia:'Ricomincia: metti la terra',
+ eredita:{Quiete:'La terra nuova è già un po’ umida: il vaso di prima le ha lasciato il suo respiro.','Mostri':'Il sasso batte forte fin dal primo giorno: ricorda il gigante.','Società':'Sul tavolo, la prima cosa che troverai sarà quella che il popolo adorava.',Conflitti:'Chi arriverà per primo, arriverà in fretta: il vaso di prima ha insegnato la fretta.'},
+ mensola:(n,nome,giorni)=>'Vaso '+n+' · '+nome+' · '+giorni+(giorni===1?' giorno':' giorni')+' nel vaso'};
+const CAL={inizio:'Il vaso comincia',nasce:'Qualcuno arriva',estinta:'Non ne resta nessuna',muta:'Qualcuno cambia',popolo:'Nasce un popolo',cultura:'Il popolo cambia idea',mostro:'Nasce un gigante',guerra:'Scoppia una guerra',pace:'Torna la pace',pianta:'Cresce una pianta',oggetto:'Una cosa dal tavolo',scelta:'Hai scelto',carta:'Hai giocato una carta',gatto:'Biscotto',capitolo:'Un finale',pagina:'Hai scritto nel quaderno',letargo:'Il vaso dormiva',risveglio:'Il vaso si è svegliato',salto:'Hai saltato due giorni',vaso:'Un vaso nuovo'};
+window.__story={TEMPO,CAL,the,cap,pick,TITOLI,PRO,OGG_VOCE,ARR,REQ,REQV,narra,osserva,ambient,PAG,DIARIO,diario,MITO,EPI,epilogo,atto,biscotto,MUTMAP,MUTFX,LETARGO,letargo,SALTO_NO,SALTO_DONO,SALTO_FATTO,FILM_FEDE};
 })();
