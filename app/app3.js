@@ -9,8 +9,8 @@ const NOTA=['mutazione','societa','guerra','pace','mostro','estinzione','scisma'
 const SFXK={mutazione:'mut',societa:'societa',guerra:'guerra',pace:'pace',mostro:'guerra',estinzione:'spento',scisma:'guerra',finale:'finale'};
 const specId=nome=>{ const s=Object.entries(T.SPECIE).find(([k,x])=>x.nome===nome); return s?s[0]:null; };
 // ---------------- sheets ----------------
-function sheet(html,modal){ layer.innerHTML='<div class="scrim" data-a="sx"></div><div class="sheet'+(modal?' modal':'')+'">'+(modal?'':'<div class="grab"></div>')+html+'</div>'; }
-function closeSheet(){ layer.innerHTML=''; }
+function sheet(html,modal){ const had=!!layer.querySelector('.sheet'); layer.innerHTML='<div class="scrim" data-a="sx"></div><div class="sheet'+(modal?' modal':'')+'">'+(modal?'':'<div class="grab"></div>')+html+'</div>'; if(window.__fx) __fx.sheetIn(layer.querySelector('.sheet'),had?null:layer.querySelector('.scrim')); }
+function closeSheet(){ if(window.__fx&&layer.querySelector('.sheet')) __fx.ghostOut(layer); layer.innerHTML=''; }
 const sheetOpen=()=>!!layer.firstChild;
 const busy=()=>sheetOpen()||cine||document.getElementById('reveal')||document.getElementById('film')||document.getElementById('cardrev');
 // ---------------- cinema: zoom guidato con voce ----------------
@@ -25,7 +25,7 @@ function cinema(steps,after){ if(cine||!steps.length||mode!=='game'){ if(after) 
   const next=()=>{ clearTimeout(tm); i++; if(i>=steps.length){ end(); return; } const s=steps[i]; V.zoomTo(s.focus); const ct=el.querySelector('.ct'); ct.classList.remove('in'); void ct.offsetWidth; ct.textContent=s.text; ct.classList.add('in'); if(s.sfx) AU.sfx(s.sfx); AU.say(s.text); tm=setTimeout(next,fast()?150:Math.min(9000,2600+s.text.length*58)); };
   el.addEventListener('click',next); setTimeout(next,fast()?20:600); }
 // ---------------- popup della storia ----------------
-function showNextPopup(){ if(busy()||mode!=='game') return; const p=A.popups.shift(); if(!p) return; const v=A.sim.view();
+function showNextPopup(){ if(busy()||mode!=='game') return; const p=A.popups.shift(); if(p&&window.__fx&&/^(levelup)$/.test(p.t)) __fx.grande(p.t==='finale'?'rgba(255,226,160,.62)':'rgba(124,245,200,.5)'); if(!p) return; const v=A.sim.view();
   if(p.t==='risveglio'){ const ev=p.eventi||[]; const nota=ev.filter(e=>NOTA.includes(e.kind)).slice(-2);
     const open=()=>{ const body=ev.length?ev.map(e=>'<div class="li nar"><span class="em">'+e.icon+'</span><div>'+esc(S.narra(e))+'</div></div>').join(''):'<p class="nar" style="text-align:center">Una notte tranquilla. Il sasso ha continuato a battere, piano.</p>';
       sheet('<div class="kicker" style="text-align:center">'+(p.giorni>1?'Mentre non c’eri':'Buongiorno')+'</div><h2>'+esc(A.G.name)+'</h2>'+body+'<div class="stack"><button class="btn" data-a="sx">Vai dal bambino</button></div>'); };
@@ -155,7 +155,17 @@ function impHTML(){ const G=A.G,s=G.settings; const tg=(k,t,sm,on)=>'<div class=
    +'<div class="card"><div class="kicker">Strumenti di test</div><p class="muted">Servono a provare il gioco in fretta. Non faranno parte del gioco.</p><div class="stack" style="display:flex;flex-direction:column;gap:8px"><button class="btn s sm" data-a="t-salta">Salta l’avvio guidato</button><button class="btn s sm" data-a="t-day">Passa al giorno dopo</button><button class="btn s sm" data-a="t-carte">Una carta di ogni tipo</button><button class="btn s sm" data-a="t-step">+1 giorno del vaso</button><button class="btn s sm" data-a="t-final">Vai avanti fino al finale</button><button class="btn s sm" data-a="t-arrivo">Fai arrivare una notifica</button><button class="btn s sm" data-a="t-biscotto">Chiama Biscotto</button><button class="btn s sm" data-a="t-notte">Fai succedere qualcosa stanotte</button><button class="btn s sm" data-a="t-gatto">Capitolo successivo di Biscotto</button></div></div>'; }
 // ---------------- render ----------------
 function sync(){ if(!A.G) return; AU.configure(A.G.settings.audio); const v=A.sim.view(); AU.setState(v.E,V.isNight()); }
-function render(){ const sc=$('#screen'), tb=$('#tabbar'); const st=sc.scrollTop; let h=''; if(tab==='codex') tab='quaderno';
+let fxPrev=null;
+function fxSnap(){ try{ if(!A.G||!A.sim) return {tab}; return {tab,mode,day:A.sim.d,needs:Object.assign({},A.sim.view().needs),nf:Array.from(document.querySelectorAll('.side .nf')).map(e=>e.dataset.a+'|'+(e.dataset.t||''))}; }catch(e){ return {tab}; } }
+function fxAfter(pv){ const F=window.__fx; if(!F||!pv) return; const sc=$('#screen');
+  if(tab!=='vaso'){ if(pv.tab!==tab) F.rise(sc.querySelectorAll('.pghead, .seg, .card, .tn, .ln, .alb-leg'),22); return; }
+  if(mode!=='game') return; const fresh=pv.tab!=='vaso'||pv.mode!=='game';
+  if(fresh){ F.rise(document.querySelectorAll('.hud > *, .hud .bars > *, .side > *, .dock .rb, .dock .cta, .qhandle'),38); return; }
+  const day=document.querySelector('.hud .day b'); if(day&&pv.day!=null&&pv.day!==A.sim.d) F.count(day,pv.day,A.sim.d);
+  const nv=A.sim.view().needs; document.querySelectorAll('.np').forEach(b=>{ const k=b.dataset.n, now=nv[k], was=pv.needs&&pv.needs[k]; if(now==null) return; if(was!=null&&Math.abs(now-was)>.015){ F.bump(b,now>was); const f=b.querySelector('i b'); if(f) F.bar(f,was,now); } b.classList.toggle('crit',now<.25); });
+  const old=pv.nf||[]; let i=0; document.querySelectorAll('.side .nf').forEach(e=>{ if(!old.includes(e.dataset.a+'|'+(e.dataset.t||''))) F.pop(e,(i++)*70); }); }
+function render(){ const pv=fxSnap(); render0(); try{ fxAfter(pv); }catch(e){} }
+function render0(){ const sc=$('#screen'), tb=$('#tabbar'); const st=sc.scrollTop; let h=''; if(tab==='codex') tab='quaderno';
   if(mode==='game'){ h=tab==='vaso'?vasoHTML():tab==='quaderno'?quadernoHTML():impHTML(); tb.hidden=true; sc.classList.toggle('nt',true); sc.classList.toggle('fullv',tab==='vaso'); if(tab!=='vaso') h='<div class="pghead"><button class="back" data-a="tab" data-t="vaso" aria-label="Torna al vaso">‹ Vaso</button></div>'+h; const G=A.G;
     tb.innerHTML=[['vaso','🫙','Vaso'],['quaderno','📓','Quaderno'],['imp','⚙️','Altro']].map(t=>'<button data-a="tab" data-t="'+t[0]+'" aria-selected="'+(tab===t[0])+'"><span class="em">'+t[1]+'</span>'+t[2]+((t[0]==='quaderno'&&G.ui.unread>0&&tab!=='quaderno')?'<span class="dot"></span>':'')+'</button>').join(''); document.documentElement.classList.toggle('soft',!!G.settings.calma.soft); sync(); }
   else tb.hidden=true;
@@ -203,7 +213,7 @@ const H={
  'arr-no'(d){ A.takeArrival(d.id,'no'); closeSheet(); render(); A.toast('Lo riporti fuori.'); setTimeout(showNextPopup,200); },
  'bis'(d){ bisResult(d.c); render(); },
  'why'(d){ const e=A.sim.log[+d.i]; if(!e) return; const v=A.sim.view(); sheet('<h2>'+e.icon+' Cosa è successo</h2><p class="nar" style="text-align:center">'+esc(S.narra(e))+'</p><div class="kicker" style="text-align:center;margin-top:10px">In parole semplici</div><p class="muted" style="text-align:center;margin:2px 0">'+esc(e.text)+'</p><div class="kicker" style="text-align:center;margin-top:10px">Cosa potrebbe c’entrare</div><div style="text-align:center;margin-top:6px">'+whyClues(e,v).map(c=>'<span class="tag">'+esc(c)+'</span>').join('')+'</div><p class="muted" style="text-align:center">Non è una certezza: è un indizio.</p><div class="stack"><button class="btn s" data-a="sx">Chiudi</button></div>'); },
- 'fin-open'(){ openFinale(); },
+ 'fin-open'(){ if(window.__fx) __fx.grande('rgba(255,226,160,.62)'); openFinale(); },
  'fin-continue'(){ const r=$('#reveal'); if(r) r.remove(); AU.stopVoice(); sheet('<h2>Chiudi il capitolo?</h2><p style="text-align:center">Il finale va nel Libro dei finali. Il vaso continua, se vuoi.</p><div class="stack"><button class="btn g" data-a="fin-close">Chiudi il capitolo</button><button class="btn s" data-a="fin-snooze">Non ancora</button></div>',true); },
  'fin-close'(){ const r=A.closeChapter(); closeSheet(); A.toast('Scritto nel Libro: '+T.FINALI[r.k].nome+(r.first?' · nuovo finale!':'')); render(); cardReveal(r.carta,()=>{ checkPopups(); setTimeout(showNextPopup,200); }); },
  'fin-snooze'(){ A.G.ui.snoozeFinale=A.todayIdx()+3; A.persist(); closeSheet(); render(); },

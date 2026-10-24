@@ -1,0 +1,2 @@
+{ "name": "terrario-asset-tools", "private": true, "type": "module",
+  "dependencies": { "@gltf-transform/cli": "4.5.1", "@gltf-transform/core": "4.5.1", "@gltf-transform/extensions": "4.5.1" } }

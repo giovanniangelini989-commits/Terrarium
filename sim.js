@@ -266,7 +266,7 @@ function createSim(setup0,opts){
   function addObject(id){ if(ogg.includes(id)||!OGGETTI[id]) return false; ogg.push(id); recompute(); ev(d,'ambiente',OGGETTI[id].icon,OGGETTI[id].nome+' nel vaso.',['L’hai messo tu.']); sp.forEach(x=>{ if(x.society){ Object.entries(OGGETTI[id].memi).forEach(([m,v])=>{ x.society.memi[m]=(x.society.memi[m]||0)+v*.8; }); if(reculture(x)) ev(d,'cultura',OGGETTI[id].icon,OGGETTI[id].txt(x.nome),['La società ha scoperto un oggetto nuovo: la sua cultura cambia.']); } }); return true; }
   function removeObject(id){ const i=ogg.indexOf(id); if(i<0) return false; ogg.splice(i,1); recompute(); ev(d,'ambiente',OGGETTI[id].icon,OGGETTI[id].nome+' tolto dal vaso.',['L’hai tolto tu.']); return true; }
   function setMalus(delta,days){ lumMod=delta; lumModLeft=days; recompute(); ev(d,'ambiente','🩹','Il vetro si è scheggiato: entra meno luce.',['Per qualche giorno il vaso è un po’ più scuro.']); }
-  function setNeeds(o){ if(o.um!=null) Wres=clamp(o.um); if(o.ter!=null) detr=clamp(o.ter); recompute(); }
+  function setNeeds(o){ if(o.um!=null) Wres=clamp(o.um); if(o.ter!=null) detr=clamp(o.ter); if(o.pul!=null) muffa=clamp(1-o.pul); recompute(); }
   function needWarn(){ if(Wres<.22&&!nw.um){ nw.um=true; ev(d,'ambiente','🥀','L’acqua sta finendo: le foglie si arricciano.',['L’umidità è scesa sotto il minimo.']); } if(Wres>.4) nw.um=false;
     if(detr<.1&&!nw.ter){ nw.ter=true; ev(d,'ambiente','🍂','Il terreno è stanco: per chi vive nel marcio non c’è più niente da mangiare.',['Il terreno è quasi senza nutrienti.']); } if(detr>.25) nw.ter=false;
     if(muffa>.55&&!nw.pul){ nw.pul=true; ev(d,'ambiente','🟣','Il vetro è sporco e la muffa avanza.',['Nessuno pulisce da un po’.']); } if(muffa<.3) nw.pul=false; }

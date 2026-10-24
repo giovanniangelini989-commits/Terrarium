@@ -295,3 +295,13 @@ canvas.v3d{display:block;width:100%;border-radius:18px}
 .tn.cap{left:0;justify-content:center;align-items:center;flex-direction:column;gap:2px;background:linear-gradient(90deg,transparent,rgba(229,192,123,.13),transparent)}
 .tn.cap b{font:800 13px Manrope,system-ui,sans-serif;color:#E5C07B}
 .tbig{display:block;width:100%;max-height:42vh;object-fit:cover;border-radius:16px;margin:0 0 10px}
+
+/* ===== Micro-interazioni ===== */
+.fx-flash{position:fixed;inset:0;pointer-events:none;z-index:9997}
+.fx-ring{position:fixed;border-radius:50%;border:2px solid rgba(124,245,200,.75);pointer-events:none;z-index:9996;box-sizing:border-box}
+.fx-rip{position:absolute;border-radius:50%;background:currentColor;pointer-events:none}
+.fx-ghost *{pointer-events:none}
+.btn,.cta{position:relative;overflow:hidden}
+.np.crit{animation:fxcrit 2.4s ease-in-out infinite}
+@keyframes fxcrit{0%,100%{box-shadow:0 0 0 0 rgba(232,115,90,0)}50%{box-shadow:0 0 0 4px rgba(232,115,90,.32)}}
+@media (prefers-reduced-motion: reduce){.np.crit{animation:none}}

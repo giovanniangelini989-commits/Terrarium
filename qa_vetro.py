@@ -1,0 +1,16 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    b=p.chromium.launch(args=['--use-gl=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']); ctx=b.new_context(viewport={'width':390,'height':844},device_scale_factor=1); ctx.add_init_script("window.__fast=true"); pg=ctx.new_page()
+    errs=[]; pg.on('pageerror',lambda e:errs.append(str(e)[:200])); pg.on('console',lambda m:errs.append(m.text[:200]) if m.type=='error' else None)
+    pg.goto('file://'+__import__('os').path.abspath('dist')+'/terrario-gioco.html'); pg.wait_for_timeout(1500)
+    pg.evaluate("document.getElementById('film')&&document.getElementById('film').remove(); __app.newGame('T',{luce:1,acqua:1,meteorite:1,piante:['muschio','felce'],insetti:['formiche','coleotteri'],oggetti:['statuina']}); __app.G.settings.tempo='giorno'; __ui.mode='game'; __app.popups.length=0; __ui.render()"); pg.wait_for_timeout(300)
+    pg.evaluate("__vase.set3d(true)"); pg.evaluate("__app.sim.setNeeds({um:.93,pul:.15}); __ui.render()"); pg.wait_for_function('window.__glass&&__glass.state().dens>.95&&__glass.state().soilCol>=6',timeout=60000); pg.wait_for_timeout(1500)
+    gs=lambda: pg.evaluate("window.__glass?__glass.state():null")
+    print('prima:',gs(),'bisogni',pg.evaluate("__app.sim.view().needs")); pg.screenshot(path='screenshots/v1_appannato.png')
+    pg.mouse.move(110,360); pg.mouse.down()
+    for x,y in [(285,380),(105,420),(285,460),(105,500),(285,540),(105,575),(285,600)]: pg.mouse.move(x,y,steps=8)
+    pg.mouse.up(); pg.wait_for_timeout(1200)
+    print('dopo:',gs(),'bisogni',pg.evaluate("__app.sim.view().needs")); pg.screenshot(path='screenshots/v2_pulito.png')
+    pg.screenshot(path='screenshots/v2b_dettaglio.png',clip={'x':60,'y':300,'width':270,'height':330}); pg.evaluate("__vase.zoomTo({kind:'specie',id:'formiche'})"); pg.wait_for_timeout(4500); pg.screenshot(path='screenshots/v3_vicino.png')
+    pg.evaluate("__vase.reset&&__vase.reset(); __app.G.settings.tempo='notte'; __ui.render()"); pg.wait_for_timeout(5000); pg.screenshot(path='screenshots/v4_notte.png')
+    print('errori:',errs or 'nessuno'); b.close()
