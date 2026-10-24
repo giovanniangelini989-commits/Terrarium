@@ -1,6 +1,6 @@
 # Terrario — regole del progetto
 
-Leggi prima `docs/STORIA.md` (cosa è stato deciso e perché) e `docs/CONTRATTI.md` (le interfacce tra le parti).
+Leggi prima `docs/STORIA.md` (cosa è stato deciso e perché), `docs/DECISIONI.md` (le scelte aperte, già chiuse) e `docs/CONTRATTI.md` (le interfacce tra le parti).
 
 ## Chi decide
 - **Giovanni** (art director, product owner) decide direzione creativa e approva. Parla italiano.
@@ -15,17 +15,39 @@ Leggi prima `docs/STORIA.md` (cosa è stato deciso e perché) e `docs/CONTRATTI.
 5. **Unione sequenziale**: l'orchestratore unisce un ramo alla volta e rilancia i test dopo ogni unione.
 6. Si lavora in rami/worktree separati per agente; `main` è sempre giocabile.
 
+## Lo studio
+| Ruolo da studio | Agente | Modello |
+|---|---|---|
+| Creative director | **Giovanni** | — |
+| Producer | orchestratore (sessione principale) | Opus |
+| Showrunner (metodo serie TV) | showrunner | Opus |
+| Narrative director | storia | Opus |
+| Direttore artistico | direttore-artistico | Opus |
+| Direttore della fotografia | luci | Opus |
+| Technical artist 3D | tre-d (modelli generati da Kimi) | Opus |
+| Game e systems designer | motore | Sonnet |
+| UI/UX designer | interfaccia | Sonnet |
+| Regista delle cinematiche | finali | Sonnet |
+| Sound designer (integrazione audio) | suono | Sonnet |
+| Compositore (musica con Magnific) | musicista | Sonnet |
+| Playtest e user research | giocatore | Sonnet |
+| Ricerca di mercato | ricerca | Sonnet |
+| Lancio e App Store | lancio | Sonnet |
+| QA | qa | Haiku |
+
+Ogni agente lavora solo quando serve: l'orchestratore li attiva al momento giusto, non tutti insieme.
+
 ## Ciclo di perfezionamento continuo
 1. **giocatore** gioca con le quattro persone e scrive dove si annoia, si confonde o si frustra.
 2. **ricerca** porta i dati dei concorrenti e le criticità quando una scelta va verificata.
 3. L'orchestratore trasforma i report in compiti e li assegna agli agenti secondo `docs/CONTRATTI.md`.
 4. Gli agenti correggono in rami separati; l'orchestratore unisce uno alla volta e rilancia i test.
-5. **qa** controlla, **giocatore** rigioca la stessa persona: il voto «quanto ho voglia di tornare domani» deve salire.
+5. **qa** controlla, **direttore-artistico** approva le schermate, **giocatore** rigioca la stessa persona: il voto «quanto ho voglia di tornare domani» deve salire.
 6. Report breve a Giovanni con le schermate e il link da aprire sull'iPhone.
 L'orchestratore agisce senza chiedere conferma; chiede a Giovanni solo le scelte creative.
 
 ## Modelli e risparmio token
-- Ogni agente ha il suo modello nel file in `.claude/agents/`: orchestratore **Opus**, tre-d, storia e luci **Opus**, giocatore e ricerca **Sonnet**, motore, interfaccia e finali **Sonnet**, qa **Haiku**. Per la prima costruzione dei finali si può passare a Opus.
+- Ogni agente ha il suo modello nel file in `.claude/agents/` (vedi «Lo studio»). Per la prima costruzione dei finali si può passare a Opus.
 - **Mai leggere** `app/tex.js` (1 MB di texture), `dist/` (gioco già costruito) né tutta la cartella `screenshots/`.
 - `app3.js`, `v3d.js`, `sim.js` hanno righe lunghissime: prima Grep, poi si legge solo il pezzo che serve.
 - Ogni agente lancia solo i test della sua parte; la suite completa con il browser gira su GitHub Actions.
@@ -40,7 +62,7 @@ L'orchestratore agisce senza chiedere conferma; chiede a Giovanni solo le scelte
 - **Micro-interazioni**: 100–250 ms, si anima la scala non le dimensioni, ogni effetto torna a riposo. Tre livelli di risposta (piccolo: tocco pulsante · medio: arrivo, scelta · grande: finale, popolo fondato).
 
 ## Vincoli tecnici
-- Pagina pubblicata = un solo file HTML autonomo. Script esterni solo da cdnjs, jsDelivr, cdn.tailwindcss.com, code.jquery.com (versioni fissate, vecchie ≥ 14 giorni). Niente immagini remote, niente fetch verso altri siti.
+- Pagina pubblicata = un solo file HTML autonomo (eccezione decisa in docs/DECISIONI.md §5: modelli hero e musica in file separati sullo stesso sito, caricati solo quando servono). Script esterni solo da cdnjs, jsDelivr, cdn.tailwindcss.com, code.jquery.com (versioni fissate, vecchie ≥ 14 giorni). Niente immagini remote, niente fetch verso altri siti.
 - Three.js 0.184. Budget: iPhone 12 a 60 fps, ≤ 90k triangoli nel caso peggiore, guardia prestazioni già attiva (abbassa risoluzione, poi spegne ombre, poi il 3D).
 - Su iPhone la vibrazione dal browser non funziona (Apple ha chiuso il trucco in iOS 26.5): solo suono e risposta visiva finché non c'è l'app nativa.
 - Salvataggio in localStorage: tenere il salvataggio leggero (l'albero limita a 36 foto da ~5 KB).
