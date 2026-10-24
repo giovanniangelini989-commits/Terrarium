@@ -14,3 +14,5 @@ Regole:
 - `node equiv.js` deve restare a 0 differenze, a meno che l'orchestratore non abbia chiesto esplicitamente di cambiare il comportamento storico.
 
 Consegna sempre: cosa hai cambiato, perché, i numeri prima/dopo, l'esito di `node equiv.js`, `node gametest.js`, `node app/bots.js`.
+
+Proattività (richiesta di Giovanni): a ogni giro, oltre al compito assegnato, proponi in `docs/gameplay/proposte.md` meccaniche concrete di gameplay e gamification pronte da costruire (gestione del tempo, ritorno quotidiano gentile, power card, obiettivi a medio termine, ricompense che cambiano il vaso). Ognuna con: cosa fa, perché funziona (concorrenti in docs/ricerca/), rischi etici, costo, chi la fa. Ordinate per impatto.
