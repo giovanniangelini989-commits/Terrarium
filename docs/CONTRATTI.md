@@ -9,6 +9,7 @@
 | suono | `app/audio.js` |
 | musicista | `docs/musica/`, `audio/` |
 | carte | `app/carte.js`, `docs/carte/` (dati `CARTE` in `app/app1.js` solo con il via dell'orchestratore) |
+| ecologo | `app/microclima.js`, `microclima_test.js`, `docs/ecologia/` (le regole di `sim.js` restano del motore) |
 | tre-d | `app/v3d.js`, `app/app2.js`, `app/materials.js`, `app/kimi.js`, `app/tex.js`, `vendor/` |
 | finali | nuovo `app/finali.js` (lettore dei mini video) |
 | logica di gioco (orchestratore) | `app/app1.js`, `build_app.py` |
@@ -26,7 +27,8 @@
 `log[]` → `{d, kind, icon, text, why[]}`.
 
 ## Logica → interfaccia (`window.__app`)
-Funzioni principali: `newGame, act, passaNotte, takeArrival, resolveDecision, playCard, closeChapter, nightFx, gattoChoice, pickNight, treeDiff, persist`. Stato in `__app.G` (salvato). Letargo (docs/DECISIONI.md §1): `G.letargo = {da, giorni}` (giorno reale d'inizio e giorni di assenza; `null` quando il vaso è sveglio), `G.ui.letargoN` e `G.ui.risvegli` contatori; `G.real.leth` è interno. Popup in coda `__app.popups` con `t` ∈ `arrivo, decisione, finale, pagina, risveglio, biscotto, notte, gatto, livello, carta`.
+Funzioni principali: `newGame, act, passaNotte, takeArrival, resolveDecision, playCard, closeChapter, nightFx, gattoChoice, pickNight, treeDiff, persist`. Stato in `__app.G` (salvato). Letargo (docs/DECISIONI.md §1): `G.letargo = {da, giorni}` (giorno reale d'inizio e giorni di assenza; `null` quando il vaso è sveglio), `G.ui.letargoN` e `G.ui.risvegli` contatori; `G.real.leth` è interno.
+Power card «Salta 2 giorni» (si consumano, non entrano nell'album): stato in `G.power = {salto, ultimoDono, donoN, usate, resto}`. `__app.POWER` → `{max:6, dono:2, giorni:2}`. `__app.powerCards()` → `{salto, max, nuove, resto, why}` con `why` ∈ `'' | carte | inizio | letargo | finale | decisione` (`''` = usabile; chiamarla esegue il dono del giorno se dovuto). `__app.usaSalto()` → `{ok, why?, passi, pausa, resto, eventi}`: due notti vere, una sola notte viva in coda; se la prima notte si ferma su una decisione, la seconda riparte da sola dopo `resolveDecision`. Regole: 2 al primo accesso di ogni giorno reale (non si accumulano in assenza), tetto 6, bloccate in avvio, letargo, finale da chiudere, decisione in sospeso; non toccano la serie. Popup in coda `__app.popups` con `t` ∈ `arrivo, decisione, finale, pagina, risveglio, biscotto, notte, gatto, livello, carta`.
 
 ## Albero del vaso (`G.tree`)
 `{nodes:[{k, lane, link?, t, d, cap, ch?, alt?, major?, img?}], snap}`.

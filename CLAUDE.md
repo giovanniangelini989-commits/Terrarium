@@ -29,6 +29,7 @@ Leggi prima `docs/STORIA.md` (cosa è stato deciso e perché), `docs/DECISIONI.m
 | UI/UX designer | interfaccia | Sonnet |
 | Regista delle cinematiche | finali | Sonnet |
 | Designer di carte collezionabili | carte | Opus |
+| Ecologo e fisico del microclima | ecologo | Opus |
 | Sound designer (integrazione audio) | suono | Sonnet |
 | Compositore (musica con Magnific) | musicista | Sonnet |
 | Playtest e user research | giocatore | Sonnet |
