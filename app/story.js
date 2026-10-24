@@ -28,20 +28,85 @@ const ARR={
  oggetto:{statuina:['una statuina di pietra con una faccia seria'],orologio:['l’orologio rotto del nonno, che ticchetta ancora'],giocattolo:['un orso di stoffa'],specchio:['uno specchietto che fa luce sul soffitto'],libro:['un librino con le pagine strappate e disegni di stelle'],moneta:['una vecchia moneta d’argento'],radio:['una radiolina che prende solo fruscio'],candela:['una candela avanzata da un compleanno']}
 };
 // ---------- richieste: pensieri del giocatore ----------
-const REQ={pulisci:['Il vetro è appannato. Non vedi niente.','Pulisci il vetro'],acqua:['Le foglie pendono, molli. Hanno sete.','Dai un po’ d’acqua'],nutri:['La terra è grigia e stanca. Le serve cibo buono.','Nutri il suolo'],osserva:['Ti chiedi cosa fanno quando nessuno li guarda.','Osserva il vaso']};
+// REQ[kind] resta [testo, pulsante] (firma invariata per app3.js), ma ogni lettura sceglie una variante
+// legata a ciò che c'è nel vaso. La scelta resta ferma finché la richiesta è la stessa (giorno + richieste fatte).
+const vivo=(v,id)=>v.sp.some(x=>x.id===id&&x.alive), pianta=(v,id)=>v.setup.piante.includes(id), popolo=v=>v.sp.find(x=>x.alive&&x.society);
+const OGG_BREVE={statuina:'la statuina',orologio:'l’orologio',giocattolo:'l’orso di stoffa',specchio:'lo specchietto',libro:'il librino',moneta:'la moneta',radio:'la radiolina',candela:'la candela'};
+const REQV={
+ pulisci:[
+  {x:'Il vetro è velato. Vedi solo ombre che si muovono.',b:'Pulisci il vetro'},
+  {c:v=>v.muffa>.45,x:'Una peluria grigia sale dal fondo del vetro. È muffa: cresce dove l’aria è umida e ferma.',b:'Pulisci il vetro'},
+  {c:v=>vivo(v,'formiche'),x:'Le formiche camminano dietro un vetro opaco. Da qui non distingui più chi è chi.',b:'Passa il panno'},
+  {c:v=>v.setup.luce===2,x:'Il sole accende ogni macchia sul vetro. Dentro, la luce arriva sporca.',b:'Pulisci il vetro'},
+  {c:v=>pianta(v,'muschio'),x:'Il muschio sembra grigio, ma è il vetro. Dietro le macchie è ancora verde.',b:'Passa il panno'},
+  {c:v=>!!popolo(v),x:'Il popolo lavora dietro un vetro sporco. Vorresti vedere cosa costruisce.',b:'Pulisci il vetro'},
+  {c:v=>v.E>60,x:'Il sasso batte, ma il viola si vede appena: il vetro è coperto di aloni.',b:'Passa il panno'},
+  {c:v=>vivo(v,'lumache'),x:'Le lumache hanno lasciato scie d’argento su tutto il vetro. Dentro non si vede più niente.',b:'Pulisci il vetro'},
+  {x:'Ieri hai lasciato un’impronta sul vetro. Adesso sopra c’è la polvere.',b:'Passa il panno'}],
+ acqua:[
+  {x:'Le foglie pendono, molli. Hanno sete.',b:'Dai un po’ d’acqua'},
+  {c:v=>pianta(v,'muschio'),x:'Il muschio è diventato grigio e croccante. Non è morto: aspetta l’acqua per riaprirsi.',b:'Spruzza il muschio'},
+  {c:v=>pianta(v,'felce'),x:'La felce arrotola le foglie verso l’interno. Così perde meno acqua.',b:'Dai un po’ d’acqua'},
+  {c:v=>vivo(v,'lumache'),x:'Le lumache si sono chiuse nel guscio. Lo fanno quando l’aria è troppo secca.',b:'Dai un po’ d’acqua'},
+  {c:v=>v.setup.luce===2,x:'Il sole ha bevuto la terra. Sul vetro non resta neanche una goccia.',b:'Dai un po’ d’acqua'},
+  {c:v=>vivo(v,'formiche'),x:'Le formiche scavano più a fondo del solito. Cercano l’umido.',b:'Bagna la terra'},
+  {c:v=>pianta(v,'fungo'),x:'I funghi hanno il cappello raggrinzito. Il buio non basta: serve acqua.',b:'Dai un po’ d’acqua'},
+  {x:'La terra si è staccata dal vetro: una riga chiara tutto intorno. È asciutta.',b:'Bagna la terra'},
+  {x:'Stamattina sul tappo non c’è una goccia. Il vaso non suda più: ha sete.',b:'Dai un po’ d’acqua'}],
+ nutri:[
+  {x:'La terra è grigia e stanca. Le serve cibo buono.',b:'Nutri il suolo'},
+  {c:v=>pianta(v,'muschio'),x:'Il muschio cresce piano, a chiazze. La terra sotto non ha più niente da dargli.',b:'Nutri il suolo'},
+  {c:v=>vivo(v,'formiche'),x:'Le formiche tornano al nido a mani vuote. Non trovano più niente.',b:'Spargi terra buona'},
+  {c:v=>vivo(v,'coleotteri'),x:'I coleotteri rosicchiano la stessa foglia da giorni. Non c’è altro.',b:'Nutri il suolo'},
+  {c:v=>vivo(v,'termiti'),x:'Le termiti hanno finito il legno morto. Girano in tondo.',b:'Spargi terra buona'},
+  {c:v=>!!popolo(v),x:'Il popolo divide le briciole in parti sempre più piccole. Il cibo sta finendo.',b:'Nutri il suolo'},
+  {c:v=>pianta(v,'felce'),x:'Le foglie nuove della felce escono pallide. La terra non ha più forza.',b:'Nutri il suolo'},
+  {x:'La terra è dura e chiara, come quella del cortile. Le radici non la bucano.',b:'Spargi terra buona'}],
+ osserva:[
+  {x:'Ti chiedi cosa fanno quando nessuno li guarda.',b:'Osserva il vaso'},
+  {c:v=>vivo(v,'formiche'),x:'Le formiche vanno sempre dallo stesso lato del sasso. Vuoi capire perché.',b:'Guarda da vicino'},
+  {c:v=>!!popolo(v),x:'Stanotte il popolo ha spostato qualcosa. Vuoi vedere cosa.',b:'Guarda da vicino'},
+  {c:v=>v.sp.some(x=>x.alive&&x.mut.length),x:'Uno di loro cammina in modo diverso dagli altri. Vuoi guardarlo da vicino.',b:'Osserva il vaso'},
+  {c:v=>v.E>60,x:'Il sasso batte forte, stamattina. Chi gli sta vicino si comporta in modo strano?',b:'Osserva il vaso'},
+  {c:v=>v.setup.oggetti.length>0&&v.sp.some(x=>x.alive),x:v=>'Qualcuno gira intorno a '+(OGG_BREVE[v.setup.oggetti[0]]||'qualcosa')+' da ieri. Vuoi sapere perché.',b:'Guarda da vicino'},
+  {c:v=>v.wars.length>0,x:'Le due fazioni sono ferme da ore. Chi si muoverà per prima?',b:'Osserva il vaso'},
+  {c:v=>v.sp.some(x=>x.alive&&x.monster),x:'La creatura più grande si è fermata contro il vetro. Sta guardando te?',b:'Guarda da vicino'},
+  {c:v=>pianta(v,'felce'),x:'Sotto la felce c’è un’ombra che si muove. Vuoi sapere chi ci abita.',b:'Osserva il vaso'},
+  {c:v=>vivo(v,'lumache'),x:'Una lumaca è salita sul vetro, a metà strada verso il tappo. Dove va?',b:'Guarda da vicino'},
+  {c:v=>vivo(v,'ragni'),x:'Il ragno non si muove da stamattina. Sta aspettando qualcosa.',b:'Osserva il vaso'},
+  {c:v=>v.sp.filter(x=>x.alive).length>=2,x:v=>{ const a=v.sp.filter(x=>x.alive); return cap(the(a[0].nome))+' e '+the(a[1].nome)+' si incrociano sul muschio. Si conoscono?'; },b:'Guarda da vicino'},
+  {x:'Il vaso sembra fermo. Ma niente, qui dentro, è fermo davvero.',b:'Osserva il vaso'}],
+ // il pulsante notte non c'è più: le notti passano da sole (o con la carta «Salta 2 giorni»)
+ notte:[
+  {x:'Il vaso ha bisogno di tempo. Le notti passano da sole: domani troverai qualcosa di nuovo.',b:'Osserva il vaso'},
+  {x:'Adesso tocca al vaso. Mentre dormi, qualcuno lì dentro lavora.',b:'Osserva il vaso'}]
+};
+const reqMemo={}, reqUltimo={};
+function reqScegli(kind){ const L=REQV[kind]; const base=[L[0].x,L[0].b];
+  try{ const A=window.__app; if(!A||!A.sim||!A.G) return base; const G=A.G, key=kind+'|'+((G.req&&G.req.day)||0)+'|'+((G.ui&&G.ui.reqN)||0);
+   if(reqMemo[kind]&&reqMemo[kind].key===key) return reqMemo[kind].r;
+   const v=A.sim.view(); const ok=L.filter(o=>{ try{ return !o.c||o.c(v); }catch(e){ return false; } });
+   const peso=ok.map(o=>o.c?3:1); let tot=peso.reduce((a,b)=>a+b,0), h=0; for(const ch of key) h=(h*31+ch.charCodeAt(0))|0; let r=Math.abs(h)%tot, i=0; while(r>=peso[i]){ r-=peso[i]; i++; }
+   const rec=reqUltimo[kind]||(reqUltimo[kind]=[]), mem=Math.min(5,ok.length-1); let o=ok[i];
+   for(let j=0;j<ok.length&&rec.slice(0,mem).includes(o);j++) o=ok[(i+j+1)%ok.length];
+   rec.unshift(o); rec.length=Math.min(rec.length,6);
+   const out=[typeof o.x==='function'?o.x(v):o.x,o.b]; reqMemo[kind]={key,r:out}; return out; }catch(e){ return base; } }
+const REQ={}; Object.keys(REQV).forEach(k=>Object.defineProperty(REQ,k,{enumerable:true,get:()=>reqScegli(k)}));
 // ---------- la voce del vaso ----------
 const NM={
- gigantismo:[N=>cap(N)+' crescono, giorno dopo giorno, finché il vaso non sembra più abbastanza grande.',N=>'Qualcosa nel cibo, o nella luce: '+N+' sono più grandi di ieri. E di avantieri.'],
- radioattivo:[N=>'Vicino al sasso la terra è tiepida. '+cap(N)+' ci passano sopra, e qualcosa in loro cambia.',N=>cap(N)+' brillano appena, di un verde che non c’era. Il sasso batte più piano, soddisfatto.'],
- intelligenza:[N=>cap(N)+' si fermano più spesso. Guardano. Come se avessero capito che c’è un vetro.',N=>'Qualcuno, tra '+N+', ha trascinato una briciola fino al sasso e l’ha lasciata lì. Come un’offerta.'],
- corazza:[N=>cap(N)+' si coprono di una scorza dura, scura come inchiostro.',N=>cap(N)+' hanno un guscio sempre più spesso. Sotto il dito, suonano come sassolini.'],
- velenoso:[N=>'Un odore dolce e sbagliato: '+N+' hanno imparato a difendersi.',N=>cap(N)+' lasciano una traccia amara. Adesso nessuno si avvicina più.'],
- iperfertilita:[N=>'Provi a contare '+N+', ma nascono più in fretta di te.',N=>'Sono ovunque. '+cap(N)+' riempiono ogni angolo del muschio.'],
- bioluminescenza:[N=>'Quando spegni la luce, '+N+' accendono la loro.',N=>cap(N)+' brillano nel buio come lucciole inquiete.']
+ gigantismo:[N=>cap(N)+' crescono giorno dopo giorno. Mangiano per tre: il cibo, nel vaso, adesso finisce prima.',N=>'Qualcosa nella luce: '+N+' sono più grandi di ieri. Dove passano, gli altri si scansano.',N=>cap(N)+' non passano più tra i fili del muschio. Ci camminano sopra, e il muschio si piega.',N=>'Il vetro sembra più vicino: '+N+' hanno bisogno di spazio. E di molto più cibo.'],
+ radioattivo:[(N,F)=>'Vicino al sasso la terra è tiepida. '+cap(N)+' ci passano sopra e cambiano. Chi prova a '+(F?'mangiarle':'mangiarli')+', adesso, sta male.',(N,F)=>cap(N)+' brillano appena, di un verde che non c’era. La luce del sasso non '+(F?'le':'li')+' brucia più.',(N,F)=>cap(N)+' dormono '+(F?'attaccate':'attaccati')+' al sasso. Lì nessun altro resiste: è il loro posto.',N=>'Chi caccia assaggia '+N+' e sputa. Sanno di sasso, di qualcosa che fa male.'],
+ intelligenza:[N=>cap(N)+' si fermano più spesso. Guardano. Hanno capito che c’è un vetro, e che dietro ci sei tu.',N=>'Qualcuno, tra '+N+', ha trascinato una briciola fino al sasso. Come un’offerta. Stanno imparando.',N=>cap(N)+' hanno trovato una strada più corta per il cibo. Gli altri la seguono. Un popolo è vicino.',(N,F)=>'Quando ti avvicini, '+N+' si girano verso di te. '+(F?'Tutte':'Tutti')+' insieme, come una domanda.'],
+ corazza:[N=>cap(N)+' si coprono di una scorza scura come inchiostro. Chi caccia, adesso, ci rinuncia.',(N,F)=>cap(N)+' hanno un guscio sempre più spesso. Sotto il dito suonano come sassolini. Nessuno '+(F?'le':'li')+' morde più.',N=>'Tic, tic: '+N+' battono contro il vetro con il guscio nuovo. Non hanno più paura di niente.',(N,F)=>cap(N)+' camminano piano, '+(F?'pesanti. La corazza le protegge, ma le rende lente.':'pesanti. La corazza li protegge, ma li rende lenti.')],
+ velenoso:[N=>'Un odore dolce e sbagliato: '+N+' hanno imparato a difendersi. I predatori girano alla larga.',N=>cap(N)+' lasciano una traccia amara. Adesso nessuno si avvicina più.',N=>'Chi morde '+N+' sputa e scappa. Nel vaso è cambiato chi ha paura di chi.',N=>cap(N)+' attraversano il muschio senza nascondersi. Non ne hanno più bisogno.'],
+ iperfertilita:[N=>'Provi a contare '+N+', ma nascono più in fretta di te. Il cibo non basterà a lungo.',N=>'Sono ovunque. '+cap(N)+' riempiono ogni angolo del muschio. Gli altri si stringono.',N=>'Ieri erano una manciata. Oggi '+N+' coprono il fondo. Domani avranno fame.',N=>cap(N)+' depongono uova sotto ogni foglia. Il vaso si fa stretto per tutti.'],
+ bioluminescenza:[N=>'Quando spegni la luce, '+N+' accendono la loro. Belle, e visibili da chi caccia.',N=>cap(N)+' brillano nel buio come lucciole inquiete. Adesso chiunque sa dove sono.',N=>'Di notte il vaso ha una costellazione nuova: '+N+'. Chi caccia segue ogni loro passo.',N=>cap(N)+' fanno luce sul muschio. Di notte il vaso non è più buio, per nessuno.']
 };
+// conseguenza in una riga, per la scheda della mutazione (interfaccia): MUTFX[m]
+const MUTFX={gigantismo:'Diventano grandi: mangiano di più e gli altri si scansano.',radioattivo:'Reggono la luce del sasso. Chi le mangia sta male.',intelligenza:'Imparano in fretta. Un popolo è più vicino.',corazza:'Guscio duro: chi caccia ci rinuncia.',velenoso:'Hanno il veleno: i predatori girano alla larga.',iperfertilita:'Nascono in fretta: il cibo finirà prima.',bioluminescenza:'Brillano al buio: belle, ma si vedono da lontano.'};
 const MUTMAP={}; Object.keys(T.MUT).forEach(m=>Object.values(T.SPECIE).forEach(s=>{ MUTMAP[T.MUT[m].txt(s.nome)]={m,nome:s.nome}; }));
 function narra(e){ const t=e.text, d=e.d||0; let m;
-  if(MUTMAP[t]){ const {m:mm,nome}=MUTMAP[t]; return pick(NM[mm],d)(the(nome)); }
+  if(MUTMAP[t]){ const {m:mm,nome}=MUTMAP[t]; return pick(NM[mm],d)(the(nome),fem(nome)); }
   switch(e.kind){
    case 'meteorite': return pick(['Il meteorite ha un lampo viola. Per un istante si vede il fondo del muschio.','Un battito più forte degli altri: il sasso scarica la sua luce e il vaso trattiene il fiato.','Un lampo viola, poi di nuovo quiete. Il sasso sembra respirare.'],d);
    case 'societa': { const n=t.replace(' si organizzano in una società.',''); return cap(the(n))+' non vagano più a caso: si dividono i compiti, danno un nome alle cose, costruiscono. In fondo al muschio è nato un popolo.'; }
@@ -91,7 +156,8 @@ function ambient(v,night,seed){ const p=[]; const nd=v.needs; if(!v.sp.length&&!
   if(v.sp.some(x=>x.monster&&x.alive)) p.push('Il vetro è sempre più vicino.');
   if(v.E>70) p.push('Il sasso batte forte. Tutto il vaso lo sente.'); else if(v.E<30) p.push('Il sasso è quasi quieto. Dorme.');
   if(v.vit<40) p.push('Le foglie sono stanche.'); if(v.muffa>.5) p.push('Una macchia grigia cresce sul vetro.');
-  if(v.setup.luce===2) p.push('Il sole scalda il vetro. Il sasso sembra più sveglio.'); if(v.setup.luce===0) p.push('L’ombra è fresca e lenta.');
+  if(v.setup.luce===2) p.push('Il sole scalda il vetro. Il sasso sembra più sveglio.','Il barattolo chiuso al sole è una serra: dentro fa più caldo che nella stanza.'); if(v.setup.luce===0) p.push('L’ombra è fresca e lenta.');
+  if(nd&&nd.um>.85) p.push('Il vetro è velato dall’interno: l’acqua sale dalla terra e si posa dove fa più fresco.','Una goccia scende dal tappo e cade sul muschio. Qui dentro piove da solo.');
   if(night) p.push('Al buio le crepe del sasso brillano, appena.','Fuori dal vetro, un grillo continua a cantare.');
   p.push('Una goccia scivola lungo il vetro.','Qualcosa si muove sotto il muschio.','Il tempo, qui dentro, passa in un altro modo.');
   return pick(p,seed); }
@@ -107,29 +173,94 @@ const PAG={
  scisma:['Metà e metà','Metà vuole inginocchiarsi, metà vuole misurare. Per la prima volta ho capito che una cosa sola può dividere un mondo.'],
  biscotto:['Biscotto','Biscotto vuole sempre salire dove non deve. Oggi ha allungato la zampa verso il barattolo, ma non l’ha toccato. Ho trattenuto il respiro lo stesso.']
 };
-const MITO={sacro:'Hanno trovato un volto di pietra e hanno deciso che li guardava. Da allora ogni sera lo salutano.',sapere:'Hanno contato i battiti del sasso e ne hanno fatto un calendario. Dicono che il tempo, finalmente, ha un padrone.',commercio:'Hanno scoperto che due briciole valgono più di una. Da quel giorno non si sono più fermati.',gioco:'Hanno trovato una cosa morbida e colorata e ci hanno ballato intorno. Non l’hanno più lasciata.',mistero:'Hanno visto sé stessi nel vetro dello specchio e hanno pensato: siamo di più di quanto credevamo.',comunicazione:'Di notte, in silenzio, hanno sentito una voce lontana. Non sanno di chi sia. Rispondono lo stesso.',fuoco:'Hanno portato una scintilla in fondo al muschio. Quella luce non si è più spenta.',agricoltura:'Hanno capito che i funghi crescono dove qualcuno li cura. Da allora qualcuno li cura.',tribale:'Non hanno niente da adorare, e questo li ha resi vicini. Hanno nomi per ogni cosa, tranne per te.'};
+// ---------- diario: una pagina ogni 3–4 giorni di vaso, legata a ciò che succede ----------
+// diario(view, G) → {id, titolo, testo} | null. Restituisce una pagina solo se l'ultima pagina del quaderno ha almeno 3 giorni
+// e non ripete mai un id già scritto. Le pagine con una condizione vengono prima di quelle generiche.
+const DIARIO=[
+ {id:'diario-terra',t:'Terra e acqua',c:v=>v.setup.piante.length>0,x:'Ho messo la terra e l’acqua. Il vetro si è appannato subito, come quando respiro sulla finestra. Sotto, il sasso batte.'},
+ {id:'diario-vetro',t:'Il vetro bianco',c:v=>v.needs&&v.needs.um>.5,x:'Ho capito una cosa: il vetro si appanna quando fuori fa più freddo che dentro. Di mattina è una finestra bianca, di pomeriggio torna chiaro.'},
+ {id:'diario-formiche',t:'Le formiche',c:v=>vivo(v,'formiche'),x:'Ho contato le formiche: sette. Poi otto. Poi ho perso il conto. Vanno sempre dallo stesso lato del sasso.'},
+ {id:'diario-muschio',t:'Il muschio',c:v=>pianta(v,'muschio'),x:'Ho toccato il muschio con un dito. È freddo, e se lo premo l’acqua esce come da una spugna. Dentro vive qualcuno di piccolissimo.'},
+ {id:'diario-sole',t:'Troppo sole',c:v=>v.setup.luce===2,x:'Il barattolo al sole scottava. Il sole entra nel vetro e non riesce più a uscire. Il muschio ha le punte marroni.'},
+ {id:'diario-ombra',t:'All’ombra',c:v=>v.setup.luce===0,x:'All’ombra il vaso è lento. Il sasso batte piano, come se dormisse. Mi piace, ma mi chiedo cosa si perde.'},
+ {id:'diario-sete',t:'Ho dimenticato',c:v=>v.needs&&v.needs.um<.35,x:'Oggi le foglie pendevano. Ho dimenticato l’acqua. Nessuno mi ha sgridato, ma il vaso era più silenzioso.'},
+ {id:'diario-ristagno',t:'Troppa acqua',c:v=>v.needs&&v.needs.um>.9,x:'Ho dato troppa acqua. In fondo, tra i sassolini, c’è una pozza ferma. La nonna dice che anche le radici devono respirare.'},
+ {id:'diario-muffa',t:'La muffa',c:v=>v.muffa>.4,x:'Sul vetro c’è una macchia grigia. È muffa: nasce dove è umido e fermo. Devo pulire prima che arrivi alle foglie.'},
+ {id:'diario-collemboli',t:'Puntini bianchi',c:v=>v.muffa>.3,x:'Con la lente ho visto puntini bianchi che saltano. Si chiamano collemboli e mangiano la muffa. Il vaso si pulisce anche da solo.'},
+ {id:'diario-sasso',t:'Il sasso acceso',c:v=>v.E>60,x:'Stasera ho spento la luce e le crepe del sasso erano accese. Viola. Ho messo la mano sul vetro: era tiepido.'},
+ {id:'diario-tanti',t:'Coinquilini',c:v=>v.sp.filter(x=>x.alive).length>=2,x:'Adesso nel vaso sono in tanti. Ognuno ha il suo angolo. Mi chiedo se sanno degli altri, o se ognuno si crede solo.'},
+ {id:'diario-oggetto',t:'Un pezzo di cielo',c:v=>v.setup.oggetti.length>0&&v.sp.some(x=>x.alive),x:v=>'Hanno trovato '+(OGG_BREVE[v.setup.oggetti[0]]||'la mia cosa')+'. Ci girano intorno ogni giorno. Per me era una cosa da tasca. Per loro è un pezzo di cielo.'},
+ {id:'diario-mutanti',t:'Diversi',c:v=>v.sp.some(x=>x.alive&&x.mut.length),x:'Alcuni sono cambiati. Non so se è colpa del sasso o mia. La nonna dice che chi cambia non è sbagliato: è nuovo.'},
+ {id:'diario-nome',t:'Un nome per me',c:v=>!!popolo(v),x:'Credo che mi abbiano dato un nome. Quando passo davanti al vetro si fermano tutti insieme. Ho fatto finta di niente.'},
+ {id:'diario-statuina',t:'La faccia di pietra',c:v=>!!popolo(v)&&v.setup.oggetti.includes('statuina'),x:'Stanno grattando la statuina. Piano, ogni giorno un po’. Oggi ho visto il naso. Somiglia al mio.'},
+ {id:'diario-guerra',t:'Il rumore',c:v=>v.wars.length>0,x:'Stanotte ho sentito colpi piccoli contro il vetro. Volevo separarli con un dito. Non so se è giusto entrare in una guerra non mia.'},
+ {id:'diario-gigante',t:'Il più grande',c:v=>v.sp.some(x=>x.alive&&x.monster),x:'Uno è diventato enorme. Quando apro il tappo alza la testa. Ho chiuso piano, senza farmi vedere.'},
+ {id:'diario-biscotto',t:'Biscotto e io',c:(v,G)=>!!(G&&G.ui&&G.ui.gattoF),x:'Biscotto dorme sulla sedia e ogni tanto apre un occhio verso il barattolo. Forse è geloso. O forse fa la guardia.'},
+ {id:'diario-nonna',t:'Pioggia in casa',da:6,x:'La nonna dice che un barattolo chiuso fa piovere da solo: l’acqua sale, tocca il vetro e ricade. Non ci credevo. Stamattina pioveva.'},
+ {id:'diario-domande',t:'Domande',da:10,x:'Mi chiedo se di notte sognano. Se il sasso, per loro, è il sole. Se sanno che il mondo finisce al vetro.'},
+ {id:'diario-mese',t:'Un mese',da:28,x:'È passato un mese di vaso. Ho sempre un po’ di terra sotto le unghie. La mamma ride e dice che ho le mani da giardino.'},
+ {id:'diario-niente',t:'Niente di speciale',x:'Oggi non è successo niente. Ho guardato lo stesso, per un’ora. Una goccia è scesa lungo il vetro, poi un’altra. Mi bastava.'},
+ {id:'diario-buio',t:'Dal letto',da:14,x:'Di notte ho aperto gli occhi e il barattolo brillava appena. L’ho guardato dal letto finché gli occhi non si sono chiusi da soli.'},
+ {id:'diario-lontano',t:'Se parto',da:20,x:'Ho chiesto alla mamma cosa succede se vado via qualche giorno. Lei dice che il vaso si addormenta e aspetta. Come i semi d’inverno.'}];
+function diario(v,G){ try{ if(!v||!G) return null; const q=G.quaderno||[]; const last=q.reduce((a,p)=>Math.max(a,p.d||0),-99); if(v.d-last<3) return null;
+  const used={}; q.forEach(p=>used[p.id]=1);
+  for(const p of DIARIO){ if(used[p.id]||v.d<(p.da||0)) continue; let ok=true; try{ ok=!p.c||!!p.c(v,G); }catch(e){ ok=false; } if(ok) return {id:p.id,titolo:p.t,testo:typeof p.x==='function'?p.x(v):p.x}; }
+  return null; }catch(e){ return null; } }
+const MITO={sacro:'Hanno trovato un volto di pietra e ci hanno grattato sopra un’altra faccia: la tua. Da allora ogni sera la salutano.',sapere:'Hanno contato i battiti del sasso e ne hanno fatto un calendario. Dicono che il tempo, finalmente, ha un padrone.',commercio:'Hanno scoperto che due briciole valgono più di una. Da quel giorno non si sono più fermati.',gioco:'Hanno trovato una cosa morbida e colorata e ci hanno ballato intorno. Non l’hanno più lasciata.',mistero:'Hanno visto sé stessi nel vetro dello specchio e hanno pensato: siamo di più di quanto credevamo.',comunicazione:'Di notte, in silenzio, hanno sentito una voce lontana. Non sanno di chi sia. Rispondono lo stesso.',fuoco:'Hanno portato una scintilla in fondo al muschio. Quella luce non si è più spenta.',agricoltura:'Hanno capito che i funghi crescono dove qualcuno li cura. Da allora qualcuno li cura.',tribale:'Non hanno niente da adorare, e questo li ha resi vicini. Hanno nomi per ogni cosa, tranne per te.'};
 const EPI={
  equilibrio:'Ho guardato il barattolo per settimane. Non è successo niente di grande, e forse è questo il bello: ogni sera il muschio respira, e io respiro con lui.',
  spento:'Si è spento tutto. Ho tenuto il coperchio chiuso un giorno intero, come se aspettassi. La mamma dice che anche i mondi piccoli finiscono. Io ne farò un altro.',
  gigante:'Una sola creatura ha preso tutto il posto. Quando la guardo, mi guarda. Non so se ha fame o se vuole uscire.',
  tribu:'Hanno un nome per ogni cosa, ma niente da adorare. Sembrano felici lo stesso, o almeno sembrano insieme.',
- fede:'Hanno messo la statuina al centro e le girano intorno. Io dico che è solo una statuina. Loro dicono che mi guarda. Forse hanno ragione loro.',
+ fede:'Hanno grattato la statuina finché non ha preso la mia faccia. Ogni sera la guardano, poi guardano il vetro. Pregano me.',
  accademia:'Segnano ogni battito del sasso, uno dopo l’altro. Hanno scoperto che il sasso batte ogni quarantasette secondi. Dicono che è un messaggio.',
  mercato:'Si scambiano briciole e fili d’erba usando la moneta come misura di tutto. Ho provato a spiegare che non vale niente. Mi hanno risposto con un prezzo.',
  carnevale:'Il giocattolo è diventato la loro piazza. Ogni sera c’è una festa che dura finché il vetro non si appanna.',
  mistero:'Si fermano davanti allo specchio e si salutano. Credo che pensino che dall’altra parte ci sia una colonia più grande.',
  voci:'Di notte fanno silenzio e ascoltano la radio. Dicono che da lontano qualcuno parla. Io non sento niente, ma ormai ci credo anch’io.',
  fiamma:'La candela non la spegne nessuno. Fanno i turni per vegliarla, come se fosse il cuore di tutto. Forse lo è.',
- giardinieri:'Hanno imparato a coltivare i funghi nel muschio. Mi sono accorto che mangiano meglio di me.',
+ giardinieri:'Hanno imparato a coltivare i funghi nel muschio. Ho scoperto che mangiano meglio di me.',
  scisma:'Metà vuole inginocchiarsi, metà vuole misurare. Per la prima volta ho capito che una cosa sola può dividere un mondo.',
  conquista:'Qualcuno ha vinto. Il vaso è più silenzioso e più grande, ma non so se è meglio.',
  patto:'Hanno messo la moneta tra loro e hanno smesso di combattere. Non sapevo che una cosa così piccola potesse fare tanto.'};
-function epilogo(k,culto){ let t=EPI[k]||''; if(T.FINALI[k]&&T.FINALI[k].fam==='Società'){ if(culto==='giocatore') t+=' Dicono che qualcuno li guarda da fuori. Hanno ragione.'; else if(culto==='meteorite') t+=' Dicono che il sasso batte per loro. Forse ha ragione.'; } return t; }
+function epilogo(k,culto){ let t=EPI[k]||''; if(k==='fede') return t+(culto==='meteorite'?' Quando il sasso batte, però, si girano verso di lui.':' Non so cosa mi chiedono. Torno ogni sera, perché mi aspettano.'); if(T.FINALI[k]&&T.FINALI[k].fam==='Società'){ if(culto==='giocatore') t+=' Dicono che qualcuno li guarda da fuori. Hanno ragione.'; else if(culto==='meteorite') t+=' Dicono che il sasso batte per loro. Forse ha ragione.'; } return t; }
+// ---------- «La Fede»: sceneggiatura del finale animato (DECISIONI §2) ----------
+// Per app/finali.js. Ogni scena: s = secondi, vedi = cosa si vede, testo = a schermo, suono, nodi = quali nodi di G.tree mostrare.
+const FILM_FEDE=[
+ {s:4,vedi:'Il vaso al buio, da lontano. Solo le crepe del sasso, viola, respirano.',testo:'All’inizio c’era solo un sasso che batteva.',suono:'battito lento, stanza silenziosa',nodi:['inizio']},
+ {s:5,vedi:'Le foto dell’albero scorrono come pagine: la terra, il muschio, i primi arrivi.',testo:'Poi è arrivata la tua mano, con la terra e l’acqua.',suono:'acqua versata, carillon lontano',nodi:['nasce','pianta']},
+ {s:5,vedi:'Il popolo in fila verso il centro. La statuina appare tra il muschio, ancora grezza.',testo:'Loro hanno trovato un volto di pietra.',suono:'ronzio del popolo, un colpo sordo',nodi:['popolo','oggetto']},
+ {s:7,vedi:'Macro sulla statuina: piccoli segni la grattano. Naso, frangetta, gli occhi. Diventa la tua faccia.',testo:'E l’hanno scolpito a tua immagine.',suono:'grattare minuto, ritmico, come pioggia fine',nodi:['cultura']},
+ {s:6,vedi:'Le scelte dell’albero si accendono una a una, la strada non presa sfuma.',testo:'Ogni cura, ogni notte, ogni scelta: l’hanno vista tutte.',suono:'note singole, una per nodo',nodi:['scelta','muta','gatto']},
+ {s:6,vedi:'Il popolo si gira verso il vetro. Dietro il vetro, sfocato, il tuo riflesso.',testo:'Per loro il gigante che li cura ha un nome. Il tuo.',suono:'coro piccolissimo, il battito si allinea',nodi:['capitolo']},
+ {s:5,vedi:'Il vaso intero sulla scrivania, alba. La statuina al centro, le file intorno.',testo:'Fino a quando guarderai, loro guarderanno te.',suono:'battito che sfuma, un uccello fuori',nodi:[]}];
+// ---------- letargo (DECISIONI §1): testi per l’assenza ----------
+const LETARGO={
+ titolo:'Il vaso dorme',
+ entrata:'Il vaso si addormenta. Le foglie si chiudono, il sasso batte piano. Ti aspetterà.',
+ sonno:'Il vaso dorme. Basta una cura per svegliarlo.',
+ risveglio:'Al tuo tocco il vaso si sveglia. Una goccia scivola, qualcuno si stira sotto il muschio.',
+ perche:'Il tappo era chiuso: l’acqua è salita sul vetro ed è ricaduta, come pioggia. Non è morto niente.'};
+// ritorno dopo l’assenza: L = G.letargo ({da, giorni})
+function letargo(L){ const g=(L&&L.giorni)|0;
+  if(g<=1) return 'Un giorno senza di te. Il vaso ha dormito e ti ha aspettato. '+LETARGO.perche;
+  if(g<7) return g+' giorni senza di te. Il vaso si è addormentato e ti ha aspettato. '+LETARGO.perche;
+  return 'Tanti giorni senza di te. Il vaso ha dormito sotto un velo di condensa. Qualcuno è calato, nessuno è sparito.'; }
+// ---------- power card «Salta 2 giorni» ----------
+// SALTO_NO[why] per i 5 blocchi di __app.powerCards().why; SALTO_DONO(n) per il toast del dono; SALTO_FATTO dopo l’uso.
+const SALTO_NO={
+ carte:'Le carte sono finite. Domani, sul comodino, ne trovi due nuove.',
+ inizio:'Il vaso è appena nato. Prima riempilo, poi il tempo potrà correre.',
+ letargo:'Il vaso dorme. Sveglialo con una cura, poi salta.',
+ finale:'Il vaso ha trovato la sua strada. Prima chiudi il capitolo.',
+ decisione:'Qualcosa nel vaso aspetta una tua decisione.'};
+const SALTO_DONO=n=>!(n>0)?'':n===1?'Sul comodino trovi una carta nuova: «Salta 2 giorni».':'Sul comodino trovi '+n+' carte nuove: «Salta 2 giorni».';
+const SALTO_FATTO='Chiudi gli occhi. Quando li riapri, nel vaso sono passati due giorni.';
 // ---------- atti ----------
 function atto(v){ if(v.finalePending) return {n:4,t:'Il destino',x:'Il vaso ha trovato la sua strada. Manca solo da decidere se chiudere il capitolo.'};
   if(v.sp.some(x=>x.society)) return {n:3,t:'Il popolo',x:'Qualcuno, nel vaso, ha cominciato a raccontare storie. Resta a guardare cosa ne fanno.'};
   if(v.sp.some(x=>x.mut.length)) return {n:2,t:'Qualcosa cambia',x:'Il sasso sta cambiando chi lo tocca. Nessuno sa ancora dove porta.'};
   return {n:1,t:'Il sasso che batte',x:'Il meteorite è appena arrivato. Il vaso si sta svegliando: osserva, cura, aspetta.'}; }
 function biscotto(){ return {intro:'Un’ombra sul muro. Poi una zampa sul coperchio. Biscotto ha deciso che il barattolo è suo.',pallina:'Biscotto insegue la pallina e dimentica il vaso. Tu respiri.',pallinaNo:'Biscotto ignora la pallina e dà una zampata al coperchio.',davanzale:'Sposti il vaso sul davanzale, fuori portata. Qui il sole è più forte: il sasso lo sente.',ok:'Il vaso è salvo. Per questa volta.',male:'Il barattolo cade sul ripiano. Non si rompe, ma il vetro si scheggia: per qualche giorno entrerà meno luce.'}; }
-window.__story={the,cap,pick,TITOLI,PRO,OGG_VOCE,ARR,REQ,narra,osserva,ambient,PAG,MITO,EPI,epilogo,atto,biscotto,MUTMAP};
+window.__story={the,cap,pick,TITOLI,PRO,OGG_VOCE,ARR,REQ,REQV,narra,osserva,ambient,PAG,DIARIO,diario,MITO,EPI,epilogo,atto,biscotto,MUTMAP,MUTFX,LETARGO,letargo,SALTO_NO,SALTO_DONO,SALTO_FATTO,FILM_FEDE};
 })();
