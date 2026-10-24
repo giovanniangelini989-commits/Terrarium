@@ -1,5 +1,5 @@
 sim=open('sim.js').read(); css=open('app/app.css').read()
-a1=open('app/app1.js').read(); a2=open('app/app2.js').read(); a3=open('app/fx.js').read()+'\n'+open('app/app3.js').read()+'\n'+open('app/scenari.js').read()
+a1=open('app/microclima.js').read()+'\n'+open('app/app1.js').read(); a2=open('app/app2.js').read(); a3=open('app/fx.js').read()+'\n'+open('app/app3.js').read()+'\n'+open('app/scenari.js').read()
 st=open('app/story.js').read()+'\n'+open('app/notti.js').read(); au=open('app/audio.js').read(); fl=open('app/film.js').read(); v3=open('app/v3d.js').read(); km=open('app/kimi.js').read()+'\n'+open('app/materials.js').read()+'\n'+open('app/tex.js').read()
 html=f'''<!doctype html>
 <html lang="it">

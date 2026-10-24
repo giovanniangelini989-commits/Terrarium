@@ -60,17 +60,22 @@ function create(st0){ st0=st0||{};
     film:{tappo:0,alto:0,medio:0,basso:0}, gocce:0,
     detrito:st0.detrito!=null?st0.detrito:.3, sporcoVetro:st0.sporcoVetro||.1, collemboli:st0.collemboli||0,
     muffa:{terra:st0.muffa||0, vetro:0, foglie:0}, marciume:0,
-    piante:{}, lux:0, luxMed:{ombra:.15,mezza:1.2,sole:3.5}[st0.posizione||'mezza'], dli:0, rh:.9, e:0, letargo:false, log:[]
+    piante:{}, lux:0, luxMed:{ombra:.15,mezza:1.2,sole:3.5}[st0.posizione||'mezza'], dli:0, rh:.9, e:0, letargo:false, log:[],
+    apertoFino:0,              // ogni cura apre il barattolo per CURA_ORE ore (si versa, si pulisce): è lì che l'acqua esce
+    Tmax:st0.T!=null?st0.T:22, Tstanza:st0.T!=null?st0.T:22, Tsum:0, Tn:0
   };
   (st0.piante||['muschio']).forEach(p=>{ if(PIANTE[p]) S.piante[p]={vigore:.7,crescita:0}; });
   S.acqua.aria=absHum(eSat(S.T.aria)*.9,S.T.aria)*JAR.aria_m3;
 
-  function ventilazione(){ return S.tappo==='aperto'?.07:.0005; }           // g/(h·hPa) di scambio con la stanza (taratura in modello.md)
+  const CURA_ORE=6;                                                          // un giorno del vaso (6 h reali): il tappo resta aperto dopo una cura
+  function aperto(){ return S.tappo==='aperto'||S.t<S.apertoFino; }
+  function ventilazione(){ return aperto()?.07:.0005; }                     // g/(h·hPa) di scambio con la stanza (taratura in modello.md)
 
   function sub(dt,A){
     // --- temperatura: la stanza trascina il barattolo (τ≈1 h); il sole lo scalda da dentro (serra, +8 °C a pieno sole, stima)
-    const tauIn=1.0, serra=8;
-    S.T.aria+=((A.T-S.T.aria)/tauIn+serra*A.sole*(S.tappo==='aperto'?.6:1))*dt;
+    const tauIn=1.0, serra=8, ap=aperto();
+    S.T.aria+=((A.T-S.T.aria)/tauIn+serra*A.sole*(ap?.6:1))*dt;
+    S.Tmax=Math.max(S.Tmax,S.T.aria); S.Tsum+=A.T*dt; S.Tn+=dt;
     S.T.suolo+=((S.T.aria+3*A.sole-S.T.suolo)/3)*dt;                          // il suolo ha inerzia e il sole lo scalda direttamente
     JAR.zone.forEach(z=>{ const k=ZONA_ESPOSTA[z]; const Tfuori=A.Tfinestra!=null?A.Tfinestra:A.T; const goal=S.T.aria*(1-k)+Tfuori*k; S.T.vetro[z]+=(goal-S.T.vetro[z])/.25*dt; });
     // --- vapore: equilibrio quasi istantaneo (l'aria di un barattolo tiene < 0,05 g d'acqua)
@@ -97,11 +102,11 @@ function create(st0){ st0=st0||{};
     // --- percolazione e risalita capillare
     if(S.acqua.superficie>JAR.cap.superficie){ const x=(S.acqua.superficie-JAR.cap.superficie)*Math.min(1,dt*2); S.acqua.superficie-=x; S.acqua.terriccio+=x; }
     if(S.acqua.terriccio>JAR.cap.terriccio){ const x=(S.acqua.terriccio-JAR.cap.terriccio)*Math.min(1,dt*.5); S.acqua.terriccio-=x; S.acqua.drenaggio+=x; }
-    if(S.acqua.drenaggio>0&&wetT<.5){ const x=Math.min(S.acqua.drenaggio,.3*dt); S.acqua.drenaggio-=x; S.acqua.terriccio+=x; }  // risalita lenta
+    if(S.acqua.drenaggio>0&&wetT<.9){ const x=Math.min(S.acqua.drenaggio,.3*dt); S.acqua.drenaggio-=x; S.acqua.terriccio+=x; }  // risalita lenta (~7 ml/giorno): il serbatoio si svuota solo se sopra si asciuga
     if(wetS<.5&&wetT>.2){ const x=Math.min(S.acqua.terriccio,1.2*dt*(wetT-.2)*(.5-wetS)/.5); S.acqua.terriccio-=x; S.acqua.superficie+=x; }  // capillarità: ~10 ml/giorno con terriccio umido e superficie secca
-    // ristagno: drenaggio pieno e terriccio oltre la capacità → radici senza aria
+    // ristagno: drenaggio pieno e terriccio oltre la capacità → radici senza aria. Sale in ~1 giorno reale (4 giorni del vaso), cala in ~4 quando il serbatoio si svuota
     const rist=S.acqua.drenaggio>=JAR.cap.drenaggio*.95&&S.acqua.terriccio>JAR.cap.terriccio*.95;
-    S.marciume=clamp(S.marciume+(rist?.004:-.002)*dt);
+    S.marciume=clamp(S.marciume+(rist?.02:-.005)*dt);
     // --- luce
     S.lux=A.lux*(S.tappo==='aperto'?1:.92); S.dli+=S.lux*dt; S.luxMed+=(S.lux-S.luxMed)*Math.min(1,dt/24);   // media mobile ~1 giorno: le piante rispondono alla luce del giorno, non all'istante
     // --- detrito: si accumula piano (foglie morte, materia), lo mangiano i collemboli
@@ -111,14 +116,16 @@ function create(st0){ st0=st0||{};
     const fT=clamp(1-Math.abs(S.T.aria-25)/20);
     const rhTerra=Math.max(S.rh, wetS>.5?.98:0), rhVetro=Math.max(S.rh, S.film.basso>.3?.98:0), rhFoglie=S.rh;
     const stressP=Object.keys(S.piante).length?1-Object.keys(S.piante).reduce((a,p)=>a+S.piante[p].vigore,0)/Object.keys(S.piante).length:0;
-    const aria=S.tappo==='aperto'?1:0, uv=A.sole;
+    const aria=ap?1:0, uv=A.sole;
     const zone={terra:[rhTerra,.4+.6*S.detrito,0], vetro:[rhVetro,.25+.75*S.sporcoVetro,uv], foglie:[rhFoglie,.2+.8*stressP,uv*.5]};
     Object.keys(zone).forEach(z=>{ const [rh,sub,luce]=zone[z]; const fRH=clamp((rh-.8)/.17);
       const cresce=.02*fRH*fT*sub*(1-.3*aria);
       const muore=.004+.02*aria*(1-fRH)+.035*S.collemboli+.01*luce;
       S.muffa[z]=clamp(S.muffa[z]+(cresce*(1-S.muffa[z])-muore*S.muffa[z])*dt); });
-    // collemboli: crescono se c'è muffa/detrito e umido, calano se secco
-    if(S.collemboli>0){ const cibo=Math.max(S.muffa.terra,S.detrito*.5); S.collemboli=clamp(S.collemboli+(.004*cibo*(S.rh>.7?1:0)-.003*(S.rh<.6?1:0))*dt,0,1); }
+    // collemboli: stanno in quasi ogni terriccio e arrivano da soli dove c'è muffa e umido (da 0 a 0,1 in ~8 giorni reali); poi crescono col cibo, calano se secco
+    const cibo=Math.max(S.muffa.terra,S.detrito*.5);
+    if(S.collemboli<.1&&S.muffa.terra>.5&&S.rh>.8) S.collemboli=clamp(S.collemboli+.0004*dt);
+    if(S.collemboli>0) S.collemboli=clamp(S.collemboli+(.004*cibo*(S.rh>.7?1:0)-.003*(S.rh<.6?1:0))*dt,0,1);
     // --- piante
     Object.keys(S.piante).forEach(p=>{ const P=PIANTE[p], q=S.piante[p];
       const lm=S.luxMed*2.2;                                                  // media giornaliera → equivalente di picco (giorno ≈ 11 h su 24 con profilo a seno)
@@ -134,26 +141,35 @@ function create(st0){ st0=st0||{};
       Object.keys(S.muffa).forEach(z=>{ S.muffa[z]=Math.min(S.muffa[z],.5); }); Object.keys(S.piante).forEach(p=>{ S.piante[p].vigore=Math.max(S.piante[p].vigore,.4); }); }
     S.t+=dt; }
 
-  function step(ore,amb){ ore=ore||1; let left=ore; while(left>1e-9){ const dt=Math.min(.25,left); const A=typeof amb==='function'?amb(S.t):(amb||ambienteDi(S.t,{posizione:S.posizione}));
-      if(A.Tfinestra==null) A.Tfinestra=A.T; S.letargo=!!A.letargo; sub(dt,A); left-=dt; } return view(); }
+  function step(ore,amb){ ore=ore||1; let left=ore; S.Tmax=S.T.aria; S.Tsum=0; S.Tn=0; while(left>1e-9){ const dt=Math.min(.25,left); const A=typeof amb==='function'?amb(S.t):(amb||ambienteDi(S.t,{posizione:S.posizione}));
+      if(A.Tfinestra==null) A.Tfinestra=A.T; S.letargo=!!A.letargo; sub(dt,A); left-=dt; } if(S.Tn>0) S.Tstanza=S.Tsum/S.Tn; return view(); }
 
   function act(a,arg){ a=a||{}; if(typeof a==='string') a={tipo:a,v:arg}; const t=a.tipo;
+    if(t==='bagna'||t==='terra'||t==='nutri'||t==='pulisci') S.apertoFino=S.t+CURA_ORE;   // per curare si toglie il tappo: per un giorno del vaso entra aria ed esce acqua
+    if(S.log.length>40) S.log.splice(0,S.log.length-40);
     if(t==='bagna'){ const ml=a.v!=null?a.v:30; S.acqua.superficie+=ml*.3; S.acqua.terriccio+=ml*.7; S.log.push([S.t,'bagna',ml]); }   // l'acqua versata filtra subito nel terriccio
     else if(t==='terra'){ S.detrito=clamp(S.detrito+(a.v!=null?a.v:.3)); S.log.push([S.t,'terra']); }
-    else if(t==='pulisci'){ const z=a.zona; if(!z||z==='vetro'){ S.muffa.vetro*=.1; S.sporcoVetro*=.2; JAR.zone.forEach(k=>{ S.film[k]*=.2; }); } if(!z||z==='terra'){ S.muffa.terra*=.4; } if(z==='foglie'){ S.muffa.foglie*=.2; } S.log.push([S.t,'pulisci',z||'tutto']); }
-    else if(t==='asciuga'){ const z=a.zona||'medio', q=a.v!=null?a.v:.5; S.film[z]*=(1-q); S.acqua.superficie=Math.max(0,S.acqua.superficie-JAR.filmCap*q*.2); }
+    else if(t==='nutri'){ S.detrito=clamp(S.detrito+(a.v!=null?a.v:.15)); S.log.push([S.t,'nutri']); }   // materia organica: cibo per il suolo, ma anche per la muffa
+    else if(t==='pulisci'){ const z=a.zona; if(!z||z==='vetro'){ S.muffa.vetro*=.1; S.sporcoVetro*=.2; JAR.zone.forEach(k=>{ S.film[k]*=.2; }); } if(!z||z==='terra'){ S.muffa.terra*=.4; S.detrito*=.7; } if(z==='foglie'){ S.muffa.foglie*=.2; } S.log.push([S.t,'pulisci',z||'tutto']); }
+    else if(t==='asciuga'){ const q=clamp(a.v!=null?a.v:.5), zz=a.zona?[a.zona]:JAR.zone; zz.forEach(z=>{ S.film[z]*=(1-q); }); S.acqua.superficie=Math.max(0,S.acqua.superficie-JAR.filmCap*q*.2*zz.length); }
     else if(t==='apri'){ S.tappo='aperto'; } else if(t==='chiudi'){ S.tappo='chiuso'; }
     else if(t==='sposta'){ S.posizione=a.v||'mezza'; }
     else if(t==='collemboli'){ S.collemboli=clamp(S.collemboli+(a.v!=null?a.v:.4)); }
     else if(t==='pianta'){ if(PIANTE[a.v]&&!S.piante[a.v]) S.piante[a.v]={vigore:.6,crescita:0}; }
     else if(t==='togli'){ delete S.piante[a.v]; }
+    else if(t==='imposta'){ const o=a.v||{};                                    // allineamento ai bisogni del motore (setNeeds, letargo, carte, notti): valori assoluti
+      if(o.um!=null){ const u=clamp(o.um); S.acqua.terriccio=u*JAR.cap.terriccio; S.acqua.superficie=u*JAR.cap.superficie*.6; if(u<.9) S.acqua.drenaggio=Math.min(S.acqua.drenaggio,JAR.cap.drenaggio*.9); }
+      if(o.muffa!=null){ const m=clamp(o.muffa); S.muffa.terra=m; S.muffa.vetro=Math.min(S.muffa.vetro,m); S.muffa.foglie=Math.min(S.muffa.foglie,m); }
+      if(o.tappo) S.tappo=o.tappo; if(o.posizione) S.posizione=o.posizione;
+      if(o.drenaggio!=null) S.acqua.drenaggio=clamp(o.drenaggio)*JAR.cap.drenaggio; if(o.collemboli!=null) S.collemboli=clamp(o.collemboli);
+      if(o.piante){ o.piante.forEach(p=>{ if(PIANTE[p]&&!S.piante[p]) S.piante[p]={vigore:.6,crescita:0}; }); Object.keys(S.piante).forEach(p=>{ if(!o.piante.includes(p)) delete S.piante[p]; }); } }
     return view(); }
 
   function view(){ const r=x=>Math.round(x*100)/100; const cond={}; JAR.zone.forEach(z=>{ cond[z]=r(clamp(S.film[z]/JAR.filmCap)); });
     const rischio={}; Object.keys(S.muffa).forEach(z=>{ rischio[z]=r(S.muffa[z]); });
     const piante={}; Object.keys(S.piante).forEach(p=>{ piante[p]={vigore:r(S.piante[p].vigore),crescita:r(S.piante[p].crescita)}; });
-    return { t:S.t, tappo:S.tappo, posizione:S.posizione,
-      aria:{rh:r(S.rh), T:r(S.T.aria), rugiada:r(dewPoint(S.T.aria,Math.max(.01,S.rh)))},
+    return { t:S.t, tappo:S.tappo, aperto:aperto(), posizione:S.posizione,
+      aria:{rh:r(S.rh), T:r(S.T.aria), rugiada:r(dewPoint(S.T.aria,Math.max(.01,S.rh))), Tmax:r(S.Tmax)}, stanza:{T:r(S.Tstanza)},
       T:{aria:r(S.T.aria), suolo:r(S.T.suolo), vetro:{tappo:r(S.T.vetro.tappo),alto:r(S.T.vetro.alto),medio:r(S.T.vetro.medio),basso:r(S.T.vetro.basso)}},
       acqua:{superficie:r(clamp(S.acqua.superficie/JAR.cap.superficie)), terriccio:r(clamp(S.acqua.terriccio/JAR.cap.terriccio)), drenaggio:r(clamp(S.acqua.drenaggio/JAR.cap.drenaggio)),
              ml:{superficie:r(S.acqua.superficie),terriccio:r(S.acqua.terriccio),drenaggio:r(S.acqua.drenaggio)}, ristagno:r(S.marciume)},

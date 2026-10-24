@@ -205,4 +205,28 @@ function closeChapter0(){ const fp=sim.closeChapter(); const k=fp.finale; const 
 function newGame(name,setup){ const seed=1+Math.floor(Math.random()*99999); G=fresh(name,setup,seed); sim=T.createSim(setup,{seed,game:true,decisions:true,needs:true}); const pieno=setup.piante.length||setup.insetti.length; G.ui.fase=pieno?5:0; if(pieno) planArrivals(0); else sim.setNeeds({um:0,ter:0}); G.real.lastDay=todayIdx(); G.req=makeRequest(); updateCodex(); addPage('inizio',S.PAG.inizio[0],S.PAG.inizio[1],false); G.ui.nextBiscotto=sim.d+14; donoPower(); persist(); }
 window.__app={POWER,powerCards,usaSalto,riprendiSalto,donoPower,wipeGlass,treeDiff,nightFx,gattoChoice,nightCtx,pickNight,bumpNeeds,skipStart,forceArrival,passaNotte,catchUp,autoCare,demoDay,CARTE,mazzoTot,drawCard,canPlay,playCard,regen,spend,scorri,TASKS,slotMax,startTask,taskLeft,readyTasks,collectTask,pullArrival,taskPing,refreshReq,nowMs,minToCure,minToTempo,CURE_MAX,TEMPO_MAX,T,S,esc,XPT,lvlOf,LIM,CULTICON,store,todayIdx,lvl,rank,fresh,persist,loadSave,newGame,giveXP,addPage,updateCodex,makeRequest,reqCheck,dueArrivals,takeArrival,inbox,toast,doAct,osserva,queueDecisions,checkNewDay,biscottoOutcome,resolveDecision,closeChapter,lastN,
  get G(){return G;},get sim(){return sim;},get popups(){return popups;},set popups(v){popups=v;}};
+// ===== Microclima (ecologo, docs/ecologia/modello.md §8). Blocco unico: avvolge le funzioni sopra senza cambiarle. =====
+// G.micro = micro.save() (+ ofs: ora reale del primo passo); un passo di 6 ore reali per ogni giorno del vaso; cure → bagna/nutri/terra/pulisci; vetro → asciuga.
+const MC=window.__MICRO||(typeof require==='function'?(()=>{ try{ return require('./microclima.js'); }catch(e){ return null; } })():null); let micro=null;
+const POSIZ=['ombra','mezza','sole'];
+const stagione=()=>{ const m=new Date(nowMs()).getMonth(); return m===11||m<2?'inverno':(m>=5&&m<=7?'estate':'mezza'); };
+function microSync(){ const v=sim.view(), c=v.clima||{}; micro.act('imposta',{um:v.needs.um,muffa:1-v.needs.pul,tappo:c.aperto?'aperto':'chiuso',posizione:POSIZ[v.setup.luce]||'mezza',drenaggio:c.drenaggio||0,collemboli:c.collemboli||0,piante:v.plants.map(p=>p.id)}); return v; }
+function microStep(){ if(!micro) return; try{ const v=microSync(), ofs=G.micro&&G.micro.ofs||0, pos=POSIZ[v.setup.luce]||'mezza', st=stagione(), lt=inLetargo();
+    micro.step(6,t=>Object.assign(MC.ambienteDi(t+ofs,{stagione:st,posizione:pos}),{letargo:lt}));
+    if(lt&&v.clima&&v.clima.ristagno>.3) sim.setNeeds({rist:.3}); }catch(e){ console.error('microclima',e); } }   // letargo (DECISIONI §1): in assenza neanche il ristagno fa danni
+function microInit(){ micro=null; if(!MC||!sim) return; try{ const v=sim.view(); micro=MC.create({piante:v.plants.map(p=>p.id),posizione:POSIZ[v.setup.luce]||'mezza'});
+    if(G.micro&&G.micro.S) micro.load(G.micro); else G.micro={ofs:new Date(nowMs()).getHours()};   // salvataggi vecchi: il microclima nasce allineato al vaso
+    microSync(); const st=sim.step; if(!sim.__micro){ sim.__micro=1; sim.step=function(){ const r=st.apply(sim,arguments); if(r&&!r.paused) microStep(); return r; }; } }catch(e){ console.error('microclima',e); micro=null; } }
+const _persist=persist; persist=function(){ if(G&&micro){ try{ G.micro=Object.assign(micro.save(),{ofs:G.micro&&G.micro.ofs||0}); }catch(e){} } return _persist(); };
+const _newGame=newGame; newGame=function(name,setup){ const r=_newGame(name,setup); G.micro=null; microInit(); persist(); return r; };
+const _loadSave=loadSave; loadSave=function(){ const ok=_loadSave(); if(ok) microInit(); return ok; };
+const _doAct=doAct; doAct=function(name){ if(micro){ try{ micro.act({acqua:'bagna',nutri:'nutri',terra:'terra',pulisci:'pulisci'}[name]||'nessuna'); }catch(e){} } return _doAct(name); };
+const _wipeGlass=wipeGlass; wipeGlass=function(area,scrub,cleared){ if(micro){ try{ micro.act('asciuga',{v:Math.min(1,(area||0)*2)}); if(cleared>0) micro.act('pulisci',{zona:'vetro'}); }catch(e){} } return _wipeGlass(area,scrub,cleared); };
+// Letargo coerente: se una decisione ha fermato il recupero dell'assenza, la cura che sveglia il vaso non toglie la protezione ai giorni di assenza ancora da recuperare.
+const _reqCheck=reqCheck; reqCheck=function(kind){ const leth=G.real.leth||0; const r=_reqCheck(kind); if(leth>0&&!(G.real.leth>0)&&G.real.owed>0) G.real.leth=Math.min(leth,G.real.owed); return r; };
+// Il tappo: aperto il vaso si asciuga e la muffa cala, chiuso l'acqua ricircola (e al sole scalda come una serra). aperto: true|false, assente = inverte.
+function tappo(aperto){ if(!sim) return null; const c=sim.view().clima||{}; const a=aperto==null?c.tappo!=='aperto':!!aperto; sim.setTappo(a); if(micro) micro.act(a?'apri':'chiudi'); persist();
+  return {tappo:a?'aperto':'chiuso',testo:a?'Hai tolto il tappo: entra aria, il vetro si schiarisce e la terra si asciuga.':'Hai chiuso il tappo: dentro l’acqua torna a girare, come pioggia.'}; }
+function microView(){ if(!micro||!sim) return null; const v=micro.view(); v.clima=sim.view().clima; return v; }
+Object.assign(window.__app,{persist,newGame,loadSave,doAct,wipeGlass,reqCheck,tappo,micro:microView});
 })();

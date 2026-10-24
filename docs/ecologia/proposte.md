@@ -52,3 +52,11 @@ Numerate per agente. Dove tocco `sim.js` ricordo che `node equiv.js` deve restar
 - +8 °C al sole è una stima: basterebbe un termometro in un barattolo chiuso sul davanzale per un pomeriggio.
 - 2 g di velo per zona e la soglia del 60 % per le gocce: pesare un barattolo appannato.
 - Tempi della muffa: se qualcuno trova le isoplete di Sedlbauer leggibili, i tempi di germinazione sostituiscono la mia costante 0,02/h.
+
+## Stato al secondo giro (24 ottobre 2026, ramo dell'ecologo)
+Numeri e regole in `modello.md` §8.
+- **Applicate:** A1 (build, `G.micro`, `step(6)` per ogni giorno del vaso, migrazione), A2 (cure → microclima, vetro → `asciuga`), A3 (`__app.micro()`), B1 (evaporazione legata al tappo e alle cure), B2 (muffa con le sue cause; collemboli come variabile del motore, non come specie), B3 (drenaggio e ristagno), B4 (serra e soglie di temperatura per pianta), B5 (succulenta nel chiuso umido), B7 (lumache che estivano), B8 (muschio che rinasce), azione **tappo** (`__app.tappo()`, `sim.setTappo()`), letargo coerente (anche il difetto del recupero interrotto da una decisione).
+- **Rimandata B6** (collemboli come specie in `SPECIE`): servirebbero modello 3D, testi d'arrivo, icona e bilanciamento delle diete. Oggi i collemboli sono una variabile del suolo (`clima.collemboli`) che arriva da sola e mangia la muffa, con il suo avviso. Se si vuole farli vedere, la specie si aggiunge sopra questa variabile.
+- **Per interfaccia (F3):** pulsante rotondo «tappo» che chiama `__app.tappo()` (inverte) e mostra `testo` come toast; stato da `__app.micro().tappo` (`aperto` = anche il giorno dopo una cura). Pillola temperatura (F2) da `__app.micro().aria.T` o `clima.T`, visibile solo fuori da 15–28 °C.
+- **Per tre-d e luci (C1–C5, D1–D2):** leggere `__app.micro()` (`condensa` per zona, `gocce`, `muffa.vetro/terra/foglie`, `acqua.drenaggio`, `tappo`), al posto di `needs.um` e `needs.pul`.
+- **Per storia:** i testi nuovi del motore sono negli eventi (`🫧` ristagno, `🌡️` serra, `🌵` succulenta, `🔬` collemboli, `🐌` lumache, `🌿` muschio, `🫙` tappo): la storia può riscriverli in `story.js` (E2, E3, E4, E6, E8).
