@@ -39,3 +39,12 @@ Le schermate dei test finiscono in `screenshots/` (ignorata da git).
 | `docs/` | Storia del progetto, contratti, backlog, brief per Kimi |
 | `vendor/kimi-pass1/` | Consegna originale di Kimi (pass 1) |
 | `.claude/agents/` | Gli agenti del team |
+
+## Lavorare dal telefono (Mac spento)
+1. **Una volta sola**, da un qualsiasi computer: crea il repository privato e carica il progetto
+   (`gh repo create terrario --private --source=. --push`, oppure GitHub Desktop).
+2. Su GitHub → Settings → Pages → Source: **GitHub Actions**. Il gioco si pubblica da solo a ogni modifica di `main`
+   (con un account GitHub gratuito Pages funziona solo con repository pubblici: in quel caso rendi pubblico il repository o usa Cloudflare Pages).
+3. Su claude.ai/code → ambiente cloud → **Setup script**: incolla il contenuto di `scripts/setup-cloud.sh`.
+4. Dall'app Claude → **Code** → **Projects** (o una sessione cloud) sul repository `terrario`.
+5. I test completi girano su **GitHub Actions** a ogni modifica: le schermate sono negli artefatti del workflow «Test».

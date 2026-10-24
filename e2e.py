@@ -202,3 +202,5 @@ with sync_playwright() as p:
     print('overflow orizzontale:',pg.evaluate('document.documentElement.scrollWidth>innerWidth+1'))
     b.close()
 print(ok,'ok',bad,'falliti'); print('errori console:',errs or 'nessuno')
+
+import sys; sys.exit(1 if bad or errs else 0)

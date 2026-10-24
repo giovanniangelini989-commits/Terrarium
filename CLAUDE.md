@@ -27,3 +27,9 @@ Leggi prima `docs/STORIA.md` (cosa è stato deciso e perché) e `docs/CONTRATTI.
 - Three.js 0.184. Budget: iPhone 12 a 60 fps, ≤ 90k triangoli nel caso peggiore, guardia prestazioni già attiva (abbassa risoluzione, poi spegne ombre, poi il 3D).
 - Su iPhone la vibrazione dal browser non funziona (Apple ha chiuso il trucco in iOS 26.5): solo suono e risposta visiva finché non c'è l'app nativa.
 - Salvataggio in localStorage: tenere il salvataggio leggero (l'albero limita a 36 foto da ~5 KB).
+
+## Lavoro nel cloud (Giovanni lavora quasi sempre dal telefono, con il Mac spento)
+- Si lavora in sessioni cloud / Projects. Ogni filone apre una pull request; **i test completi girano su GitHub Actions** (workflow «Test»): una PR si unisce solo se è verde.
+- Se nella sessione cloud il browser di test non è disponibile, lancia comunque i test node e affidati a GitHub Actions per quelli con il browser; leggi le schermate dagli artefatti del workflow.
+- Il gioco si pubblica da solo su GitHub Pages a ogni modifica di `main`: nel report finale a Giovanni metti sempre il link da aprire sull'iPhone.
+- Il report a Giovanni deve essere leggibile su telefono: breve, con le 3–5 schermate più importanti.

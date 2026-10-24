@@ -1,0 +1,44 @@
+name: Test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Strumenti
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Costruisci il gioco
+        run: python3 build_app.py
+      - name: Motore identico allo storico
+        run: |
+          node equiv.js | tee eq.log && grep -q "differenze: 0" eq.log
+      - name: Scenari di gioco
+        run: node gametest.js | tee gt.log && grep -q " 0 falliti" gt.log
+      - name: Giocatori virtuali
+        run: cd app && node bots.js | tee ../bots.log && grep -q "Nessun errore" ../bots.log
+      - name: Test completo iPhone
+        run: python3 e2e.py
+      - name: Test completo iPhone SE
+        run: python3 e2e.py 375 667 se
+      - name: Test 3D
+        run: python3 e2e_3d.py
+        continue-on-error: true
+      - name: Schermate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schermate
+          path: screenshots/
+          retention-days: 14
