@@ -37,8 +37,9 @@ jobs:
         continue-on-error: true
       - name: Schermate
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: schermate
           path: screenshots/
-          retention-days: 14
+          retention-days: 3
