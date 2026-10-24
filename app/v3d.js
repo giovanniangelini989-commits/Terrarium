@@ -4,7 +4,7 @@ const A=window.__app, T=A.T;
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const hashStr=s=>{ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; };
 const rngS=seed=>{ let s=(seed>>>0)||1; return ()=>{ s=(s+0x6D2B79F5)>>>0; let t=s; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; };
-window.__v3dLoad=async function(){ if(window.__v3d) return window.__v3d; const THREE=await import('three'); window.__v3d=build(THREE); return window.__v3d; };
+window.__v3dLoad=function(){ if(window.__v3d) return Promise.resolve(window.__v3d); return window.__v3dP||(window.__v3dP=(async()=>{ try{ const THREE=await import('three'); window.__v3d=build(THREE); return window.__v3d; }catch(e){ window.__v3dP=null; throw e; } })()); }; // una sola costruzione anche con chiamate concorrenti (menu + tentativo automatico)
 function build(THREE){
   const V3=THREE.Vector3, Col=THREE.Color;
   const canvas=document.createElement('canvas'); canvas.className='v3d'; canvas.style.touchAction='none';

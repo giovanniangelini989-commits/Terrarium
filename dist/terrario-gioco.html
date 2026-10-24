@@ -1813,7 +1813,7 @@ function move(dt,t,v,dry){ uni.uTime.value=t; uni.uDry.value=dry||0; const lv=Ma
       const dx=it.tx-it.px, dz=it.tz-it.pz, d=dead?0:Math.hypot(dx,dz)||1, mv=!dead&&d>.02, st0=dead?0:Math.min(d,sp*dt); if(mv){ it.px+=dx/d*st0; it.pz+=dz/d*st0; const rr=Math.hypot(it.px,it.pz); if(rr>.84){ it.px*=.84/rr; it.pz*=.84/rr; } const ta=Math.atan2(dz,dx); let da=ta-it.ang; while(da>Math.PI) da-=6.283; while(da<-Math.PI) da+=6.283; it.ang+=da*Math.min(1,dt*7); }
       // stato: 0 idle · 1 walk · 2 carry · 3 fight · 4 eat · 5 dead
       const st=dead?5:war?3:mv?(it.carry?2:1):(it.eat&&!fly?4:0); if(st!==it.st){ it.st=st; it.tw=0; } it.tw+=dt;
-      const tsp=mv?(war?1.6:1)*(1-.3*(dry||0)):0; it.spd+=(tsp-it.spd)*Math.min(1,dt*8); it.gait+=dt*4*it.spd;
+      const tsp=mv?(war?1.6:1)*(1-.3*(dry||0)):0; it.spd+=(tsp-it.spd)*Math.min(1,dt*8); it.gait=(it.gait+dt*4*it.spd)%1;
       const y=fly?S.soilTop+.35+Math.sin(t*1.1+it.ph)*.3:S.soilTop+(glb?0:Math.abs(Math.sin(t*(war?9:4)+it.ph))*(war?.03:.006));
       it.y=y; it.sz=sz; it.mut=mutK;
       if(it.carry&&mv&&!war&&crumbN<crumbCap){ _p.set(it.px,y+vis*.55,it.pz); _m.makeTranslation(_p.x,_p.y,_p.z); crumbs.setMatrixAt(crumbN++,_m); }
@@ -1836,7 +1836,7 @@ const A=window.__app, T=A.T;
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const hashStr=s=>{ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; };
 const rngS=seed=>{ let s=(seed>>>0)||1; return ()=>{ s=(s+0x6D2B79F5)>>>0; let t=s; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; };
-window.__v3dLoad=async function(){ if(window.__v3d) return window.__v3d; const THREE=await import('three'); window.__v3d=build(THREE); return window.__v3d; };
+window.__v3dLoad=function(){ if(window.__v3d) return Promise.resolve(window.__v3d); return window.__v3dP||(window.__v3dP=(async()=>{ try{ const THREE=await import('three'); window.__v3d=build(THREE); return window.__v3d; }catch(e){ window.__v3dP=null; throw e; } })()); }; // una sola costruzione anche con chiamate concorrenti (menu + tentativo automatico)
 function build(THREE){
   const V3=THREE.Vector3, Col=THREE.Color;
   const canvas=document.createElement('canvas'); canvas.className='v3d'; canvas.style.touchAction='none';
