@@ -15,7 +15,7 @@ INIT="""
 # inquadrature fisse (come la «home» del gioco, senza l'oscillazione): [tempo, az, pol, distanza (<0 = come home()), bersaglio]
 SHOTS=[('giorno','giorno',0,1.06,-1,[0,.85,0]),('sera','sera',0,1.06,-1,[0,.85,0]),('notte','notte',0,1.06,-1,[0,.85,0]),('zoom','giorno',.35,1.0,2.3,[0,.45,0])]
 # camera fissa: un involucro esterno su renderer.render rimette la camera dove vogliamo prima di ogni disegno della scena
-CAMHOOK="""()=>{ const R=__cap.renderer, prev=R.render; R.render=function(s,c){ const q=window.__qaCam; if(q&&s===__cap.scene&&c&&c.isPerspectiveCamera){ let [az,pol,dist,tgt]=q;
+CAMHOOK="""()=>{ const R=__cap.renderer, prev=R.render; R.render=function(s,c){ const q=window.__qaCam; if(q&&s===__cap.scene&&c&&c.isPerspectiveCamera){ let [az,pol,dist,tgt,spin]=q; if(spin){ q[0]+=spin; az=q[0]; }   // spin: rotazione a ogni disegno (per vedere la sfocatura di movimento)
   if(dist<0){ const th=Math.tan(c.fov*Math.PI/360); dist=Math.max(2.9/(2*th),2.35/(2*th*c.aspect))*1.06*1.22; }
   c.position.set(tgt[0]+dist*Math.sin(pol)*Math.sin(az),tgt[1]+dist*Math.cos(pol),tgt[2]+dist*Math.sin(pol)*Math.cos(az)); c.lookAt(tgt[0],tgt[1],tgt[2]); c.updateMatrixWorld(); }
   return prev.call(R,s,c); }; }"""
@@ -64,6 +64,8 @@ with sync_playwright() as p:
             g=pg.evaluate("(()=>{ const g=__v3d.groups().formiche; return g?[g.x,g.y,g.z]:null; })()")
             if g: tgt=[g[0],g[1]+.02,g[2]]; az=math.atan2(g[0],g[2]) if abs(g[0])+abs(g[2])>.05 else az; dist=1.15; pol=.72
         shot(name,[az,pol,dist,tgt])
+    # camera in rotazione (come col dito): sfocatura di movimento
+    pg.evaluate("__app.G.settings.tempo='giorno'"); frames(5); shot('movimento',[0,1.06,-1,[0,.85,0],.045])
     # livelli della guardia: costo a ogni livello (inquadratura giorno)
     if pg.evaluate("!!window.__luci"):
         pg.evaluate("__app.G.settings.tempo='giorno'"); frames(5)
