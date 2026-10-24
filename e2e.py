@@ -36,7 +36,7 @@ with sync_playwright() as p:
     def drain():
         for _ in range(14):
             if pg.locator('#cine').count(): pg.wait_for_timeout(250)
-            elif pg.locator('#cardrev').count(): pg.wait_for_timeout(200); pg.click('[data-a=carta-ok]'); pg.wait_for_timeout(150)
+            elif pg.locator('#cardrev').count(): pg.wait_for_timeout(200); pg.evaluate("(()=>{const b=document.querySelector('[data-a=carta-ok]'); if(b) b.click();})()"); pg.wait_for_timeout(150)  # il pulsante cambia etichetta durante l'animazione: clic diretto
             elif pg.locator('.sheet [data-a=dec]').count():
                 ty=pg.evaluate("__app.sim.pending[0]&&__app.sim.pending[0].type")
                 if ty and ty not in seenDec: seenDec.add(ty); pg.screenshot(path=f'screenshots/{tag}_g6_dec_{ty}.png')
