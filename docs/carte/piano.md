@@ -75,6 +75,12 @@ G.album = {id:{d, n, img?}}  (sostituisce G.ui.viste)   G.carte = {pA, pS, giorn
 
 Schermate per Giovanni: velina chiusa, carta del sasso nella festa, ventaglio sul vaso, album.
 
+## Stato (24 ottobre 2026, fase 2: costruito)
+- P1–P5 in `app/carte.js` (carta a quattro finiture, unboxing a stati, dito, ventaglio con trascinamento sul vaso, album con sagome e quote). P6 ganci minimi in `app3.js`, `build_app.py`, via l'ambra da `app.css`. P7 dati e logica in `app1.js` (24 carte, quote 70/22/8, garanzie 3/6, «prima le nuove», ricordi, pesca ogni 7 giorni di cura, `G.album`/`G.carte` migrati al primo uso). P8: testi bozza marcati `// TESTO-STORIA`; suoni elencati in `suoni.md`. P9: e2e aggiornato (velina, giro, trascinamento, album).
+- Scostamenti dal piano: `carte.js` pesa 33 KB (il budget era 25: il 40% è CSS). Un «giorno di cura» è un giorno in cui fai ciò che il vaso chiede (`reqCheck`), non una cura qualsiasi: altrimenti chi lascia morire il vaso (molti capitoli brevi) riceveva più carte di chi lo cura. Con questa regola l'attivo dei bot riceve 20 carte in 100 giorni (3 ricordi compresi), il passivo 18: sopra l'obiettivo 10±3, perché il bot attivo fa la richiesta ogni giorno. La leva è `ODDS.cura` in `app1.js`.
+- Le garanzie alzano le quote reali (circa 52/29/18 nei bot contro 70/22/8 per pesca): l'album pubblica entrambe le regole (quota per pesca e garanzia), che sono esattamente quello che fa la funzione.
+- Mancano: l'effetto 3D per carta (`__vase.fx`: per ora pioggia/terra/semi/brina riusano acqua e nutri), le carte appoggiate sulla scrivania, i suoni.
+
 ## Budget
 - `carte.js` ≤ 25 KB.
 - Niente Three.js per la carta: DOM + CSS 3D, una texture canvas per finitura (non per carta).

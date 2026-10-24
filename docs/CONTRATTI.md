@@ -47,5 +47,31 @@ Contratto completo in `docs/brief-kimi-v2.md` (scala, LOD, `aMat`, `aAnim`, `aPi
 ## Finale animato (`app/finali.js`, da costruire)
 `playEnding(container, data, {onDone})` dove `data = {finale, nome, giorni, capitolo, culto, popolo, nodi: G.tree.nodes (con foto)}`. Durata 30–45 s, saltabile, tenere premuto accelera.
 
+## Carte (`window.__carte`, in `app/carte.js`)
+`carte.js` è solo presentazione: non decide quali carte escono e non tocca `G`. Si carica prima di `app3.js`.
+```
+__carte.init({app, audio, vase})          // __app, __au, __vase; app3 la chiama prima di ogni uso
+__carte.reveal(dono, onDone)              // unboxing: velina → apertura → giro → festa → lettura
+   dono = {id, fonte:'capitolo'|'cura'|'ricordo', nuova:bool}
+   onDone({azione:'mazzo'|'gioca'})      // 'gioca' → app3 chiama H['carta-gioca']({id})
+__carte.hand({onPlay(id)})                // ventaglio del mazzo sopra il vaso (trascina sul vaso = gioca)
+__carte.albumHTML() → string · __carte.album(el)   // album a 4 set, sagome «come arriva», quote da cardOdds()
+__carte.cardEl(id, {lato:'fronte'|'retro', mini?}) → HTMLElement
+__carte.view(id) · __carte.isOpen() → bool (in busy()) · __carte.close() · __carte.ok() (il pulsante data-a="carta-ok")
+Root dell'unboxing: id="cardrev" con data-st (arrivo·attesa·apertura·chiusa·giro·festa·lettura); pulsante accessibile data-a="carta-ok" (Apri → Gira → Nel mazzo). Ventaglio: id="hand", una .cardrow[data-id] per carta, pulsante data-a="carta-gioca". Visore: id="cardview".
+Suoni richiesti ad audio.js (AU.sfx): carta-velina, carta-filo, carta-lembo, carta-gira, carta-posa, carta-lamina, carta-sasso, carta-foto, carta-timbro, carta-mazzo, carta-album, carta-vaso, carta-ventaglio, carta-pagina.
+```
+Logica → carte (`window.__app`, app1.js):
+```
+CARTE[id] = {n, ic, r:'carta'|'argento'|'sasso'|'ricordo', set:'tempo'|'casa'|'biscotto'|'cassetto', d, x, w, come?}   SET_CARTE = {set: nome}
+drawCard(k, fonte) → {id, nuova, fonte}     giveCard(id, fonte) → {id, nuova, fonte} | null (ricordo già avuto)
+cardOdds() → {carta:.70, argento:.22, sasso:.08, garanzia:{argento:n, sasso:m}, pesche, cura:{fatti, ogni:7}}   // stessa fonte della pesca
+cardImg(id) → dataURL | null   (foto del ricordo: punta al nodo dell'albero, copiata solo se l'albero la scarta)
+G.album = {id:{d, n, ni?, img?}} (sostituisce G.ui.viste, migrato al primo uso) · G.carte = {pA, pS, pesche, giorniCura, lastCura, nC, nA, nS}
+Popup {t:'carta', id, fonte, nuova} per le pesche di cura e i ricordi; closeChapter() → {…, carta:id, cartaNuova}.
+Ricordi (una volta sola): ric_muta (prima mutazione), ric_popolo (primo popolo), ric_finale (primo finale), ric_biscotto (fine della storia di Biscotto).
+Pesca di cura: curaDay() in reqCheck → ogni 7 giorni (reali, non di fila) in cui fai ciò che il vaso chiede.
+```
+
 ## Luci (`window.__LUCI`, in `app/luci.js`)
 `__LUCI(THREE, {scene, renderer, camera}) → {set(tempo), update(dt), level(n), dispose()}`. `tempo` ∈ `giorno, sera, notte`. `level(n)` riceve il livello della guardia prestazioni (0 pieno · 1 ridotto · 2 minimo) e spegne gli effetti costosi. Tutte le luci, il tone mapping, l'esposizione, le ombre e i post-effetti vivono qui, non in `v3d.js`.
