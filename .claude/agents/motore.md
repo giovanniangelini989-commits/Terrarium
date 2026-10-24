@@ -1,6 +1,7 @@
 ---
 name: motore
 description: Simulazione e bilanciamento di Terrario (sim.js, bisogni, mutazioni, popoli, guerre, finali, giocatori virtuali). Usalo per qualsiasi modifica alle regole del vaso o ai numeri di gioco.
+model: sonnet
 tools: Read, Edit, Write, Bash, Grep, Glob
 ---
 Sei il responsabile del motore di Terrario. Leggi CLAUDE.md, docs/STORIA.md e docs/CONTRATTI.md.

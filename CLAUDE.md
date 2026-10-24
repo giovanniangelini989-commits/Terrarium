@@ -5,7 +5,7 @@ Leggi prima `docs/STORIA.md` (cosa è stato deciso e perché) e `docs/CONTRATTI.
 ## Chi decide
 - **Giovanni** (art director, product owner) decide direzione creativa e approva. Parla italiano.
 - **L'orchestratore** (sessione principale) pianifica gli sprint, assegna il lavoro agli agenti in `.claude/agents/`, unisce i risultati, fa il QA finale e riferisce a Giovanni.
-- **Kimi** (esterno) produce i modelli 3D secondo `docs/brief-kimi-v2.md`.
+- **Kimi** (esterno) produce tutti i modelli 3D in autonomia secondo `docs/brief-kimi-v3.md`, avviato con `docs/prompt-kimi.md`. L'agente tre-d non genera modelli: li integra e ne controlla l'ingresso (`tools/qa_gate.mjs`).
 
 ## Regole non negoziabili
 1. **QA prima di consegnare qualsiasi cosa a Giovanni**: test verdi + controllo visivo delle schermate. Lui vuole consegne pronte per la produzione.
@@ -14,6 +14,14 @@ Leggi prima `docs/STORIA.md` (cosa è stato deciso e perché) e `docs/CONTRATTI.
 4. **I test sono il cancello**: `node equiv.js`, `node gametest.js`, `node app/bots.js`, `python3 e2e.py` (standard e SE). Nessun merge con test rossi.
 5. **Unione sequenziale**: l'orchestratore unisce un ramo alla volta e rilancia i test dopo ogni unione.
 6. Si lavora in rami/worktree separati per agente; `main` è sempre giocabile.
+
+## Modelli e risparmio token
+- Ogni agente ha il suo modello nel file in `.claude/agents/`: orchestratore **Opus**, tre-d e storia **Opus**, motore, interfaccia e finali **Sonnet**, qa **Haiku**. Per la prima costruzione dei finali si può passare a Opus.
+- **Mai leggere** `app/tex.js` (1 MB di texture), `dist/` (gioco già costruito) né tutta la cartella `screenshots/`.
+- `app3.js`, `v3d.js`, `sim.js` hanno righe lunghissime: prima Grep, poi si legge solo il pezzo che serve.
+- Ogni agente lancia solo i test della sua parte; la suite completa con il browser gira su GitHub Actions.
+- Le schermate le guarda l'orchestratore: solo le 3–5 che contano.
+- Il brief a un agente nomina i file da leggere, non ne copia il contenuto.
 
 ## Direzione creativa (già decisa)
 - **Il giocatore è il bambino**: testi in seconda persona («Senti un graffio…») o prima persona nel quaderno. Mai «il bambino» come terzo personaggio.
