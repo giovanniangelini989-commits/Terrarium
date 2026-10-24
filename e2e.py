@@ -129,6 +129,7 @@ with sync_playwright() as p:
             if demo_on(): return
     dd0=pg.evaluate("__app.sim.d"); demo_start(); pg.wait_for_timeout(300); t('dal menu parte lo scorrimento veloce (si ferma da solo alle notifiche)',demo_on() or pg.evaluate("__app.sim.d")>dd0,(dd0,pg.evaluate("__app.sim.d")))
     drain(); goto('vaso'); drain(); goto('vaso'); pg.evaluate("__app.popups.length=0; document.getElementById('demoov').classList.add('on')")
+    pg.evaluate("(()=>{ try{__ui.closeSheet()}catch(e){}; __app.popups.length=0; document.getElementById('demoov').classList.add('on'); })()"); pg.wait_for_timeout(150)
     pg.click('[data-a=demo-speed][data-s="16"]'); t('la velocità 16× si seleziona',pg.locator('[data-a=demo-speed][data-s="16"]').get_attribute('aria-pressed')=='true'); t('la cura automatica è attiva di default nella demo',pg.locator('[data-a=demo-auto]').get_attribute('aria-pressed')=='true'); pg.screenshot(path=f'screenshots/{tag}_k2_demo.png'); pg.evaluate("document.getElementById('demoov').classList.remove('on')")
     for _ in range(10):
         if demo_on():
