@@ -1,6 +1,8 @@
 # Tempo e calendario (progetto, agente motore, 24 ottobre 2026)
 
-Solo progetto: nessun codice toccato. Fonti: `app/app1.js` (`checkNewDay`, `catchUp`, `G.real`, `G.power`), `sim.js` (`RITMO=4`), docs/DECISIONI.md §1, docs/CONTRATTI.md, docs/ricerca/SINTESI.md, docs/giocatore/2026-10-24-SINTESI.md, docs/ecologia/modello.md §2.
+**Stato (24 ottobre, sera): costruito nella logica e nel motore** (`app1.js`, `sim.js`, `gametest.js` blocchi 8 «tempo e calendario» e 9 «nuovo vaso», `app/bots.js`, `S.TEMPO/S.CAL` in `story.js`). Manca l'interfaccia (`app3.js`): perline delle mani, popup `notte-ora`, calendario nel quaderno, pulsante tappo/power card, ordine finale → carta → chiudi, segmento «Vasi», contatore «Vaso N · Giorno D». API in docs/CONTRATTI.md «Tempo, mani, calendario, fine del vaso». Differenze dal progetto: `G.cal` memorizza `dt = t − t0` (righe più corte, un anno ≈ 4,2 KB); il quaderno ha un tetto di 240 pagine e il diario non si ripete a ogni vaso; la mensola tiene 8 nodi per i vasi oltre gli ultimi 12; «La chiave del cassetto» dà anch'essa +2 salti (la vecchia scorta tempo non esiste più); separare due specie in guerra non costa una mano.
+
+Fonti: `app/app1.js` (`checkNewDay`, `catchUp`, `G.real`, `G.power`), `sim.js` (`RITMO=4`), docs/DECISIONI.md §1, docs/CONTRATTI.md, docs/ricerca/SINTESI.md, docs/giocatore/2026-10-24-SINTESI.md, docs/ecologia/modello.md §2.
 
 ## Com'è oggi (misurato nel codice)
 - 1 giorno reale = 4 giorni del vaso (`RITMO`). Tutti e 4 passano **in blocco al primo accesso del giorno** (`checkNewDay` → `owed` → `catchUp`). Nel resto della giornata il vaso è fermo: chi riapre alle 13 e alle 20 non vede nulla di nuovo (giocatore: frettoloso 4/10, distratto 4/10).
