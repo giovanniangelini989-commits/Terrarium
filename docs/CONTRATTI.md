@@ -42,7 +42,15 @@ Funzioni principali: `newGame, act, passaNotte, takeArrival, resolveDecision, pl
 `{DEF, ID, mat(slot|id), dress(group, objId)}`. Gli id coincidono con il §3 di `docs/brief-kimi-v2.md`. Quando Kimi consegna `aMat`, `dress` userà l'attributo invece dei colori.
 
 ## Modelli Kimi
-Contratto completo in `docs/brief-kimi-v2.md` (scala, LOD, `aMat`, `aAnim`, `aPivot`, `iAnim`, `patchMaterial`, clip). Ogni consegna passa dal controllo d'ingresso (agente tre-d + qa) prima di entrare.
+Contratto completo in `docs/brief-kimi-v3.md` (tier swarm/close/hero, `_ANIM`, `_PIVOT`, `_EMIT`, clip). Ogni consegna passa dal controllo d'ingresso (agente tre-d + qa) prima di entrare.
+
+### Modelli nel gioco (`window.__MODELLI`, in `app/modelli.js`, agente tre-d)
+`__MODELLI(THREE, {critG, S, KLEN, camera, viewH, level, anchorOf, kimiGeo, fallbackGeo, SIZE}) → {crt, sync(view), move(dt, t, view, dry), ready, loaded, stats(), models}`.
+- **Conta esatta**: per ogni specie viva si disegnano `Math.round(pop)` individui (minimo 1), in 3D e nella riserva 2D (`app/app2.js`). Lo stesso numero che la scheda del gruppo mostra («Sono circa N»).
+- I GLB approvati (`assets/kimi/<id>/swarm.glb`, `close.glb`) e i LOD derivati (`vendor/lod/<id>_lod1.glb`, `_lod2.glb`, generati da `vendor/lod/make_lod.mjs`) vengono incorporati in base64 da `build_app.py` in `window.__GLB = {<id>: {swarm, close, lod1, lod2}}`. `hero.glb` non si incorpora (docs/DECISIONI.md §5). Il meteorite resta escluso finché Kimi non lo corregge.
+- Un `InstancedMesh` per specie e per livello di dettaglio; i livelli si assegnano per grandezza a schermo entro un budget di triangoli per livello della guardia prestazioni (`level()` 0/1/2 → 64k/36k/20k): la guardia abbassa il dettaglio, mai il numero.
+- Animazione nel vertex shader: attributi per istanza `iAnim` (fase del passo, velocità, stato 0 idle · 1 walk · 2 carry · 3 fight · 4 eat · 5 dead, tempo nello stato) e `iMut` (0–1,3: intensità del bagliore `_EMIT` verde `#7CF5C8`); uniformi `uTime`, `uDry`.
+- `stats()` → `{<id>: {n, kind: 'glb'|'pass1', tiers: {close, swarm, lod1, lod2}}}` per QA e test. Esposto anche come `window.__v3d.modelli`.
 
 ## Finale animato (`app/finali.js`, da costruire)
 `playEnding(container, data, {onDone})` dove `data = {finale, nome, giorni, capitolo, culto, popolo, nodi: G.tree.nodes (con foto)}`. Durata 30–45 s, saltabile, tenere premuto accelera.
