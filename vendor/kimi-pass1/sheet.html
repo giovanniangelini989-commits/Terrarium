@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terrario — Asset Sheet · Pass 1</title>
+<style>
+:root{--ink:oklch(0.25 0.018 65);--muted:oklch(0.48 0.018 65);--paper:oklch(0.965 0.012 82);--panel:oklch(0.99 0.008 82);--line:oklch(0.86 0.018 75);--accent:oklch(0.52 0.09 155);--night:oklch(0.25 0.035 65)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100dvh}body{font:15px/1.5 "Avenir Next","Segoe UI",sans-serif;color:var(--ink);background:var(--paper)}button,input,select{font:inherit}button,a,input,select{outline-offset:3px}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent)}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.45}
+header{min-height:72px;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);background:var(--panel)}h1{font:600 22px/1.2 Georgia,serif;margin:0}header p{margin:3px 0 0;color:var(--muted);font-size:13px}.downloads{display:flex;gap:8px}.downloads a{color:var(--ink);text-decoration:none;border:1px solid var(--line);padding:9px 12px;border-radius:7px;background:var(--panel)}.downloads a:hover{border-color:var(--accent)}
+.layout{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:calc(100dvh - 72px)}aside{border-right:1px solid var(--line);background:var(--panel);padding:18px 14px}aside h2,.stats h2{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:8px 8px 10px}.model-list{display:grid;gap:4px}.model-btn{min-height:40px;text-align:left;border:0;border-radius:6px;background:transparent;color:var(--ink);padding:8px 10px;display:flex;justify-content:space-between;gap:8px}.model-btn span{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}.model-btn:hover{background:oklch(0.94 0.015 82)}.model-btn.active{background:oklch(0.89 0.035 145);color:oklch(0.30 0.06 155)}
+main{min-width:0;padding:18px;display:grid;grid-template-rows:auto minmax(420px,58vh) auto;gap:14px}.toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.toolbar button,.toolbar select{min-height:40px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);padding:8px 12px}.toolbar button:hover,.toolbar select:hover{border-color:var(--accent)}.toolbar button.active{background:var(--night);color:var(--paper);border-color:var(--night)}.toolbar .sep{width:1px;height:26px;background:var(--line);margin:0 3px}.slider{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:13px}.slider input{width:90px;accent-color:var(--accent)}
+.viewport{position:relative;overflow:hidden;border-radius:10px;background:#d8d4ca;min-height:420px;box-shadow:inset 0 0 0 1px rgba(60,50,35,.08)}#scene{display:block;width:100%;height:100%;touch-action:none;cursor:grab}#scene:active{cursor:grabbing}.view-title{position:absolute;top:18px;left:20px;pointer-events:none}.view-title strong{display:block;font:600 24px/1.2 Georgia,serif}.view-title small{color:oklch(0.38 0.018 65)}.badges{position:absolute;right:16px;top:16px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.badge{background:rgba(247,244,236,.88);border:1px solid rgba(70,60,45,.14);padding:5px 8px;border-radius:5px;font-size:12px;font-variant-numeric:tabular-nums}.hint{position:absolute;left:20px;bottom:14px;color:oklch(0.38 0.018 65);font-size:12px;pointer-events:none}#error{display:none;position:absolute;inset:20px;background:var(--panel);padding:24px;border:1px solid #a55;z-index:3}
+.stats{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 16px 14px;overflow:auto}.stats h2{margin:10px 0}.stats table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}.stats th,.stats td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}.stats th{color:var(--muted);font-weight:500}.stats tr:last-child td{border-bottom:0}.ok{color:oklch(0.43 0.11 150);font-weight:600}.summary{display:flex;gap:20px;flex-wrap:wrap;margin:10px 0 0;color:var(--muted)}.summary strong{color:var(--ink)}
+@media(max-width:800px){header{align-items:flex-start;padding:14px 16px}.downloads{display:none}.layout{grid-template-columns:minmax(0,1fr)}aside{min-width:0;overflow:hidden;border-right:0;border-bottom:1px solid var(--line);padding:10px 12px}aside h2{display:none}.model-list{display:flex;width:100%;max-width:100%;overflow-x:auto;padding-bottom:5px}.model-btn{flex:0 0 auto;min-height:44px}.model-btn span{display:none}main{padding:10px;grid-template-rows:auto minmax(390px,55vh) auto}.toolbar button,.toolbar select{min-height:44px}.viewport{min-height:390px}.slider{display:none}.badges{top:auto;bottom:38px;left:14px;right:14px;justify-content:flex-start}.view-title{top:14px;left:14px}.hint{left:14px}.stats{padding:8px}.stats table{font-size:12px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<header><div><h1>Terrario · Asset Sheet</h1><p>Pass 1 — creature, oggetti e verifica della scala · 1 unità = 10 cm</p></div><nav class="downloads" aria-label="File sorgente"><a href="./models.js" download>models.js</a><a href="./README.md" download>README.md</a></nav></header>
+<div class="layout">
+<aside><h2>Creature</h2><div id="creature-list" class="model-list"></div><h2>Oggetti</h2><div id="object-list" class="model-list"></div></aside>
+<main>
+<div class="toolbar" aria-label="Controlli scena">
+<button id="mode-model" class="active">Modello</button><button id="mode-scale">Scale check</button><button id="mode-instances">14 × 6 istanze</button><span class="sep"></span>
+<button id="day" class="active">Day</button><button id="night">Night</button><button id="wire">Wireframe</button><button id="glow">Mutation glow</button><button id="spin" class="active">Turntable</button>
+<label class="slider">dry <input id="dry" type="range" min="0" max="1" step=".01" value="0" disabled title="Disponibile con le piante nel Pass 2"></label>
+<label class="slider">health <input id="health" type="range" min="0" max="1" step=".01" value="1" disabled title="Disponibile con le piante nel Pass 2"></label>
+</div>
+<section class="viewport" aria-label="Anteprima 3D"><canvas id="scene"></canvas><div class="view-title"><strong id="view-name">Formiche</strong><small id="view-sub">6 zampe · 2 antenne · forward +X</small></div><div id="badges" class="badges"></div><div class="hint">Trascina per orbitare · rotella/pinch per zoom</div><div id="error" role="alert"></div></section>
+<section class="stats"><h2>Statistiche geometriche</h2><div style="overflow:auto"><table><thead><tr><th>Modello</th><th>Triangoli</th><th>Budget</th><th>Draw call</th><th>Attributi</th><th>Esito</th></tr></thead><tbody id="stats-body"></tbody></table></div><div class="summary"><span>Worst case Pass 1: <strong id="worst">—</strong> / 60.000 triangoli</span><span>84 creature + 3 oggetti; piante e insediamenti arrivano nei pass successivi.</span></div></section>
+</main></div>
+<script type="module">
+import * as THREE from 'three';
+import {MODELS,mergeParts} from './models.js';
+
+const $=id=>document.getElementById(id), canvas=$('scene');
+const state={mode:'model',selected:'formiche',category:'creatures',night:false,wire:false,glow:false,spin:!matchMedia('(prefers-reduced-motion: reduce)').matches,theta:.72,phi:1.2,distance:3.8,target:new THREE.Vector3(0,.25,0),drag:false,autoDistance:true};
+const names={formiche:'Formiche',termiti:'Termiti',coleotteri:'Coleotteri',ragni:'Ragni',lumache:'Lumache',mosche:'Mosche',statuina:'Statuina',orologio:'Orologio',giocattolo:'Giocattolo',specchio:'Specchio',libro:'Libro',moneta:'Moneta',radio:'Radio',candela:'Candela'};
+const subtitles={formiche:'6 zampe · 2 antenne · forward +X',termiti:'Corpo segmentato · 6 zampe',coleotteri:'Elitre verdi · 6 zampe',ragni:'8 zampe articolate',lumache:'Guscio a spirale reale',mosche:'2 ali · 6 zampe',statuina:'Pietra scolpita · altezza 0,55',orologio:'Ottone e quadrante · base inclusa',giocattolo:'Teddy consumato · cucitura frontale',specchio:'Vetro metallico separato',libro:'Pagine e copertina · 0,70 × 0,50',moneta:'Moneta verticale · Ø 0,30',radio:'Griglia, manopole e antenna',candela:'Fiamma emissiva separata'};
+let renderer,scene,camera,content,hemi,sun,fill,clock,stats=[],glowMaterials=[];
+const built={creatures:{},objects:{}};
+
+function init(){
+  renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.75)); renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+  renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  scene=new THREE.Scene(); scene.background=new THREE.Color('#D8D4CA'); scene.fog=new THREE.Fog('#D8D4CA',12,28);
+  camera=new THREE.PerspectiveCamera(36,1,.02,60);
+  hemi=new THREE.HemisphereLight(0xdbe8f5,0x5a4636,.9); scene.add(hemi);
+  sun=new THREE.DirectionalLight(0xffd9a8,2.2); sun.position.set(2.5,4,3); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024); scene.add(sun);
+  fill=new THREE.DirectionalLight(0xbcd2ff,.6); fill.position.set(-3,2,2); scene.add(fill);
+  const envCanvas=document.createElement('canvas'); envCanvas.width=512;envCanvas.height=256;
+  const ex=envCanvas.getContext('2d'),gr=ex.createLinearGradient(0,0,0,256);gr.addColorStop(0,'#cfe3ff');gr.addColorStop(.55,'#f2e6d2');gr.addColorStop(1,'#4a382a');ex.fillStyle=gr;ex.fillRect(0,0,512,256);
+  const env=new THREE.CanvasTexture(envCanvas);env.mapping=THREE.EquirectangularReflectionMapping;env.colorSpace=THREE.SRGBColorSpace;
+  const pmrem=new THREE.PMREMGenerator(renderer);scene.environment=pmrem.fromEquirectangular(env).texture;env.dispose();pmrem.dispose();
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({color:'#C9C3B6',roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.006;ground.receiveShadow=true;scene.add(ground);
+  content=new THREE.Group();scene.add(content); clock=new THREE.Clock();
+  for(const [k,v] of Object.entries(MODELS.creatures)) built.creatures[k]=v.build(THREE,{seed:1});
+  for(const [k,v] of Object.entries(MODELS.objects)) built.objects[k]=v.build(THREE,{seed:1});
+  collectStats(); buildLists(); bind(); showModel(); resize(); animate();
+  window.__TERRARIO_STATS__=stats; window.__TERRARIO_READY__=true;
+}
+function tri(g){return g.index?g.index.count/3:g.attributes.position.count/3}
+function collectStats(){
+  stats=[];
+  for(const cat of ['creatures','objects']) for(const [k,r] of Object.entries(built[cat])){
+    let triangles=0,calls=0;const attrs=new Set();
+    if(r.geometry){triangles=tri(r.geometry);calls=1;Object.keys(r.geometry.attributes).forEach(a=>attrs.add(a))}
+    else r.group.traverse(o=>{if(o.isMesh){triangles+=tri(o.geometry);calls++;Object.keys(o.geometry.attributes).forEach(a=>attrs.add(a))}});
+    const budget=cat==='creatures'?350:600;
+    stats.push({category:cat,key:k,triangles,calls,budget,attributes:[...attrs],pass:triangles<=budget&&calls<=(cat==='creatures'?1:3)});
+  }
+  const creatureTris=stats.filter(s=>s.category==='creatures').reduce((a,s)=>a+s.triangles*14,0);
+  const objectTris=stats.filter(s=>s.category==='objects').slice(0,3).reduce((a,s)=>a+s.triangles,0);
+  $('worst').textContent=(creatureTris+objectTris).toLocaleString('it-IT');
+  $('stats-body').innerHTML=stats.map(s=>`<tr><td>${names[s.key]}</td><td>${s.triangles}</td><td>≤ ${s.budget}</td><td>${s.calls}</td><td>${s.attributes.filter(a=>a.startsWith('a')).join(', ')||'—'}</td><td class="ok">${s.pass?'OK':'FUORI'}</td></tr>`).join('');
+}
+function buildLists(){
+  for(const cat of ['creatures','objects']){
+    const el=$(cat==='creatures'?'creature-list':'object-list');
+    for(const k of Object.keys(built[cat])){const b=document.createElement('button');b.className='model-btn';b.dataset.key=k;b.dataset.category=cat;b.innerHTML=`${names[k]}<span>${stats.find(s=>s.key===k).triangles}△</span>`;b.onclick=()=>{state.selected=k;state.category=cat;state.mode='model';state.spin=true;syncButtons();showModel()};el.appendChild(b)}
+  }
+}
+function clearContent(){while(content.children.length){const o=content.children.pop();o.traverse?.(n=>{if(n.userData.ownsMaterial)n.material?.dispose()})}}
+function prepareMaterial(m){
+  if(!m||m.userData.glowReady)return;m.userData.glowReady=true;glowMaterials.push(m);
+  m.onBeforeCompile=shader=>{
+    shader.uniforms.uGlow={value:state.glow?1:0};m.userData.glowUniform=shader.uniforms.uGlow;
+    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float aEmit; varying float vEmit;').replace('#include <begin_vertex>','#include <begin_vertex>\nvEmit=aEmit;');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float uGlow; varying float vEmit;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n#ifdef USE_COLOR\ntotalEmissiveRadiance += vec3(0.20,1.0,0.58)*vEmit*uGlow*1.8;\n#endif');
+  };m.customProgramCacheKey=()=> 'terrario-glow-v1';
+}
+function prepare(root){root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(m){m.wireframe=state.wire;prepareMaterial(m)}})}})}
+function addResult(res){const root=res.group||new THREE.Mesh(res.geometry,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.7,metalness:.05,...(res.materialHint||{})}));if(!res.group)root.userData.ownsMaterial=true;content.add(root);prepare(root);return root}
+function fit(root,padding=1.55){
+  const box=new THREE.Box3().setFromObject(root),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+  const max=Math.max(size.x,size.y,size.z,.05);state.target.copy(center);state.distance=max/(2*Math.tan(THREE.MathUtils.degToRad(18)))*padding;state.theta=.72;state.phi=1.2;state.autoDistance=false;
+}
+function showModel(){
+  clearContent();const root=addResult(built[state.category][state.selected]);root.name=state.selected;fit(root,state.category==='creatures'?2.15:1.65);
+  $('view-name').textContent=names[state.selected];$('view-sub').textContent=subtitles[state.selected];
+  const s=stats.find(x=>x.key===state.selected);$('badges').innerHTML=`<span class="badge">${s.triangles} triangoli</span><span class="badge">${s.calls} draw call</span><span class="badge">origin y=0</span>`;
+  document.querySelectorAll('.model-btn').forEach(b=>b.classList.toggle('active',b.dataset.key===state.selected&&state.mode==='model'));
+}
+function labelSprite(text){const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.fillStyle='rgba(246,242,232,.94)';x.fillRect(0,0,256,64);x.fillStyle='#39342D';x.font='28px Segoe UI';x.textAlign='center';x.fillText(text,128,41);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));s.scale.set(.48,.12,1);s.userData.ownsMaterial=true;return s}
+function referenceCube(pos){const g=new THREE.BoxGeometry(1,1,1),m=new THREE.MeshStandardMaterial({color:'#D6C8A8',wireframe:true});const mesh=new THREE.Mesh(g,m);mesh.position.copy(pos).add(new THREE.Vector3(0,.5,0));mesh.userData.ownsMaterial=true;content.add(mesh);return mesh}
+function jarRing(pos){const pts=[];for(let i=0;i<=64;i++){const a=i/64*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a),0,Math.sin(a)))}const g=new THREE.BufferGeometry().setFromPoints(pts),l=new THREE.Line(g,new THREE.LineBasicMaterial({color:'#718B89'}));l.position.copy(pos);l.userData.ownsMaterial=true;content.add(l);return l}
+function showScale(){
+  clearContent();const group=new THREE.Group();content.add(group);
+  const ant=new THREE.Mesh(built.creatures.formiche.geometry,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.7}));ant.position.set(-.85,0,0);ant.userData.ownsMaterial=true;group.add(ant);
+  const statue=built.objects.statuina.group.clone();statue.position.set(-.35,0,0);group.add(statue);
+  // Pass-1 scale proxies only: future hut Ø .40 and jar R 1.00.
+  const hut=new THREE.Mesh(new THREE.SphereGeometry(.2,12,6,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:'#8A7155',roughness:.9}));hut.position.set(.35,0,0);hut.scale.y=1.1;hut.userData.ownsMaterial=true;group.add(hut);
+  const ring=jarRing(new THREE.Vector3(1.65,0,0));
+  const cube=referenceCube(new THREE.Vector3(-1.35,0,0));
+  [['Ant 0,20',-.85],['Statuina 0,55',-.35],['Hut Ø 0,40',.35],['Jar R 1,00',1.65],['Cubo 10 cm',-1.35]].forEach(([t,x],i)=>{const s=labelSprite(t);s.position.set(x,i===4?1.07:.70,0);content.add(s)});
+  prepare(group);state.target.set(.45,.25,0);state.distance=5.3;state.theta=.15;state.phi=1.15;
+  $('view-name').textContent='Scale check';$('view-sub').textContent='Ant : statuina = 1 : 2,75 · hut = 2 × ant · raggio jar = 1';
+  $('badges').innerHTML='<span class="badge">ant 0,20</span><span class="badge">statuina 0,55</span><span class="badge">hut Ø 0,40</span><span class="badge">jar R 1,00</span>';
+}
+function showInstances(){
+  clearContent();const all=new THREE.Group();content.add(all);const dummy=new THREE.Object3D();
+  Object.entries(built.creatures).forEach(([k,r],row)=>{
+    const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.7,metalness:.05});const im=new THREE.InstancedMesh(r.geometry,mat,14);im.userData.ownsMaterial=true;
+    for(let i=0;i<14;i++){dummy.position.set((i-6.5)*.32,0,(row-2.5)*.52);dummy.rotation.y=(i%3-1)*.18;dummy.updateMatrix();im.setMatrixAt(i,dummy.matrix);im.setColorAt(i,new THREE.Color(1,1,1))}im.instanceMatrix.needsUpdate=true;im.instanceColor.needsUpdate=true;all.add(im);
+    const lab=labelSprite(`${k} ×14`);lab.position.set(-4.85,.25,(row-2.5)*.52);lab.scale.set(.75,.18,1);content.add(lab);
+  });prepare(all);state.target.set(0,.05,0);state.distance=6.4;state.theta=.12;state.phi=.85;
+  $('view-name').textContent='Instancing test';$('view-sub').textContent='84 creature · setColorAt(white) · nessuna scala negativa';
+  $('badges').innerHTML='<span class="badge">84 istanze</span><span class="badge">6 draw call creature</span><span class="badge">normali CCW</span>';
+}
+function syncButtons(){
+  for(const [id,on] of [['day',!state.night],['night',state.night],['wire',state.wire],['glow',state.glow],['spin',state.spin],['mode-model',state.mode==='model'],['mode-scale',state.mode==='scale'],['mode-instances',state.mode==='instances']])$(id).classList.toggle('active',on);
+}
+function setLighting(){hemi.intensity=state.night?.38:.9;sun.intensity=state.night?.45:2.2;sun.color.set(state.night?0x8fa6ff:0xffd9a8);fill.intensity=state.night?.25:.6;scene.background.set(state.night?'#242B42':'#D8D4CA');scene.fog.color.copy(scene.background)}
+function bind(){
+  $('mode-model').onclick=()=>{state.mode='model';showModel();syncButtons()};$('mode-scale').onclick=()=>{state.mode='scale';showScale();syncButtons()};$('mode-instances').onclick=()=>{state.mode='instances';showInstances();syncButtons()};
+  $('day').onclick=()=>{state.night=false;setLighting();syncButtons()};$('night').onclick=()=>{state.night=true;setLighting();syncButtons()};
+  $('wire').onclick=()=>{state.wire=!state.wire;content.traverse(o=>{if(o.isMesh)o.material.wireframe=state.wire});syncButtons()};
+  $('glow').onclick=()=>{state.glow=!state.glow;glowMaterials.forEach(m=>{if(m.userData.glowUniform)m.userData.glowUniform.value=state.glow?1:0});syncButtons()};
+  $('spin').onclick=()=>{state.spin=!state.spin;syncButtons()};syncButtons();
+  const pointers=new Map();let lastX=0,lastY=0,lastPinch=0;
+  canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);lastX=e.clientX;lastY=e.clientY;state.drag=true});
+  canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===2){const p=[...pointers.values()],d=Math.hypot(p[0][0]-p[1][0],p[0][1]-p[1][1]);if(lastPinch)state.distance=THREE.MathUtils.clamp(state.distance*lastPinch/d,.08,20);lastPinch=d}else{state.theta-=(e.clientX-lastX)*.008;state.phi=THREE.MathUtils.clamp(state.phi-(e.clientY-lastY)*.008,.18,1.5);lastX=e.clientX;lastY=e.clientY}});
+  const up=e=>{pointers.delete(e.pointerId);state.drag=false;lastPinch=0};canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
+  canvas.addEventListener('wheel',e=>{e.preventDefault();state.distance=THREE.MathUtils.clamp(state.distance*Math.exp(e.deltaY*.001),.08,20)},{passive:false});
+  new ResizeObserver(resize).observe(canvas.parentElement);
+}
+function resize(){const r=canvas.parentElement.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()}
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);if(state.spin&&!state.drag&&state.mode==='model'&&content.children[0])content.children[0].rotation.y+=dt*.32;
+  const sp=new THREE.Spherical(state.distance,state.phi,state.theta);camera.position.copy(state.target).add(new THREE.Vector3().setFromSpherical(sp));camera.lookAt(state.target);renderer.render(scene,camera)}
+try{init()}catch(err){console.error(err);$('error').style.display='block';$('error').textContent='Impossibile inizializzare WebGL2: '+err.message}
+</script>
+</body>
+</html>

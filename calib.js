@@ -1,0 +1,8 @@
+global.window=global; const T=require('./sim.js');
+const setups=[{luce:1,acqua:1,piante:['muschio','felce'],insetti:['formiche'],oggetti:['statuina']},{luce:2,acqua:1,piante:['muschio','felce'],insetti:['formiche'],oggetti:[]},{luce:0,acqua:2,piante:['muschio','felce'],insetti:['formiche'],oggetti:['orologio']},{luce:1,acqua:0,piante:['muschio','felce'],insetti:['formiche'],oggetti:['specchio']}];
+const mode=process.argv[2]||'abbandono'; const CAD=+process.argv[4]||4, BUR=+process.argv[5]||1; const N=+process.argv[3]||24; const res=[]; let alive100=0, soc=0, tot=0, fin={};
+for(const su of setups) for(let seed=1;seed<=N/4+1;seed++){ const sim=T.createSim(JSON.parse(JSON.stringify(su)),{seed:seed*7,game:true,decisions:false,needs:true}); let dead=null, society=false;
+  for(let d=1;d<=140;d++){ if(mode==='cura'&&d%CAD===1){ for(let b=0;b<BUR;b++){ const n=sim.view().needs; if(n.um<.6) sim.act('acqua'); if(n.ter<.5) sim.act('nutri'); if(n.pul<.7) sim.act('pulisci'); } } sim.step(); const v=sim.view(); if(v.sp.every(x=>!x.alive)&&dead==null) dead=d; if(v.sp.some(x=>x.society)) society=true; if(sim.finalePending) { if(mode==='abbandono'||dead!=null) break; } }
+  tot++; res.push(dead); const v=sim.view(); if(v.sp.some(x=>x.alive)) alive100++; if(society) soc++; const f=sim.finalePending&&sim.finalePending.finale; if(f) fin[f]=(fin[f]||0)+1; }
+const ok=res.filter(x=>x!=null).sort((a,b)=>a-b);
+console.log(mode,'· vasi',tot,'· estinti',ok.length,'· giorno-vaso estinzione min/mediana/max',ok[0],ok[Math.floor(ok.length/2)],ok[ok.length-1],'(≈ giorni reali',ok.length?(ok[Math.floor(ok.length/2)]/4).toFixed(1):'-',')','· ancora vivi alla fine',alive100,'· con un popolo',soc,'· finali',JSON.stringify(fin));

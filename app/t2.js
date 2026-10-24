@@ -1,0 +1,8 @@
+global.window=global; global.localStorage={_d:{},getItem(k){return this._d[k]||null},setItem(k,v){this._d[k]=v},removeItem(k){delete this._d[k]}}; global.document={querySelector:()=>null,createElement:()=>({}),body:{appendChild(){}}};
+global.Terr=require('../sim.js'); require('./story.js'); require('./app1.js'); const A=window.__app; const ok=(n,c)=>console.log(c?'✓':'✗',n);
+A.newGame('Prova',{luce:1,acqua:1,meteorite:1,piante:['muschio','felce'],insetti:['formiche'],oggetti:['statuina']});
+ok('quaderno: prima pagina',A.G.quaderno.length===1&&A.G.quaderno[0].id==='inizio'); ok('richiesta del giorno',['pulisci','acqua','nutri','osserva'].includes(A.G.req.kind)); console.log('  richiesta:',A.G.req.kind,'· arrivi pianificati:',A.G.arrivi.list.length);
+let arr=0, pag=0, bisc=0; for(let g=1;g<=30;g++){ A.G.dev.offset++; A.checkNewDay(); A.popups.filter(p=>p.t==='arrivo').forEach(p=>{ const a=A.G.arrivi.list.find(x=>x.id===p.id); arr++; A.takeArrival(p.id,a.kind==='oggetto'?a.alt[0]:'si'); }); bisc+=A.popups.filter(p=>p.t==='biscotto').length; while(A.sim.pending.length){ const q=A.sim.pending[0]; A.resolveDecision(q.id,q.type==='mutazione'?'proteggi':q.type==='guerra'?'lascia':'nascosto'); } A.popups.length=0; }
+ok('arrivi nella storia (accettati '+arr+')',arr>=4); ok('Biscotto compare ('+bisc+' volte in 30 giorni)',bisc>=4&&bisc<=9);
+console.log('  vaso ora:',JSON.stringify(A.sim.view().setup)); console.log('  pagine del quaderno:',A.G.quaderno.map(p=>p.id).join(', '));
+ok('esito di Biscotto',typeof A.biscottoOutcome('pallina').text==='string'); ok('salva e ricarica',(A.persist(),A.loadSave())&&A.G.quaderno.length>0);

@@ -1,0 +1,14 @@
+global.window=global; global.localStorage={_d:{},getItem(k){return this._d[k]||null},setItem(k,v){this._d[k]=v},removeItem(k){delete this._d[k]}}; global.document={querySelector:()=>null,createElement:()=>({}),body:{appendChild(){}}};
+global.Terr=require('../sim.js'); require('./app1.js'); const A=window.__app;
+const ok=(n,c)=>console.log(c?'✓':'✗',n);
+A.newGame('Prova',{luce:1,acqua:1,meteorite:1,piante:['muschio','felce'],insetti:['formiche'],oggetti:['statuina']});
+ok('nuovo gioco',A.sim.d===0&&A.G.hypo.offer.length===2); console.log('  offerte:',A.G.hypo.offer.map(o=>o.title).join(' | '));
+ok('specie sbloccate al livello 1: '+Object.keys(A.T.SPECIE).filter(A.unlocked).join(','),!A.unlocked('ragni')&&A.unlocked('formiche'));
+A.G.dev.offset=1; const r=A.checkNewDay(); ok('un giorno reale = 4 giorni del vaso (o fino a una decisione)',A.sim.d===4||A.sim.pending.length>0);
+ok('risveglio in coda',A.popups.some(p=>p.t==='risveglio'));
+const m=A.doAct('pulisci'); ok('azione consuma 1 di 3',A.G.real.actions===2&&m);
+ok('aggiungi termiti',A.addSpec('termiti')==='' && A.G.player.gocce===30);
+ok('ipotesi: scegli e completa',(()=>{ const o=A.G.hypo.offer[0]; A.G.hypo.picked=o; A.G.hypo.state='scelta'; if(o.kind==='specie'){ A.G.player.gocce=100; A.addSpec(o.param);} else if(o.kind==='oggetto'){ A.G.player.gocce=100; A.addObj(o.param);} else if(o.kind==='luce'){ A.G.player.gocce=100; A.moveVase(o.param);} else { A.doAct('acqua'); } return A.G.hypo.state==='in corso' && A.G.player.serie===1; })());
+A.G.dev.offset=2; A.checkNewDay(); ok('risultato dell’ipotesi dopo un giorno',A.G.hypo.log.length===1&&A.G.player.xp>=35);
+A.persist(); const bytes=localStorage._d['terrario.save.v1'].length; A.loadSave(); ok('salva e ricarica ('+bytes+' byte)',A.sim.d>=8&&A.G.name==='Prova');
+console.log('  livello',A.lvl(),'xp',A.G.player.xp,'gocce',A.G.player.gocce,'serie',A.G.player.serie);
