@@ -25,6 +25,7 @@ Leggi prima `docs/STORIA.md` (cosa è stato deciso e perché), `docs/DECISIONI.m
 | Direttore artistico | direttore-artistico | Opus |
 | Direttore della fotografia | luci | Opus |
 | Technical artist 3D | tre-d (modelli generati da Kimi) | Opus |
+| Modellatore 3D (Magnific / Higgsfield, al posto di Kimi) | modellatore | Opus |
 | Game e systems designer | motore | Sonnet |
 | UI/UX designer | interfaccia | Sonnet |
 | Regista delle cinematiche | finali | Sonnet |
