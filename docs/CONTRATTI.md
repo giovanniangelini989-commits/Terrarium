@@ -10,6 +10,9 @@
 | finali | nuovo `app/finali.js` (lettore dei mini video) |
 | logica di gioco (orchestratore) | `app/app1.js`, `build_app.py` |
 | qa | nessuno (sola lettura), scrive solo in `screenshots/` e report |
+| luci | `app/luci.js`, `qa_luci.py` (in `app/v3d.js` solo la chiamata a `__LUCI`) |
+| giocatore | `tools/giocatore.py`, `docs/giocatore/`, `screenshots/giocatore/` (sul gioco sola lettura) |
+| ricerca | `docs/ricerca/` |
 
 ## Motore → app (`sim.js`)
 `createSim(setup,{seed,game,decisions,needs})` → `{step, view, act, resolve, addSpecies, removeSpecies, addPlant, removePlant, addObject, removeObject, setNeeds, charge, growMeteo, setMalus, closeChapter, save, load, log, pending, d, chapter, E}`.
@@ -37,3 +40,6 @@ Contratto completo in `docs/brief-kimi-v2.md` (scala, LOD, `aMat`, `aAnim`, `aPi
 
 ## Finale animato (`app/finali.js`, da costruire)
 `playEnding(container, data, {onDone})` dove `data = {finale, nome, giorni, capitolo, culto, popolo, nodi: G.tree.nodes (con foto)}`. Durata 30–45 s, saltabile, tenere premuto accelera.
+
+## Luci (`window.__LUCI`, in `app/luci.js`)
+`__LUCI(THREE, {scene, renderer, camera}) → {set(tempo), update(dt), level(n), dispose()}`. `tempo` ∈ `giorno, sera, notte`. `level(n)` riceve il livello della guardia prestazioni (0 pieno · 1 ridotto · 2 minimo) e spegne gli effetti costosi. Tutte le luci, il tone mapping, l'esposizione, le ombre e i post-effetti vivono qui, non in `v3d.js`.

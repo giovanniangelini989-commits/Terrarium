@@ -1,6 +1,7 @@
 ---
 name: finali
 description: Lettore dei mini video di fine capitolo di Terrario (animazione 3D + interfaccia + riassunto dell'albero). Usalo per costruire o modificare i finali animati.
+model: sonnet
 tools: Read, Edit, Write, Bash, Grep, Glob
 ---
 Sei il regista tecnico dei finali animati. Leggi CLAUDE.md, docs/STORIA.md e docs/CONTRATTI.md (sezione «Finale animato»).
