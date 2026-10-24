@@ -1,0 +1,3669 @@
+{
+ "persona": "curioso",
+ "data": "2026-10-24",
+ "stato_finale": {
+  "d": 57,
+  "vive": [
+   "Formiche",
+   "Mosche",
+   "Coleotteri",
+   "Lumache"
+  ],
+  "needs": {
+   "um": 0.7463999999999994,
+   "ter": 0.8574283509515694,
+   "pul": 0.766
+  },
+  "fase": 4,
+  "cap": 2,
+  "pending": 0
+ },
+ "righe": [
+  {
+   "t": 10,
+   "giorno": 0,
+   "novita": [
+    "testo: Salta ›",
+    "testo: TERRARIO",
+    "testo: Tocca per iniziare",
+    "testo: Meglio con l’audio acceso: il bambino ti racconta la storia a voce.",
+    "testo: Quella notte non riuscivo a dormire.",
+    "testo: Dalla finestra ho visto una stella staccarsi dal cielo.",
+    "testo: Tocca la stella che brilla",
+    "testo: È caduta nel giardino, dietro il gelso. Ha fatto un rumore come di vetro su un tappeto."
+   ],
+   "n_novita": 8,
+   "azioni": [
+    "tocco «Tocca per iniziare»",
+    "tocco lo schermo per andare avanti",
+    "tocco la stella",
+    "tocco la stella",
+    "tocco la stella"
+   ],
+   "da_ultima_risposta_s": 1.7,
+   "da_ultima_novita_s": 0.5,
+   "inviti": []
+  },
+  {
+   "t": 20,
+   "giorno": 0,
+   "novita": [
+    "testo: Era un sasso nero con delle crepe viola. Era caldo. E batteva, piano, come un cuore.",
+    "testo: Tieni premuto sul sasso",
+    "testo: Ho svuotato il barattolo della marmellata. Non ci ho messo niente, solo il sasso."
+   ],
+   "n_novita": 3,
+   "azioni": [
+    "tocco lo schermo per andare avanti",
+    "tengo premuto il sasso 1.2s",
+    "tengo premuto il sasso 1.2s"
+   ],
+   "da_ultima_risposta_s": 3.6,
+   "da_ultima_novita_s": 1.4,
+   "inviti": []
+  },
+  {
+   "t": 30,
+   "giorno": 0,
+   "novita": [
+    "testo: Adesso è vuoto e freddo. La nonna dice che per fare un mondo ci vuole prima la terra, poi ",
+    "testo: Trascina il sasso nel barattolo",
+    "testo: Dove lo metto? Vicino alla finestra il sole lo fa battere più forte. Ma io ho un po’ di pa",
+    "testo: Ombra",
+    "testo: batte piano",
+    "testo: Finestra",
+    "testo: batte regolare",
+    "testo: Sole"
+   ],
+   "n_novita": 10,
+   "azioni": [
+    "tocco lo schermo per andare avanti",
+    "trascino il sasso nel barattolo",
+    "trascino il sasso nel barattolo"
+   ],
+   "da_ultima_risposta_s": 6.9,
+   "da_ultima_novita_s": 1.9,
+   "inviti": []
+  },
+  {
+   "t": 40,
+   "giorno": 0,
+   "novita": [
+    "testo: La nonna dice che le stelle cadute portano un sogno. Il sasso non è un sasso: ascolta.",
+    "testo: Più luce gli dai, più batte. E chi lo tocca, cambia."
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "scelgo dove mettere il barattolo",
+    "tocco «Avanti»",
+    "tocco lo schermo per andare avanti"
+   ],
+   "da_ultima_risposta_s": 2.2,
+   "da_ultima_novita_s": 1.7,
+   "inviti": []
+  },
+  {
+   "t": 50,
+   "giorno": 0,
+   "novita": [
+    "testo: Non so cosa vuole. Credo che voglia essere guardato.",
+    "testo: Tocca il sasso: senti il battito",
+    "testo: Come lo chiamo, il mio piccolo mondo?",
+    "testo: Lumen",
+    "testo: Piccolo Mondo",
+    "testo: Stellina",
+    "testo: Casa",
+    "testo: Chiudi il coperchio"
+   ],
+   "n_novita": 9,
+   "azioni": [
+    "tocco lo schermo per andare avanti",
+    "tocco il sasso",
+    "tocco il sasso",
+    "tocco il sasso",
+    "tocco «Avanti»",
+    "scrivo il nome «Lumen»",
+    "tocco la fine del video"
+   ],
+   "da_ultima_risposta_s": 3.0,
+   "da_ultima_novita_s": 2.0,
+   "inviti": []
+  },
+  {
+   "t": 60,
+   "giorno": 0,
+   "novita": [
+    "testo: Ma tu lo guarderai, vero?",
+    "testo: Il barattolo è vuoto. Ci vuole della terra.",
+    "testo: Metti la terra",
+    "testo: Versi una manciata di terra nel barattolo. Il sasso si scurisce un poco, come se ascoltass",
+    "testo: Bagna la terra"
+   ],
+   "n_novita": 5,
+   "azioni": [
+    "tocco lo schermo per andare avanti",
+    "tocco lo schermo per andare avanti",
+    "tocco lo schermo per andare avanti",
+    "tocco il pulsante grande «🪴 Metti la terra»"
+   ],
+   "da_ultima_risposta_s": 2.7,
+   "da_ultima_novita_s": 1.2,
+   "inviti": [
+    "💧 Bagna la terra"
+   ]
+  },
+  {
+   "t": 70,
+   "giorno": 0,
+   "novita": [
+    "testo: Un filo d’acqua scivola tra le radici. Il vaso beve.",
+    "testo: Apri",
+    "pannello: notifica:Dal bosco dietro casa",
+    "testo: QUALCOSA È ARRIVATO",
+    "testo: Dal bosco dietro casa",
+    "testo: Ho staccato un pezzo di muschio da una pietra umida. Era morbido e freddo, come un animale",
+    "testo: Accogli nel vaso",
+    "testo: Lascia fuori"
+   ],
+   "n_novita": 10,
+   "azioni": [
+    "tocco il pulsante grande «💧 Bagna la terra»"
+   ],
+   "da_ultima_risposta_s": 7.1,
+   "da_ultima_novita_s": 5.6,
+   "inviti": [
+    "Dal bosco dietro casa",
+    "🔔 Apri"
+   ]
+  },
+  {
+   "t": 80,
+   "giorno": 0,
+   "novita": [
+    "testo: GIORNO",
+    "testo: Muschio nel vaso.",
+    "testo: Quaderno ●",
+    "testo: Il vaso ha qualcosa di nuovo.",
+    "pannello: notifica:Una pagina nuova",
+    "testo: ‹ Vaso",
+    "testo: IL MIO QUADERNO",
+    "testo: Albero"
+   ],
+   "n_novita": 17,
+   "azioni": [
+    "tocco «Accogli nel vaso»",
+    "apro la notifica «Una pagina nuova»"
+   ],
+   "da_ultima_risposta_s": 4.0,
+   "da_ultima_novita_s": 3.0,
+   "inviti": [
+    "Il vaso ha qualcosa di nuovo."
+   ]
+  },
+  {
+   "t": 90,
+   "giorno": 0,
+   "novita": [
+    "testo: Quaderno",
+    "testo: Come sta il vaso",
+    "testo: Umidità · 60%",
+    "testo: Va bene. Bagna per rialzarla.",
+    "testo: Terreno · 60%",
+    "testo: Va bene. Aggiungi terra o nutri il suolo.",
+    "testo: Pulizia · 95%",
+    "testo: Va bene. Pulisci il vetro e il fondo."
+   ],
+   "n_novita": 10,
+   "azioni": [
+    "torno al vaso",
+    "tocco il giorno «Come sta il vaso»"
+   ],
+   "da_ultima_risposta_s": 1.4,
+   "da_ultima_novita_s": 0.0,
+   "inviti": [
+    "Passa la notte"
+   ]
+  },
+  {
+   "t": 100,
+   "giorno": 0,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "acqua (barra Umidità al 60%)"
+   ],
+   "da_ultima_risposta_s": 0.8,
+   "da_ultima_novita_s": 10.0,
+   "inviti": [
+    "Passa la notte"
+   ]
+  },
+  {
+   "t": 110,
+   "giorno": 0,
+   "novita": [
+    "testo: Spargi un po’ di terra buona. Qualcuno, sotto, ringrazia."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "nutri (barra Terreno al 60%)",
+    "tocco il vaso a (195,640)",
+    "tocco il vaso a (120,560)",
+    "tocco il vaso a (260,700)",
+    "apro il quaderno"
+   ],
+   "da_ultima_risposta_s": 4.2,
+   "da_ultima_novita_s": 7.8,
+   "inviti": []
+  },
+  {
+   "t": 120,
+   "giorno": 0,
+   "novita": [
+    "testo: Il tronco è il vaso, ogni ramo una specie. ◆ le tue scelte, ○ le strade non prese.",
+    "testo: Il vaso comincia",
+    "testo: Arriva: muschio",
+    "testo: Hai scelto: Lo accogli nel vaso",
+    "testo: Lasciarlo fuori"
+   ],
+   "n_novita": 5,
+   "azioni": [
+    "quaderno: «Albero»"
+   ],
+   "da_ultima_risposta_s": 2.9,
+   "da_ultima_novita_s": 0.0,
+   "inviti": []
+  },
+  {
+   "t": 130,
+   "giorno": 0,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "quaderno: «Pagine»"
+   ],
+   "da_ultima_risposta_s": 0.9,
+   "da_ultima_novita_s": 10.0,
+   "inviti": []
+  },
+  {
+   "t": 140,
+   "giorno": 0,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 10.9,
+   "da_ultima_novita_s": 20.0,
+   "inviti": []
+  },
+  {
+   "t": 150,
+   "giorno": 0,
+   "novita": [
+    "testo: 🌱 Spargi un po’ di terra buona. Qualcuno, sotto, ringrazia.",
+    "testo: 💧 Un filo d’acqua scivola tra le radici. Il vaso beve.",
+    "testo: 🌿 Muschio nel vaso.",
+    "testo: 🪴 Versi una manciata di terra nel barattolo. Il sasso si scurisce un poco, come se ascolta"
+   ],
+   "n_novita": 4,
+   "azioni": [
+    "quaderno: «Cronaca»"
+   ],
+   "da_ultima_risposta_s": 8.9,
+   "da_ultima_novita_s": 5.9,
+   "inviti": []
+  },
+  {
+   "t": 160,
+   "giorno": 0,
+   "novita": [
+    "testo: Non ancora arrivata nel vaso.",
+    "testo: ANOMALIE",
+    "testo: Nessuna ancora."
+   ],
+   "n_novita": 3,
+   "azioni": [
+    "quaderno: «Specie»"
+   ],
+   "da_ultima_risposta_s": 6.9,
+   "da_ultima_novita_s": 3.9,
+   "inviti": []
+  },
+  {
+   "t": 170,
+   "giorno": 0,
+   "novita": [
+    "testo: 0 / 15 finali. Un finale chiude il capitolo, non il vaso.",
+    "testo: QUIETE",
+    "testo: Indizio: Pochi elementi, luce media, niente di speciale da scoprire.",
+    "testo: Indizio: Il sole troppo vicino, o un’acqua sbagliata per chi hai scelto.",
+    "testo: MOSTRI",
+    "testo: Indizio: Un animale solitario, molta radiazione e cibo in abbondanza.",
+    "testo: SOCIETÀ",
+    "testo: Indizio: Un insetto sociale e nessun oggetto."
+   ],
+   "n_novita": 20,
+   "azioni": [
+    "quaderno: «Finali»"
+   ],
+   "da_ultima_risposta_s": 4.9,
+   "da_ultima_novita_s": 1.9,
+   "inviti": []
+  },
+  {
+   "t": 180,
+   "giorno": 0,
+   "novita": [
+    "testo: Ogni finale regala una carta. Le speciali escono il 12% delle volte e una è garantita ogni",
+    "testo: ??? comune",
+    "testo: Non ancora ottenuta.",
+    "testo: Più probabile dopo un finale di: Quiete",
+    "testo: Più probabile dopo un finale di: Mostri, Società",
+    "testo: Più probabile dopo un finale di: Mostri, Conflitti",
+    "testo: Più probabile dopo un finale di: Conflitti",
+    "testo: Più probabile dopo un finale di: Società"
+   ],
+   "n_novita": 12,
+   "azioni": [
+    "quaderno: «Carte»"
+   ],
+   "da_ultima_risposta_s": 2.9,
+   "da_ultima_novita_s": 0.0,
+   "inviti": []
+  },
+  {
+   "t": 190,
+   "giorno": 0,
+   "novita": [
+    "testo: Qualcosa si muove sotto il muschio."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "torno al vaso"
+   ],
+   "da_ultima_risposta_s": 0.9,
+   "da_ultima_novita_s": 0.0,
+   "inviti": [
+    "Passa la notte"
+   ]
+  },
+  {
+   "t": 200,
+   "giorno": 0,
+   "novita": [
+    "testo: Menu",
+    "testo: 🧊 Passa alla vista 3D",
+    "testo: ⏩ Scorri i giorni (demo)",
+    "testo: ⚙️ Impostazioni",
+    "pannello: scheda:Menu",
+    "testo: IMPOSTAZIONI",
+    "testo: AUDIO",
+    "testo: Suoni"
+   ],
+   "n_novita": 42,
+   "azioni": [
+    "apro il menu ⋯"
+   ],
+   "da_ultima_risposta_s": 9.9,
+   "da_ultima_novita_s": 0.0,
+   "inviti": []
+  },
+  {
+   "t": 210,
+   "giorno": 2,
+   "novita": [
+    "testo: STANOTTE",
+    "testo: Sogni il sasso che ti parla. Non capisci le parole, ma sai che ha fame di luce.",
+    "testo: Continua",
+    "pannello: scheda:",
+    "testo: C’è la luna piena. Dal vetro esce una luce verde: il muschio brilla da solo."
+   ],
+   "n_novita": 5,
+   "azioni": [
+    "torno al vaso",
+    "Passa la notte",
+    "chiudo la scheda",
+    "Passa la notte"
+   ],
+   "da_ultima_risposta_s": 1.2,
+   "da_ultima_novita_s": 0.0,
+   "inviti": [
+    "Passa la notte"
+   ]
+  },
+  {
+   "t": 29029,
+   "giorno": 6,
+   "novita": [
+    "testo: L’ombra è fresca e lenta.",
+    "testo: BUONGIORNO",
+    "testo: Una notte tranquilla. Il sasso ha continuato a battere, piano.",
+    "testo: Vai dal bambino",
+    "pannello: scheda:Lumen",
+    "pannello: notifica:Dalla serra della nonna",
+    "testo: Una goccia scivola lungo il vetro.",
+    "testo: Dalla serra della nonna"
+   ],
+   "n_novita": 10,
+   "azioni": [
+    "chiudo la scheda",
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 5.2,
+   "da_ultima_novita_s": 4.6,
+   "inviti": [
+    "Dalla serra della nonna",
+    "Passa la notte"
+   ]
+  },
+  {
+   "t": 29039,
+   "giorno": 6,
+   "novita": [
+    "testo: Hai lasciato la finestra aperta: fa freddo, e il vaso si appanna. Il sasso rallenta."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "tocco «Accogli nel vaso»",
+    "acqua (barra Umidità al 68%)",
+    "tocco il vaso a (195,640)",
+    "tocco il vaso a (120,560)"
+   ],
+   "da_ultima_risposta_s": 3.5,
+   "da_ultima_novita_s": 3.5,
+   "inviti": [
+    "Passa la notte"
+   ]
+  },
+  {
+   "t": 29049,
+   "giorno": 6,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "tocco il vaso a (260,700)",
+    "apro il quaderno"
+   ],
+   "da_ultima_risposta_s": 8.4,
+   "da_ultima_novita_s": 13.5,
+   "inviti": []
+  },
+  {
+   "t": 29059,
+   "giorno": 6,
+   "novita": [
+    "testo: Arriva: felce",
+    "testo: Nel vaso cresce: felce"
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "quaderno: «Albero»"
+   ],
+   "da_ultima_risposta_s": 7.1,
+   "da_ultima_novita_s": 4.1,
+   "inviti": []
+  },
+  {
+   "t": 29069,
+   "giorno": 6,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "quaderno: «Pagine»"
+   ],
+   "da_ultima_risposta_s": 5.1,
+   "da_ultima_novita_s": 14.1,
+   "inviti": []
+  },
+  {
+   "t": 29079,
+   "giorno": 6,
+   "novita": [
+    "testo: ☄️ Il sasso si quieta.",
+    "testo: 🍃 Felce nel vaso.",
+    "testo: ☄️ Il sasso si carica di colpo."
+   ],
+   "n_novita": 3,
+   "azioni": [
+    "quaderno: «Cronaca»"
+   ],
+   "da_ultima_risposta_s": 3.1,
+   "da_ultima_novita_s": 0.1,
+   "inviti": []
+  },
+  {
+   "t": 29089,
+   "giorno": 6,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "quaderno: «Specie»"
+   ],
+   "da_ultima_risposta_s": 1.1,
+   "da_ultima_novita_s": 10.1,
+   "inviti": []
+  },
+  {
+   "t": 29099,
+   "giorno": 6,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 11.1,
+   "da_ultima_novita_s": 20.1,
+   "inviti": []
+  },
+  {
+   "t": 29109,
+   "giorno": 6,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "quaderno: «Finali»"
+   ],
+   "da_ultima_risposta_s": 9.1,
+   "da_ultima_novita_s": 30.1,
+   "inviti": []
+  },
+  {
+   "t": 29119,
+   "giorno": 6,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "quaderno: «Carte»"
+   ],
+   "da_ultima_risposta_s": 7.1,
+   "da_ultima_novita_s": 40.1,
+   "inviti": []
+  },
+  {
+   "t": 29129,
+   "giorno": 6,
+   "novita": [
+    "testo: Il tempo, qui dentro, passa in un altro modo."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "torno al vaso",
+    "apro il menu ⋯",
+    "menu: «⚙️ Impostazioni»"
+   ],
+   "da_ultima_risposta_s": 2.6,
+   "da_ultima_novita_s": 4.1,
+   "inviti": []
+  },
+  {
+   "t": 29139,
+   "giorno": 6,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso",
+    "apro il menu ⋯"
+   ],
+   "da_ultima_risposta_s": 0.6,
+   "da_ultima_novita_s": 14.1,
+   "inviti": [
+    "Passa la notte"
+   ]
+  },
+  {
+   "t": 29149,
+   "giorno": 7,
+   "novita": [
+    "testo: Dal giardino",
+    "testo: Una formica ha seguito l’odore della terra bagnata fino al barattolo. Dietro di lei, altre",
+    "pannello: scheda:Dal giardino",
+    "pannello: notifica:Dal giardino"
+   ],
+   "n_novita": 4,
+   "azioni": [
+    "menu: «Scorri i giorni (demo)»"
+   ],
+   "da_ultima_risposta_s": 9.6,
+   "da_ultima_novita_s": 8.6,
+   "inviti": [
+    "Dal giardino",
+    "Passa la notte"
+   ]
+  },
+  {
+   "t": 29159,
+   "giorno": 8,
+   "novita": [
+    "testo: Le formiche entrano nel vaso, e per un momento tutto il resto si ferma a guardare.",
+    "pannello: notifica:Ti è venuta un’idea",
+    "creatura: Formiche",
+    "testo: Una notte passa. Il sasso batte, il muschio respira."
+   ],
+   "n_novita": 4,
+   "azioni": [
+    "tocco «Accogli nel vaso»",
+    "fermo lo scorrimento (NON toccabile)",
+    "Passa la notte"
+   ],
+   "da_ultima_risposta_s": 1.3,
+   "da_ultima_novita_s": 0.0,
+   "inviti": [
+    "Ti è venuta un’idea",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 29169,
+   "giorno": 9,
+   "novita": [
+    "testo: All’alba vedi una formica sola in cima alla felce. Guarda verso la finestra, immobile.",
+    "testo: TI È VENUTA UN’IDEA",
+    "testo: Oggi voglio sapere cosa fanno quando nessuno guarda. Guardiamo insieme?",
+    "testo: Osserva il vaso"
+   ],
+   "n_novita": 4,
+   "azioni": [
+    "Passa la notte",
+    "chiudo la scheda",
+    "apro la notifica «Ti è venuta un’idea»"
+   ],
+   "da_ultima_risposta_s": 2.3,
+   "da_ultima_novita_s": 1.3,
+   "inviti": [
+    "Ti è venuta un’idea",
+    "Osserva",
+    "Osserva il vaso"
+   ]
+  },
+  {
+   "t": 29179,
+   "giorno": 9,
+   "novita": [
+    "testo: Tocca per continuare",
+    "pannello: zoom",
+    "testo: Ti avvicini a guardare le formiche. Esplorano il muschio, una briciola alla volta, senza f",
+    "testo: NEL VASO",
+    "testo: Formiche",
+    "testo: Sono circa 12 →",
+    "testo: Si arrangiano",
+    "testo: Cercano molta luce e ambiente asciutto."
+   ],
+   "n_novita": 11,
+   "azioni": [
+    "tocco «Osserva il vaso»",
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 1.5,
+   "da_ultima_novita_s": 1.0,
+   "inviti": []
+  },
+  {
+   "t": 29189,
+   "giorno": 9,
+   "novita": [
+    "testo: Ora sei Curioso",
+    "testo: Il vaso ti sembra un po’ più tuo.",
+    "testo: Bene",
+    "pannello: scheda:Ora sei Curioso"
+   ],
+   "n_novita": 4,
+   "azioni": [
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 2.2,
+   "da_ultima_novita_s": 1.6,
+   "inviti": []
+  },
+  {
+   "t": 58005,
+   "giorno": 13,
+   "novita": [
+    "testo: Un’ombra grande passa sul vetro. Era solo la tua mano, ma dentro si sono nascosti tutti."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "chiudo la scheda",
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 5.2,
+   "da_ultima_novita_s": 4.6,
+   "inviti": [
+    "Ti è venuta un’idea",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 58015,
+   "giorno": 13,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "apro la notifica «Ti è venuta un’idea»"
+   ],
+   "da_ultima_risposta_s": 8.4,
+   "da_ultima_novita_s": 14.6,
+   "inviti": []
+  },
+  {
+   "t": 58025,
+   "giorno": 13,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 8.9,
+   "da_ultima_novita_s": 24.6,
+   "inviti": []
+  },
+  {
+   "t": 58035,
+   "giorno": 13,
+   "novita": [
+    "testo: Vitalità · 62%",
+    "testo: Quanto stanno bene piante e creature.",
+    "testo: Meteorite · 44%",
+    "testo: Più è carico, più cambia chi lo tocca.",
+    "testo: CHI CI VIVE",
+    "testo: 14 →"
+   ],
+   "n_novita": 6,
+   "azioni": [
+    "chiudo la scheda",
+    "tocco il giorno «Come sta il vaso»"
+   ],
+   "da_ultima_risposta_s": 8.9,
+   "da_ultima_novita_s": 7.4,
+   "inviti": []
+  },
+  {
+   "t": 58045,
+   "giorno": 13,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "apro il gruppo «🐜 Formiche 14 →»"
+   ],
+   "da_ultima_risposta_s": 1.7,
+   "da_ultima_novita_s": 17.4,
+   "inviti": []
+  },
+  {
+   "t": 58055,
+   "giorno": 13,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "nutri (barra Terreno al 55%)"
+   ],
+   "da_ultima_risposta_s": 1.1,
+   "da_ultima_novita_s": 27.4,
+   "inviti": []
+  },
+  {
+   "t": 58065,
+   "giorno": 13,
+   "novita": [
+    "testo: Passi il dito sul vetro: la condensa si apre come una finestra."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "acqua (barra Umidità al 66%)",
+    "pulisci (barra Pulizia al 67%)",
+    "tocco Osserva",
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 2.6,
+   "da_ultima_novita_s": 6.6,
+   "inviti": []
+  },
+  {
+   "t": 58075,
+   "giorno": 13,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "tocco il vaso a (195,640)",
+    "tocco il vaso a (120,560)",
+    "tocco il vaso a (260,700)"
+   ],
+   "da_ultima_risposta_s": 1.5,
+   "da_ultima_novita_s": 16.6,
+   "inviti": []
+  },
+  {
+   "t": 58085,
+   "giorno": 13,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "apro il quaderno"
+   ],
+   "da_ultima_risposta_s": 9.1,
+   "da_ultima_novita_s": 26.6,
+   "inviti": []
+  },
+  {
+   "t": 58095,
+   "giorno": 13,
+   "novita": [
+    "testo: Arriva: formiche",
+    "testo: Arrivano formiche"
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "quaderno: «Albero»"
+   ],
+   "da_ultima_risposta_s": 7.8,
+   "da_ultima_novita_s": 4.8,
+   "inviti": []
+  },
+  {
+   "t": 58105,
+   "giorno": 13,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "quaderno: «Pagine»"
+   ],
+   "da_ultima_risposta_s": 5.8,
+   "da_ultima_novita_s": 14.8,
+   "inviti": []
+  },
+  {
+   "t": 58115,
+   "giorno": 13,
+   "novita": [
+    "testo: 🧽 Passi il dito sul vetro: la condensa si apre come una finestra.",
+    "testo: 🐜 Le formiche entrano nel vaso, e per un momento tutto il resto si ferma a guardare."
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "quaderno: «Cronaca»"
+   ],
+   "da_ultima_risposta_s": 3.8,
+   "da_ultima_novita_s": 0.8,
+   "inviti": []
+  },
+  {
+   "t": 58125,
+   "giorno": 13,
+   "novita": [
+    "testo: Sociali e adattabili: le più portate a farsi una società."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "quaderno: «Specie»"
+   ],
+   "da_ultima_risposta_s": 1.8,
+   "da_ultima_novita_s": 0.0,
+   "inviti": []
+  },
+  {
+   "t": 58135,
+   "giorno": 13,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 11.8,
+   "da_ultima_novita_s": 10.0,
+   "inviti": []
+  },
+  {
+   "t": 58145,
+   "giorno": 13,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "quaderno: «Finali»"
+   ],
+   "da_ultima_risposta_s": 9.8,
+   "da_ultima_novita_s": 20.0,
+   "inviti": []
+  },
+  {
+   "t": 58155,
+   "giorno": 13,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "quaderno: «Carte»"
+   ],
+   "da_ultima_risposta_s": 7.8,
+   "da_ultima_novita_s": 30.0,
+   "inviti": []
+  },
+  {
+   "t": 58165,
+   "giorno": 13,
+   "novita": [
+    "testo: 🌳 Albero del vaso",
+    "testo: 📓 Quaderno"
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "torno al vaso",
+    "apro il menu ⋯",
+    "menu: «🌳 Albero del vaso»"
+   ],
+   "da_ultima_risposta_s": 3.3,
+   "da_ultima_novita_s": 3.3,
+   "inviti": []
+  },
+  {
+   "t": 58175,
+   "giorno": 14,
+   "novita": [
+    "testo: BISCOTTO · LO SGUARDO",
+    "testo: Biscotto è salito sulla scrivania. Non si muove: fissa le formiche con gli occhi enormi.",
+    "testo: Lo prendi e lo porti via",
+    "testo: Lo lasci guardare"
+   ],
+   "n_novita": 4,
+   "azioni": [
+    "torno al vaso",
+    "Passa la notte"
+   ],
+   "da_ultima_risposta_s": 1.3,
+   "da_ultima_novita_s": 0.0,
+   "inviti": []
+  },
+  {
+   "t": 58185,
+   "giorno": 14,
+   "novita": [
+    "testo: Per un’ora intera Biscotto e le formiche si guardano. Nessuno sbatte le palpebre."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "scelgo «Lo lasci guardare»"
+   ],
+   "da_ultima_risposta_s": 2.1,
+   "da_ultima_novita_s": 0.9,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 58195,
+   "giorno": 15,
+   "novita": [
+    "testo: Fuori piove forte. Il vetro trema a ogni tuono e dentro si forma la condensa."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "chiudo la scheda",
+    "Passa la notte"
+   ],
+   "da_ultima_risposta_s": 4.8,
+   "da_ultima_novita_s": 3.3,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 58205,
+   "giorno": 15,
+   "novita": [
+    "testo: Biscotto · Lo sguardo",
+    "testo: Hai scelto: Lo lasci guardare"
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "chiudo la scheda",
+    "apro la notifica «Una pagina nuova»"
+   ],
+   "da_ultima_risposta_s": 7.6,
+   "da_ultima_novita_s": 6.6,
+   "inviti": []
+  },
+  {
+   "t": 58215,
+   "giorno": 15,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso",
+    "apro la notifica «Una pagina nuova»"
+   ],
+   "da_ultima_risposta_s": 5.0,
+   "da_ultima_novita_s": 16.6,
+   "inviti": []
+  },
+  {
+   "t": 58225,
+   "giorno": 15,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso",
+    "apro la notifica «Una pagina nuova»"
+   ],
+   "da_ultima_risposta_s": 2.4,
+   "da_ultima_novita_s": 26.6,
+   "inviti": []
+  },
+  {
+   "t": 58235,
+   "giorno": 15,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso"
+   ],
+   "da_ultima_risposta_s": 0.6,
+   "da_ultima_novita_s": 36.6,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 58245,
+   "giorno": 15,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "apro la notifica «Una pagina nuova»"
+   ],
+   "da_ultima_risposta_s": 9.8,
+   "da_ultima_novita_s": 46.6,
+   "inviti": []
+  },
+  {
+   "t": 87062,
+   "giorno": 19,
+   "novita": [
+    "testo: Le formiche stanno male: qui dentro è troppo umido.",
+    "pannello: notifica:Dalla finestra",
+    "testo: Dalla finestra",
+    "testo: Una mosca è entrata e ha sbattuto sul vetro per un’ora. Poi ne sono arrivate altre. Le fac",
+    "pannello: scheda:Dalla finestra"
+   ],
+   "n_novita": 5,
+   "azioni": [
+    "torno al vaso (NON toccabile)",
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 5.8,
+   "da_ultima_novita_s": 5.2,
+   "inviti": [
+    "Dalla finestra",
+    "Ti è venuta un’idea",
+    "Una pagina nuova",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 87072,
+   "giorno": 19,
+   "novita": [
+    "testo: Le mosche entrano nel vaso, e per un momento tutto il resto si ferma a guardare.",
+    "creatura: Mosche",
+    "testo: Sul comodino c’è un biglietto della nonna: «Domani ti porto una cosa per il tuo mondo»."
+   ],
+   "n_novita": 3,
+   "azioni": [
+    "tocco «Accogli nel vaso»"
+   ],
+   "da_ultima_risposta_s": 6.2,
+   "da_ultima_novita_s": 5.0,
+   "inviti": [
+    "Dalla serra della nonna",
+    "Ti è venuta un’idea",
+    "Una pagina nuova",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 87082,
+   "giorno": 19,
+   "novita": [
+    "testo: La nonna mi ha dato un cestino: dentro, dei funghi piccolissimi. Dice che amano il buio e "
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 9.4,
+   "da_ultima_novita_s": 8.8,
+   "inviti": [
+    "Dalla serra della nonna",
+    "Ti è venuta un’idea",
+    "Una pagina nuova",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 87092,
+   "giorno": 19,
+   "novita": [
+    "testo: Funghi nel vaso.",
+    "testo: Ti avvicini a guardare le mosche. Esplorano il muschio, una briciola alla volta, senza fre"
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "tocco «Accogli nel vaso»",
+    "apro la notifica «Ti è venuta un’idea»",
+    "tocco «Osserva il vaso»"
+   ],
+   "da_ultima_risposta_s": 1.7,
+   "da_ultima_novita_s": 0.0,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 87102,
+   "giorno": 19,
+   "novita": [
+    "testo: Mosche",
+    "testo: Stanno bene qui",
+    "testo: Cercano mezza luce e umidità media.",
+    "pannello: scheda:Mosche"
+   ],
+   "n_novita": 4,
+   "azioni": [
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 7.5,
+   "da_ultima_novita_s": 7.0,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 87112,
+   "giorno": 19,
+   "novita": [
+    "testo: Biscotto è salito sulla scrivania. Non si muove: fissa le formiche con gli occhi enormi. P"
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "chiudo la scheda",
+    "apro la notifica «Una pagina nuova»"
+   ],
+   "da_ultima_risposta_s": 9.1,
+   "da_ultima_novita_s": 8.1,
+   "inviti": []
+  },
+  {
+   "t": 87122,
+   "giorno": 19,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso",
+    "tocco il vaso a (195,640)",
+    "tocco il vaso a (120,560)",
+    "tocco il vaso a (260,700)",
+    "apro il quaderno"
+   ],
+   "da_ultima_risposta_s": 2.9,
+   "da_ultima_novita_s": 18.1,
+   "inviti": []
+  },
+  {
+   "t": 87132,
+   "giorno": 19,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 12.9,
+   "da_ultima_novita_s": 28.1,
+   "inviti": []
+  },
+  {
+   "t": 87142,
+   "giorno": 19,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso",
+    "apro il menu ⋯",
+    "menu: «📓 Quaderno»"
+   ],
+   "da_ultima_risposta_s": 5.4,
+   "da_ultima_novita_s": 38.1,
+   "inviti": []
+  },
+  {
+   "t": 87152,
+   "giorno": 20,
+   "novita": [
+    "testo: Una stella cade fuori dalla finestra. Il sasso, dentro, batte una volta più forte."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "torno al vaso",
+    "Passa la notte (NON toccabile)"
+   ],
+   "da_ultima_risposta_s": 4.4,
+   "da_ultima_novita_s": 1.9,
+   "inviti": []
+  },
+  {
+   "t": 115972,
+   "giorno": 25,
+   "novita": [
+    "testo: Il sasso batte forte. Tutto il vaso lo sente.",
+    "testo: Senti un graffio leggero sul vetro. Accendi la torcia?",
+    "testo: Accendi la torcia",
+    "testo: Lascia stare"
+   ],
+   "n_novita": 4,
+   "azioni": [
+    "chiudo la scheda",
+    "Passa la notte",
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 5.2,
+   "da_ultima_novita_s": 4.6,
+   "inviti": [
+    "Ti è venuta un’idea",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 115982,
+   "giorno": 25,
+   "novita": [
+    "testo: Torni a dormire. Il graffio continua, piano, fino all’alba."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "scelgo «Lascia stare»",
+    "chiudo la scheda",
+    "apro la notifica «Ti è venuta un’idea»"
+   ],
+   "da_ultima_risposta_s": 3.8,
+   "da_ultima_novita_s": 8.3,
+   "inviti": [
+    "Ti è venuta un’idea",
+    "Una pagina nuova",
+    "Osserva",
+    "Osserva il vaso"
+   ]
+  },
+  {
+   "t": 115992,
+   "giorno": 25,
+   "novita": [
+    "testo: Sono circa 19 ↗ · 1 generazioni"
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "tocco «Osserva il vaso»",
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 3.0,
+   "da_ultima_novita_s": 2.5,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 116002,
+   "giorno": 25,
+   "novita": [
+    "testo: Una notte",
+    "testo: Senti un graffio leggero sul vetro. Accendi la torcia? Torni a dormire. Il graffio continu"
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "chiudo la scheda",
+    "apro la notifica «Una pagina nuova»"
+   ],
+   "da_ultima_risposta_s": 2.4,
+   "da_ultima_novita_s": 1.4,
+   "inviti": []
+  },
+  {
+   "t": 116012,
+   "giorno": 25,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso"
+   ],
+   "da_ultima_risposta_s": 0.6,
+   "da_ultima_novita_s": 11.4,
+   "inviti": []
+  },
+  {
+   "t": 116022,
+   "giorno": 25,
+   "novita": [
+    "testo: 19 ↗"
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "tocco il giorno «Come sta il vaso»"
+   ],
+   "da_ultima_risposta_s": 9.8,
+   "da_ultima_novita_s": 8.3,
+   "inviti": []
+  },
+  {
+   "t": 116032,
+   "giorno": 25,
+   "novita": [
+    "testo: Sono circa 23 → · 1 generazioni"
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "apro il gruppo «🪰 Mosche 23 →»"
+   ],
+   "da_ultima_risposta_s": 1.6,
+   "da_ultima_novita_s": 0.4,
+   "inviti": []
+  },
+  {
+   "t": 116042,
+   "giorno": 25,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "nutri (barra Terreno al 51%)",
+    "acqua (barra Umidità al 55%)"
+   ],
+   "da_ultima_risposta_s": 0.3,
+   "da_ultima_novita_s": 10.4,
+   "inviti": []
+  },
+  {
+   "t": 116052,
+   "giorno": 25,
+   "novita": [
+    "testo: Il sasso batte forte. Le crepe viola pulsano a ritmo con qualcosa che non è nel vaso, ma d"
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "tocco Osserva",
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 4.8,
+   "da_ultima_novita_s": 7.8,
+   "inviti": []
+  },
+  {
+   "t": 116062,
+   "giorno": 25,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "tocco il vaso a (195,640)",
+    "tocco il vaso a (120,560)",
+    "tocco il vaso a (260,700)",
+    "apro il quaderno"
+   ],
+   "da_ultima_risposta_s": 0.5,
+   "da_ultima_novita_s": 17.8,
+   "inviti": []
+  },
+  {
+   "t": 116072,
+   "giorno": 25,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 10.5,
+   "da_ultima_novita_s": 27.8,
+   "inviti": []
+  },
+  {
+   "t": 116082,
+   "giorno": 25,
+   "novita": [
+    "testo: Arriva: mosche",
+    "testo: Arrivano mosche",
+    "testo: Arriva: funghi",
+    "testo: Nel vaso cresce: funghi",
+    "testo: Una notte: Senti un graffio leggero sul vetro",
+    "testo: Hai scelto: Lascia stare"
+   ],
+   "n_novita": 6,
+   "azioni": [
+    "torno al vaso",
+    "apro il menu ⋯",
+    "menu: «🌳 Albero del vaso»"
+   ],
+   "da_ultima_risposta_s": 3.0,
+   "da_ultima_novita_s": 1.0,
+   "inviti": []
+  },
+  {
+   "t": 116092,
+   "giorno": 26,
+   "novita": [
+    "testo: IMPREVISTO",
+    "testo: Biscotto!",
+    "testo: Un’ombra sul muro. Poi una zampa sul coperchio. Biscotto ha deciso che il barattolo è suo.",
+    "testo: Lancia la pallina",
+    "testo: gratis · può non funzionare",
+    "testo: Sposta il vaso sul davanzale",
+    "testo: sicuro · più sole, il sasso batte più forte",
+    "pannello: scheda:Biscotto!"
+   ],
+   "n_novita": 8,
+   "azioni": [
+    "torno al vaso",
+    "Passa la notte"
+   ],
+   "da_ultima_risposta_s": 1.0,
+   "da_ultima_novita_s": 0.0,
+   "inviti": []
+  },
+  {
+   "t": 116102,
+   "giorno": 26,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 11.0,
+   "da_ultima_novita_s": 10.0,
+   "inviti": []
+  },
+  {
+   "t": 116112,
+   "giorno": 26,
+   "novita": [
+    "testo: Che botta",
+    "testo: Biscotto ignora la pallina e dà una zampata al coperchio. Il barattolo cade sul ripiano. N",
+    "pannello: scheda:Che botta"
+   ],
+   "n_novita": 3,
+   "azioni": [
+    "scelgo «Lancia la pallina gratis · può»"
+   ],
+   "da_ultima_risposta_s": 8.4,
+   "da_ultima_novita_s": 7.2,
+   "inviti": []
+  },
+  {
+   "t": 116122,
+   "giorno": 27,
+   "novita": [
+    "testo: Tocchi il vetro sopra il sasso: è caldo, come una tazza appena riempita."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "chiudo la scheda",
+    "Passa la notte",
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 1.7,
+   "da_ultima_novita_s": 6.6,
+   "inviti": []
+  },
+  {
+   "t": 144934,
+   "giorno": 29,
+   "novita": [
+    "pannello: notifica:Qualcosa sta succedendo",
+    "testo: Il sasso ha toccato le formiche. Qualcosa, in loro, sta per cambiare.",
+    "testo: UNA MUTAZIONE",
+    "testo: Le formiche: radioattività.",
+    "testo: Tollerano la radiazione e sono tossiche per i predatori. Il tempo è sospeso finché scegli.",
+    "testo: Proteggili",
+    "testo: si fissa, e gli dai una mano",
+    "testo: Riportali com’erano"
+   ],
+   "n_novita": 12,
+   "azioni": [
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 2.2,
+   "da_ultima_novita_s": 1.7,
+   "inviti": [
+    "Qualcosa sta succedendo",
+    "Ti è venuta un’idea",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 144944,
+   "giorno": 29,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 12.2,
+   "da_ultima_novita_s": 11.7,
+   "inviti": [
+    "Qualcosa sta succedendo",
+    "Ti è venuta un’idea",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 144954,
+   "giorno": 31,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "apro la notifica «Ti è venuta un’idea»"
+   ],
+   "da_ultima_risposta_s": 2.8,
+   "da_ultima_novita_s": 21.7,
+   "inviti": [
+    "Ti è venuta un’idea",
+    "Osserva",
+    "Osserva il vaso"
+   ]
+  },
+  {
+   "t": 144964,
+   "giorno": 31,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "tocco «Osserva il vaso»",
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 2.0,
+   "da_ultima_novita_s": 31.7,
+   "inviti": []
+  },
+  {
+   "t": 144974,
+   "giorno": 31,
+   "novita": [
+    "testo: Ora sei Osservatore",
+    "pannello: scheda:Ora sei Osservatore"
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 2.0,
+   "da_ultima_novita_s": 1.4,
+   "inviti": []
+  },
+  {
+   "t": 144984,
+   "giorno": 31,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "pulisci (barra Pulizia al 62%)",
+    "nutri (barra Terreno al 65%)",
+    "acqua (barra Umidità al 66%)",
+    "tocco il vaso a (195,640)",
+    "tocco il vaso a (120,560)",
+    "tocco il vaso a (260,700)"
+   ],
+   "da_ultima_risposta_s": 4.7,
+   "da_ultima_novita_s": 11.4,
+   "inviti": []
+  },
+  {
+   "t": 144994,
+   "giorno": 31,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "apro il quaderno"
+   ],
+   "da_ultima_risposta_s": 9.6,
+   "da_ultima_novita_s": 21.4,
+   "inviti": []
+  },
+  {
+   "t": 145004,
+   "giorno": 31,
+   "novita": [
+    "testo: Una decisione nel vaso",
+    "testo: Hai scelto: rimuovi",
+    "testo: Separarli"
+   ],
+   "n_novita": 3,
+   "azioni": [
+    "torno al vaso",
+    "apro il menu ⋯"
+   ],
+   "da_ultima_risposta_s": 3.6,
+   "da_ultima_novita_s": 0.0,
+   "inviti": []
+  },
+  {
+   "t": 145014,
+   "giorno": 32,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso",
+    "Passa la notte"
+   ],
+   "da_ultima_risposta_s": 2.1,
+   "da_ultima_novita_s": 10.0,
+   "inviti": []
+  },
+  {
+   "t": 145024,
+   "giorno": 33,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "Passa la notte"
+   ],
+   "da_ultima_risposta_s": 4.6,
+   "da_ultima_novita_s": 20.0,
+   "inviti": []
+  },
+  {
+   "t": 173841,
+   "giorno": 37,
+   "novita": [
+    "pannello: notifica:Dal tavolo del bambino",
+    "testo: Dal tavolo del bambino",
+    "testo: Il bambino ti lascia due cose sul tavolo: il mio orso di stoffa, e uno specchietto che fa ",
+    "testo: Tieni 🧸 giocattolo",
+    "testo: Tieni 🪞 specchio",
+    "pannello: scheda:Dal tavolo del bambino"
+   ],
+   "n_novita": 6,
+   "azioni": [
+    "chiudo la scheda",
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 5.2,
+   "da_ultima_novita_s": 4.6,
+   "inviti": [
+    "Dal tavolo del bambino",
+    "Ti è venuta un’idea",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 173851,
+   "giorno": 37,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "tocco «Tieni 🧸 giocattolo»"
+   ],
+   "da_ultima_risposta_s": 2.9,
+   "da_ultima_novita_s": 14.6,
+   "inviti": [
+    "Ti è venuta un’idea",
+    "Osserva",
+    "Il vaso ha qualcosa di nuovo."
+   ]
+  },
+  {
+   "t": 173861,
+   "giorno": 37,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "apro la notifica «Ti è venuta un’idea»"
+   ],
+   "da_ultima_risposta_s": 6.1,
+   "da_ultima_novita_s": 24.6,
+   "inviti": [
+    "Ti è venuta un’idea",
+    "Osserva",
+    "Osserva il vaso"
+   ]
+  },
+  {
+   "t": 173871,
+   "giorno": 37,
+   "novita": [
+    "testo: Serie di 7 giorni: hai guadagnato una protezione.",
+    "testo: Soffrono qui"
+   ],
+   "n_novita": 2,
+   "azioni": [],
+   "da_ultima_risposta_s": 16.1,
+   "da_ultima_novita_s": 6.5,
+   "inviti": []
+  },
+  {
+   "t": 173881,
+   "giorno": 37,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "tocco il giorno «Come sta il vaso»"
+   ],
+   "da_ultima_risposta_s": 6.4,
+   "da_ultima_novita_s": 16.5,
+   "inviti": []
+  },
+  {
+   "t": 173891,
+   "giorno": 37,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 16.4,
+   "da_ultima_novita_s": 26.5,
+   "inviti": []
+  },
+  {
+   "t": 173901,
+   "giorno": 37,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "apro il gruppo «🪰 Mosche 34 ↗»"
+   ],
+   "da_ultima_risposta_s": 8.3,
+   "da_ultima_novita_s": 36.5,
+   "inviti": []
+  },
+  {
+   "t": 173911,
+   "giorno": 37,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "tocco Osserva",
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 4.5,
+   "da_ultima_novita_s": 46.5,
+   "inviti": []
+  },
+  {
+   "t": 173921,
+   "giorno": 37,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "tocco il vaso a (195,640)",
+    "tocco il vaso a (120,560)"
+   ],
+   "da_ultima_risposta_s": 2.7,
+   "da_ultima_novita_s": 56.5,
+   "inviti": []
+  },
+  {
+   "t": 173931,
+   "giorno": 37,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "tocco il vaso a (260,700)",
+    "apro il quaderno"
+   ],
+   "da_ultima_risposta_s": 0.2,
+   "da_ultima_novita_s": 66.5,
+   "inviti": []
+  },
+  {
+   "t": 173941,
+   "giorno": 37,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 10.2,
+   "da_ultima_novita_s": 76.5,
+   "inviti": []
+  },
+  {
+   "t": 173951,
+   "giorno": 37,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso",
+    "apro il menu ⋯",
+    "menu: «📓 Quaderno»"
+   ],
+   "da_ultima_risposta_s": 2.7,
+   "da_ultima_novita_s": 86.5,
+   "inviti": []
+  },
+  {
+   "t": 173961,
+   "giorno": 38,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso",
+    "Passa la notte"
+   ],
+   "da_ultima_risposta_s": 0.7,
+   "da_ultima_novita_s": 96.5,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 173971,
+   "giorno": 38,
+   "novita": [
+    "testo: Le formiche si fermano più spesso. Guardano. Come se avessero capito che c’è un vetro.",
+    "testo: Sono circa 18 ↘ · 2 generazioni",
+    "testo: Intelligenza"
+   ],
+   "n_novita": 3,
+   "azioni": [
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 6.2,
+   "da_ultima_novita_s": 5.7,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 173981,
+   "giorno": 38,
+   "novita": [
+    "testo: BISCOTTO · IL REGALO",
+    "testo: Biscotto ti lascia un regalo sul cuscino: un coleottero vivo, un po’ stordito.",
+    "testo: Lo metti nel vaso",
+    "testo: Lo riporti in giardino"
+   ],
+   "n_novita": 4,
+   "azioni": [
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 5.5,
+   "da_ultima_novita_s": 4.9,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 173991,
+   "giorno": 38,
+   "novita": [
+    "testo: Il coleottero esplora il muschio. Biscotto ti guarda, fiero.",
+    "creatura: Coleotteri"
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "scelgo «Lo metti nel vaso»",
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 2.0,
+   "da_ultima_novita_s": 6.5,
+   "inviti": [
+    "2"
+   ]
+  },
+  {
+   "t": 174001,
+   "giorno": 39,
+   "novita": [
+    "testo: Il sasso ha toccato le mosche. Qualcosa, in loro, sta per cambiare.",
+    "testo: Le mosche: gigantismo.",
+    "testo: Dimensioni ×1,8, più aggressive, ma servono più risorse. Il tempo è sospeso finché scegli.",
+    "pannello: scheda:Le mosche"
+   ],
+   "n_novita": 4,
+   "azioni": [
+    "chiudo la scheda",
+    "Passa la notte",
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 1.2,
+   "da_ultima_novita_s": 0.7,
+   "inviti": [
+    "Qualcosa sta succedendo",
+    "2"
+   ]
+  },
+  {
+   "t": 174011,
+   "giorno": 39,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 11.2,
+   "da_ultima_novita_s": 10.7,
+   "inviti": [
+    "Qualcosa sta succedendo",
+    "2"
+   ]
+  },
+  {
+   "t": 174021,
+   "giorno": 39,
+   "novita": [
+    "testo: Troppo grande",
+    "testo: Una creatura ha preso più posto del dovuto. Quando la guardo dal vetro, mi guarda anche le",
+    "testo: Biscotto · Il regalo",
+    "testo: Biscotto ti lascia un regalo sul cuscino: un coleottero vivo, un po’ stordito. Il coleotte",
+    "testo: Qualcosa è cambiato",
+    "testo: Oggi una creatura era diversa. Non so spiegarlo: aveva un altro modo di camminare. Il sass"
+   ],
+   "n_novita": 6,
+   "azioni": [
+    "scelgo «Lascia fare può non succedere »",
+    "apro la notifica «Una pagina nuova»"
+   ],
+   "da_ultima_risposta_s": 6.8,
+   "da_ultima_novita_s": 5.8,
+   "inviti": []
+  },
+  {
+   "t": 202841,
+   "giorno": 43,
+   "novita": [
+    "pannello: notifica:Dopo la pioggia"
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "torno al vaso",
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 5.2,
+   "da_ultima_novita_s": 4.6,
+   "inviti": [
+    "Dopo la pioggia",
+    "Ti è venuta un’idea",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 202851,
+   "giorno": 43,
+   "novita": [
+    "testo: Dopo la pioggia",
+    "testo: Due lumache hanno lasciato una scia d’argento fino al coperchio. Hanno l’aria di chi ha tu",
+    "pannello: scheda:Dopo la pioggia"
+   ],
+   "n_novita": 3,
+   "azioni": [
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 9.0,
+   "da_ultima_novita_s": 8.4,
+   "inviti": [
+    "Dopo la pioggia",
+    "Ti è venuta un’idea",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 202861,
+   "giorno": 43,
+   "novita": [
+    "testo: Le lumache entrano nel vaso, e per un momento tutto il resto si ferma a guardare.",
+    "creatura: Lumache",
+    "testo: La creatura più grande occupa quasi metà del vetro. Quando ti avvicini, si ferma. Ti guard"
+   ],
+   "n_novita": 3,
+   "azioni": [
+    "tocco «Accogli nel vaso»",
+    "apro la notifica «Ti è venuta un’idea»",
+    "tocco «Osserva il vaso»"
+   ],
+   "da_ultima_risposta_s": 1.7,
+   "da_ultima_novita_s": 0.0,
+   "inviti": []
+  },
+  {
+   "t": 202871,
+   "giorno": 43,
+   "novita": [
+    "testo: Uno di loro è cresciuto troppo.",
+    "testo: Gigantismo"
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 7.5,
+   "da_ultima_novita_s": 7.0,
+   "inviti": []
+  },
+  {
+   "t": 202881,
+   "giorno": 43,
+   "novita": [
+    "testo: Il vetro è sempre più vicino."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "chiudo la scheda",
+    "acqua (barra Umidità al 57%)",
+    "nutri (barra Terreno al 61%)",
+    "tocco il vaso a (195,640)",
+    "tocco il vaso a (120,560)",
+    "tocco il vaso a (260,700)"
+   ],
+   "da_ultima_risposta_s": 4.5,
+   "da_ultima_novita_s": 6.0,
+   "inviti": []
+  },
+  {
+   "t": 202891,
+   "giorno": 43,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "apro il quaderno"
+   ],
+   "da_ultima_risposta_s": 9.4,
+   "da_ultima_novita_s": 16.0,
+   "inviti": []
+  },
+  {
+   "t": 202901,
+   "giorno": 43,
+   "novita": [
+    "testo: Il sasso è quasi quieto. Dorme."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "torno al vaso",
+    "apro il menu ⋯",
+    "menu: «📓 Quaderno»"
+   ],
+   "da_ultima_risposta_s": 1.9,
+   "da_ultima_novita_s": 3.4,
+   "inviti": []
+  },
+  {
+   "t": 202911,
+   "giorno": 43,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso"
+   ],
+   "da_ultima_risposta_s": 0.9,
+   "da_ultima_novita_s": 13.4,
+   "inviti": []
+  },
+  {
+   "t": 202921,
+   "giorno": 44,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "Passa la notte",
+    "scelgo «Lascia stare»"
+   ],
+   "da_ultima_risposta_s": 3.3,
+   "da_ultima_novita_s": 23.4,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 202931,
+   "giorno": 45,
+   "novita": [
+    "testo: Il sasso fa tre lampi uno dopo l’altro, tutti verso il giocattolo."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "chiudo la scheda",
+    "Passa la notte",
+    "chiudo la scheda",
+    "apro la notifica «Una pagina nuova»"
+   ],
+   "da_ultima_risposta_s": 1.0,
+   "da_ultima_novita_s": 6.1,
+   "inviti": []
+  },
+  {
+   "t": 202941,
+   "giorno": 45,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 11.0,
+   "da_ultima_novita_s": 16.1,
+   "inviti": []
+  },
+  {
+   "t": 231756,
+   "giorno": 49,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso",
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 5.2,
+   "da_ultima_novita_s": 10.0,
+   "inviti": [
+    "Ti è venuta un’idea",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 231766,
+   "giorno": 49,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "apro la notifica «Ti è venuta un’idea»",
+    "tocco «Osserva il vaso»"
+   ],
+   "da_ultima_risposta_s": 2.0,
+   "da_ultima_novita_s": 20.0,
+   "inviti": []
+  },
+  {
+   "t": 231776,
+   "giorno": 49,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 7.8,
+   "da_ultima_novita_s": 30.0,
+   "inviti": []
+  },
+  {
+   "t": 231786,
+   "giorno": 49,
+   "novita": [
+    "testo: 32 ↘ · 👹",
+    "testo: Coleotteri",
+    "testo: Lumache"
+   ],
+   "n_novita": 3,
+   "azioni": [
+    "chiudo la scheda",
+    "tocco il giorno «Come sta il vaso»"
+   ],
+   "da_ultima_risposta_s": 6.3,
+   "da_ultima_novita_s": 4.8,
+   "inviti": []
+  },
+  {
+   "t": 231796,
+   "giorno": 49,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 16.3,
+   "da_ultima_novita_s": 14.8,
+   "inviti": []
+  },
+  {
+   "t": 231806,
+   "giorno": 49,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "apro il gruppo «🪰 Mosche 32 ↘ · 👹»"
+   ],
+   "da_ultima_risposta_s": 6.0,
+   "da_ultima_novita_s": 24.8,
+   "inviti": []
+  },
+  {
+   "t": 231816,
+   "giorno": 49,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "acqua (barra Umidità al 61%)",
+    "pulisci (barra Pulizia al 62%)",
+    "tocco Osserva"
+   ],
+   "da_ultima_risposta_s": 0.8,
+   "da_ultima_novita_s": 34.8,
+   "inviti": []
+  },
+  {
+   "t": 231826,
+   "giorno": 49,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 6.8,
+   "da_ultima_novita_s": 44.8,
+   "inviti": []
+  },
+  {
+   "t": 231836,
+   "giorno": 49,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "tocco il vaso a (195,640)",
+    "tocco il vaso a (120,560)",
+    "tocco il vaso a (260,700)",
+    "apro il quaderno"
+   ],
+   "da_ultima_risposta_s": 1.8,
+   "da_ultima_novita_s": 54.8,
+   "inviti": []
+  },
+  {
+   "t": 231846,
+   "giorno": 49,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 11.8,
+   "da_ultima_novita_s": 64.8,
+   "inviti": []
+  },
+  {
+   "t": 231856,
+   "giorno": 49,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso",
+    "apro il menu ⋯",
+    "menu: «⚙️ Impostazioni»"
+   ],
+   "da_ultima_risposta_s": 4.3,
+   "da_ultima_novita_s": 74.8,
+   "inviti": []
+  },
+  {
+   "t": 231866,
+   "giorno": 50,
+   "novita": [
+    "testo: BISCOTTO · LA NOTTE DI BISCOTTO",
+    "testo: Stanotte Biscotto dorme acciambellato contro il vaso. Il sasso batte più piano, come se lo",
+    "testo: Lo lasci lì",
+    "testo: Lo porti nel tuo letto"
+   ],
+   "n_novita": 4,
+   "azioni": [
+    "torno al vaso",
+    "Passa la notte"
+   ],
+   "da_ultima_risposta_s": 2.3,
+   "da_ultima_novita_s": 0.8,
+   "inviti": []
+  },
+  {
+   "t": 231876,
+   "giorno": 50,
+   "novita": [
+    "testo: Al mattino il vetro è caldo dove c’era lui. Il sasso è tranquillo."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "scelgo «Lo lasci lì»"
+   ],
+   "da_ultima_risposta_s": 2.4,
+   "da_ultima_novita_s": 1.2,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 231886,
+   "giorno": 50,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 5.9,
+   "da_ultima_novita_s": 11.2,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 231896,
+   "giorno": 51,
+   "novita": [
+    "testo: Biscotto · La notte di Biscotto",
+    "testo: Stanotte Biscotto dorme acciambellato contro il vaso. Il sasso batte più piano, come se lo"
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "chiudo la scheda",
+    "Passa la notte",
+    "chiudo la scheda",
+    "apro la notifica «Una pagina nuova»"
+   ],
+   "da_ultima_risposta_s": 2.0,
+   "da_ultima_novita_s": 1.0,
+   "inviti": []
+  },
+  {
+   "t": 231906,
+   "giorno": 51,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso"
+   ],
+   "da_ultima_risposta_s": 0.2,
+   "da_ultima_novita_s": 11.0,
+   "inviti": []
+  },
+  {
+   "t": 260721,
+   "giorno": 55,
+   "novita": [
+    "testo: Il vaso è fermo, come dopo un lungo respiro. Qualcosa è arrivato alla fine.",
+    "pannello: notifica:Un finale ti aspetta"
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "tocco per chiudere lo zoom",
+    "chiudo la scheda"
+   ],
+   "da_ultima_risposta_s": 1.2,
+   "da_ultima_novita_s": 10.0,
+   "inviti": [
+    "Un finale ti aspetta",
+    "Ti è venuta un’idea",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 260731,
+   "giorno": 55,
+   "novita": [
+    "testo: Ora sei Custode",
+    "pannello: scheda:Ora sei Custode"
+   ],
+   "n_novita": 2,
+   "azioni": [
+    "chiudo la scheda",
+    "chiudo la scheda",
+    "apro la notifica «Un finale ti aspetta»"
+   ],
+   "da_ultima_risposta_s": 1.4,
+   "da_ultima_novita_s": 4.9,
+   "inviti": [
+    "Un finale ti aspetta",
+    "Ti è venuta un’idea",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 260741,
+   "giorno": 55,
+   "novita": [
+    "testo: Sono circa 17 ↗",
+    "testo: Cercano ombra e molta umidità.",
+    "testo: FINALE · MOSTRI",
+    "testo: Il Gigante",
+    "testo: Una sola creatura ha preso tutto il posto. Quando la guardo, mi guarda. Non so se ha fame ",
+    "testo: Una sola specie cresce oltre misura e domina il vaso.",
+    "pannello: scheda:Lumache",
+    "pannello: rivelazione"
+   ],
+   "n_novita": 8,
+   "azioni": [
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 7.4,
+   "da_ultima_novita_s": 6.9,
+   "inviti": [
+    "Un finale ti aspetta",
+    "Ti è venuta un’idea",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 260751,
+   "giorno": 55,
+   "novita": [
+    "testo: Chiudi il capitolo?",
+    "testo: Il finale va nel Libro dei finali. Il vaso continua, se vuoi.",
+    "testo: Chiudi il capitolo",
+    "testo: Non ancora",
+    "pannello: scheda:Chiudi il capitolo?",
+    "testo: HAI OTTENUTO UNA CARTA",
+    "testo: Ombra fresca",
+    "testo: comune"
+   ],
+   "n_novita": 12,
+   "azioni": [
+    "tocco «continua» nella rivelazione"
+   ],
+   "da_ultima_risposta_s": 7.8,
+   "da_ultima_novita_s": 1.3,
+   "inviti": [
+    "Ti è venuta un’idea",
+    "Una pagina nuova",
+    "Osserva"
+   ]
+  },
+  {
+   "t": 260761,
+   "giorno": 55,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "prendo la carta",
+    "apro la notifica «Ti è venuta un’idea»"
+   ],
+   "da_ultima_risposta_s": 2.4,
+   "da_ultima_novita_s": 11.3,
+   "inviti": [
+    "Ti è venuta un’idea",
+    "Una pagina nuova",
+    "Osserva",
+    "Osserva il vaso"
+   ]
+  },
+  {
+   "t": 260771,
+   "giorno": 55,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "tocco «Osserva il vaso»",
+    "tocco per chiudere lo zoom"
+   ],
+   "da_ultima_risposta_s": 1.7,
+   "da_ultima_novita_s": 21.3,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 260781,
+   "giorno": 55,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "apro la notifica «Una pagina nuova»"
+   ],
+   "da_ultima_risposta_s": 0.2,
+   "da_ultima_novita_s": 31.3,
+   "inviti": []
+  },
+  {
+   "t": 260791,
+   "giorno": 55,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 10.2,
+   "da_ultima_novita_s": 41.3,
+   "inviti": []
+  },
+  {
+   "t": 260801,
+   "giorno": 55,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso",
+    "nutri (barra Terreno al 57%)",
+    "tocco il vaso a (195,640)",
+    "tocco il vaso a (120,560)",
+    "tocco il vaso a (260,700)",
+    "apro il quaderno"
+   ],
+   "da_ultima_risposta_s": 2.5,
+   "da_ultima_novita_s": 51.3,
+   "inviti": []
+  },
+  {
+   "t": 260811,
+   "giorno": 55,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [],
+   "da_ultima_risposta_s": 12.5,
+   "da_ultima_novita_s": 61.3,
+   "inviti": []
+  },
+  {
+   "t": 260821,
+   "giorno": 55,
+   "novita": [
+    "testo: 🃏 Asso nella manica · 1",
+    "testo: ASSO NELLA MANICA",
+    "testo: Il tuo mazzo",
+    "testo: Ombra fresca comune",
+    "testo: Gioca",
+    "pannello: scheda:Il tuo mazzo"
+   ],
+   "n_novita": 6,
+   "azioni": [
+    "torno al vaso",
+    "apro il menu ⋯",
+    "menu: «🃏 Asso nella manica · 1»"
+   ],
+   "da_ultima_risposta_s": 5.0,
+   "da_ultima_novita_s": 3.0,
+   "inviti": []
+  },
+  {
+   "t": 260831,
+   "giorno": 55,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "tocco «Gioca»"
+   ],
+   "da_ultima_risposta_s": 0.1,
+   "da_ultima_novita_s": 13.0,
+   "inviti": []
+  },
+  {
+   "t": 260841,
+   "giorno": 55,
+   "novita": [
+    "pannello: scheda:Coleotteri"
+   ],
+   "n_novita": 1,
+   "azioni": [],
+   "da_ultima_risposta_s": 10.1,
+   "da_ultima_novita_s": 5.9,
+   "inviti": []
+  },
+  {
+   "t": 260851,
+   "giorno": 56,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "chiudo la scheda",
+    "torno al vaso (NON toccabile)",
+    "Passa la notte"
+   ],
+   "da_ultima_risposta_s": 6.1,
+   "da_ultima_novita_s": 15.9,
+   "inviti": []
+  },
+  {
+   "t": 260861,
+   "giorno": 57,
+   "novita": [
+    "testo: Una fila di formiche lavora al buio. Non si fermano neanche per te."
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "chiudo la scheda",
+    "Passa la notte",
+    "scelgo «Accendi la torcia»"
+   ],
+   "da_ultima_risposta_s": 1.8,
+   "da_ultima_novita_s": 0.6,
+   "inviti": [
+    "Una pagina nuova"
+   ]
+  },
+  {
+   "t": 260871,
+   "giorno": 57,
+   "novita": [
+    "testo: Senti un graffio leggero sul vetro. Accendi la torcia? Una fila di formiche lavora al buio"
+   ],
+   "n_novita": 1,
+   "azioni": [
+    "chiudo la scheda",
+    "apro la notifica «Una pagina nuova»"
+   ],
+   "da_ultima_risposta_s": 5.8,
+   "da_ultima_novita_s": 4.8,
+   "inviti": []
+  },
+  {
+   "t": 260881,
+   "giorno": 57,
+   "novita": [],
+   "n_novita": 0,
+   "azioni": [
+    "torno al vaso"
+   ],
+   "da_ultima_risposta_s": 4.0,
+   "da_ultima_novita_s": 14.8,
+   "inviti": []
+  }
+ ],
+ "linea_del_tempo": [
+  [
+   3,
+   0,
+   "video: scena «cielo»"
+  ],
+  [
+   9,
+   0,
+   "video: scena «giardino»"
+  ],
+  [
+   18,
+   0,
+   "video: scena «barattolo»"
+  ],
+  [
+   28,
+   0,
+   "video: scena «luce»"
+  ],
+  [
+   33,
+   0,
+   "video: scena «legenda»"
+  ],
+  [
+   44,
+   0,
+   "video: scena «nome»"
+  ],
+  [
+   55,
+   0,
+   "video finito, si entra nel gioco"
+  ],
+  [
+   55,
+   0,
+   "visita 1: giorno del vaso 0, bisogni {'um': 0, 'ter': 0, 'pul': 95}, vivono []"
+  ],
+  [
+   74,
+   0,
+   "scheda «Dal bosco dietro casa»: tocco «Accogli nel vaso» (altre opzioni: ['Lascia fuori', 'Dopo'])"
+  ],
+  [
+   98,
+   0,
+   "scheda «Come sta il vaso»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   191,
+   0,
+   "menu: 🧊 Passa alla vista 3D / ⏩ Scorri i giorni (demo) / ⚙️ Impostazioni"
+  ],
+  [
+   208,
+   1,
+   "scheda «STANOTTE ·  · 💤 ·  · Sogni il sasso che»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   215,
+   2,
+   "scheda «STANOTTE ·  · 🌕 ·  · C’è la luna piena.»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   219,
+   2,
+   "fine visita 1: giorno del vaso 2, bisogni {'um': 80, 'ter': 88, 'pul': 88}, vivono [], durata 164 s"
+  ],
+  [
+   29019,
+   6,
+   "riapro il gioco dopo 1 giorno/i"
+  ],
+  [
+   29019,
+   6,
+   "visita 2: giorno del vaso 6, bisogni {'um': 62, 'ter': 76, 'pul': 84}, vivono []"
+  ],
+  [
+   29024,
+   6,
+   "scheda «Lumen»: la chiudo (opzioni viste: ['Vai dal bambino'])"
+  ],
+  [
+   29035,
+   6,
+   "scheda «Dalla serra della nonna»: tocco «Accogli nel vaso» (altre opzioni: ['Lascia fuori', 'Dopo'])"
+  ],
+  [
+   29127,
+   6,
+   "menu: 🧊 Passa alla vista 3D / ⏩ Scorri i giorni (demo) / ⚙️ Impostazioni"
+  ],
+  [
+   29156,
+   7,
+   "scheda «Dal giardino»: tocco «Accogli nel vaso» (altre opzioni: ['Lascia fuori', 'Dopo'])"
+  ],
+  [
+   29158,
+   7,
+   "ho provato lo scorrimento veloce: giorni 6 → 7"
+  ],
+  [
+   29167,
+   9,
+   "scheda «STANOTTE ·  · 🌅 ·  · All’alba vedi una f»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   29174,
+   9,
+   "scheda «TI È VENUTA UN’IDEA ·  · Oggi voglio sap»: tocco «Osserva il vaso» (altre opzioni: ['Dopo'])"
+  ],
+  [
+   29178,
+   9,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   29187,
+   9,
+   "scheda «Formiche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   29191,
+   9,
+   "scheda «Ora sei Curioso»: la chiudo (opzioni viste: ['Bene'])"
+  ],
+  [
+   29195,
+   9,
+   "fine visita 2: giorno del vaso 9, bisogni {'um': 84, 'ter': 67, 'pul': 74}, vivono ['Formiche'], durata 175 s"
+  ],
+  [
+   57995,
+   13,
+   "riapro il gioco dopo 1 giorno/i"
+  ],
+  [
+   57995,
+   13,
+   "visita 3: giorno del vaso 13, bisogni {'um': 66, 'ter': 54, 'pul': 67}, vivono ['Formiche']"
+  ],
+  [
+   58000,
+   13,
+   "scheda «Lumen»: la chiudo (opzioni viste: ['Vai dal bambino'])"
+  ],
+  [
+   58006,
+   13,
+   "scheda «STANOTTE ·  · ✋ ·  · Un’ombra grande pas»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   58013,
+   13,
+   "scheda «TI È VENUTA UN’IDEA ·  · Oggi voglio sap»: tocco «Osserva il vaso» (altre opzioni: ['Dopo'])"
+  ],
+  [
+   58016,
+   13,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   58026,
+   13,
+   "scheda «Formiche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   58044,
+   13,
+   "scheda «Come sta il vaso»: apro il gruppo «🐜 Formiche 14 →»"
+  ],
+  [
+   58063,
+   13,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   58072,
+   13,
+   "scheda «Formiche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   58162,
+   13,
+   "menu: 🧊 Passa alla vista 3D / ⏩ Scorri i giorni (demo) / 🌳 Albero del vaso / 📓 Quaderno / ⚙️ Impostazioni"
+  ],
+  [
+   58183,
+   14,
+   "scheda «BISCOTTO · LO SGUARDO ·  · 🐈 ·  · Biscot»: scelgo «Lo lasci guardare» fra ['Lo prendi e lo porti via', 'Lo lasci guardare']"
+  ],
+  [
+   58190,
+   14,
+   "scheda «BISCOTTO · LO SGUARDO ·  · Per un’ora in»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   58197,
+   15,
+   "scheda «STANOTTE ·  · ⛈️ ·  · Fuori piove forte.»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   58252,
+   15,
+   "fine visita 3: giorno del vaso 15, bisogni {'um': 100, 'ter': 83, 'pul': 93}, vivono ['Formiche'], durata 256 s"
+  ],
+  [
+   87052,
+   19,
+   "riapro il gioco dopo 1 giorno/i"
+  ],
+  [
+   87052,
+   19,
+   "visita 4: giorno del vaso 19, bisogni {'um': 81, 'ter': 70, 'pul': 80}, vivono ['Formiche']"
+  ],
+  [
+   87056,
+   19,
+   "scheda «Lumen»: la chiudo (opzioni viste: ['Vai dal bambino'])"
+  ],
+  [
+   87066,
+   19,
+   "scheda «Dalla finestra»: tocco «Accogli nel vaso» (altre opzioni: ['Lascia fuori', 'Dopo'])"
+  ],
+  [
+   87073,
+   19,
+   "scheda «STANOTTE ·  · ✉️ ·  · Sul comodino c’è u»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   87083,
+   19,
+   "scheda «Dalla serra della nonna»: tocco «Accogli nel vaso» (altre opzioni: ['Lascia fuori', 'Dopo'])"
+  ],
+  [
+   87090,
+   19,
+   "scheda «TI È VENUTA UN’IDEA ·  · Oggi voglio sap»: tocco «Osserva il vaso» (altre opzioni: ['Dopo'])"
+  ],
+  [
+   87095,
+   19,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   87102,
+   19,
+   "scheda «Mosche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   87137,
+   19,
+   "menu: 🧊 Passa alla vista 3D / ⏩ Scorri i giorni (demo) / 🌳 Albero del vaso / 📓 Quaderno / ⚙️ Impostazioni"
+  ],
+  [
+   87155,
+   20,
+   "scheda «STANOTTE ·  · 🌠 ·  · Una stella cade fuo»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   87162,
+   21,
+   "fine visita 4: giorno del vaso 21, bisogni {'um': 72, 'ter': 64, 'pul': 73}, vivono ['Formiche', 'Mosche'], durata 109 s"
+  ],
+  [
+   115962,
+   25,
+   "riapro il gioco dopo 1 giorno/i"
+  ],
+  [
+   115962,
+   25,
+   "visita 5: giorno del vaso 25, bisogni {'um': 54, 'ter': 50, 'pul': 72}, vivono ['Formiche', 'Mosche']"
+  ],
+  [
+   115966,
+   25,
+   "scheda «Lumen»: la chiudo (opzioni viste: ['Vai dal bambino'])"
+  ],
+  [
+   115972,
+   25,
+   "scheda «STANOTTE ·  · 🔦 ·  · Senti un graffio le»: scelgo «Lascia stare» fra ['Accendi la torcia', 'Lascia stare']"
+  ],
+  [
+   115977,
+   25,
+   "scheda «STANOTTE ·  · Torni a dormire. Il graffi»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   115984,
+   25,
+   "scheda «TI È VENUTA UN’IDEA ·  · Oggi voglio sap»: tocco «Osserva il vaso» (altre opzioni: ['Dopo'])"
+  ],
+  [
+   115989,
+   25,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   115999,
+   25,
+   "scheda «Formiche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   116030,
+   25,
+   "scheda «Come sta il vaso»: apro il gruppo «🪰 Mosche 23 →»"
+  ],
+  [
+   116047,
+   25,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   116057,
+   25,
+   "scheda «Formiche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   116079,
+   25,
+   "menu: 🧊 Passa alla vista 3D / ⏩ Scorri i giorni (demo) / 🌳 Albero del vaso / 📓 Quaderno / ⚙️ Impostazioni"
+  ],
+  [
+   116103,
+   26,
+   "scheda «Biscotto!»: scelgo «Lancia la pallina gratis · può non funzionare» fra ['Lancia la pallina gratis · può non funzionare', 'Sposta il vaso sul davanzale sicuro · più sole, il sasso bat']"
+  ],
+  [
+   116113,
+   26,
+   "scheda «Che botta»: la chiudo (opzioni viste: ['Ok'])"
+  ],
+  [
+   116120,
+   27,
+   "scheda «STANOTTE ·  · ♨️ ·  · Tocchi il vetro so»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   116124,
+   27,
+   "fine visita 5: giorno del vaso 27, bisogni {'um': 76, 'ter': 78, 'pul': 65}, vivono ['Formiche', 'Mosche'], durata 162 s"
+  ],
+  [
+   144924,
+   29,
+   "riapro il gioco dopo 1 giorno/i"
+  ],
+  [
+   144924,
+   29,
+   "visita 6: giorno del vaso 29, bisogni {'um': 68, 'ter': 71, 'pul': 62}, vivono ['Formiche', 'Mosche']"
+  ],
+  [
+   144929,
+   29,
+   "scheda «Lumen»: la chiudo (opzioni viste: ['Vai dal bambino'])"
+  ],
+  [
+   144932,
+   29,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   144946,
+   29,
+   "scheda «UNA MUTAZIONE ·  · 🐜 ·  · Le formiche: r»: scelgo «Riportali com’erano ci riproveranno più tardi» fra ['Proteggili si fissa, e gli dai una mano', 'Riportali com’erano ci riproveranno più tardi', 'Lascia fare può non succedere niente']"
+  ],
+  [
+   144951,
+   31,
+   "scheda «STANOTTE ·  · 🪟 ·  · Hai lasciato la fin»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   144958,
+   31,
+   "scheda «TI È VENUTA UN’IDEA ·  · Oggi voglio sap»: tocco «Osserva il vaso» (altre opzioni: ['Dopo'])"
+  ],
+  [
+   144962,
+   31,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   144972,
+   31,
+   "scheda «Formiche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   144976,
+   31,
+   "scheda «Ora sei Osservatore»: la chiudo (opzioni viste: ['Bene'])"
+  ],
+  [
+   145002,
+   31,
+   "menu: 🧊 Passa alla vista 3D / ⏩ Scorri i giorni (demo) / 🌳 Albero del vaso / 📓 Quaderno / ⚙️ Impostazioni"
+  ],
+  [
+   145019,
+   32,
+   "scheda «STANOTTE ·  · 🌅 ·  · All’alba vedi una f»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   145026,
+   33,
+   "scheda «STANOTTE ·  · ⛈️ ·  · Fuori piove forte.»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   145031,
+   33,
+   "fine visita 6: giorno del vaso 33, bisogni {'um': 100, 'ter': 93, 'pul': 93}, vivono ['Formiche', 'Mosche'], durata 106 s"
+  ],
+  [
+   173831,
+   37,
+   "riapro il gioco dopo 1 giorno/i"
+  ],
+  [
+   173831,
+   37,
+   "visita 7: giorno del vaso 37, bisogni {'um': 84, 'ter': 81, 'pul': 80}, vivono ['Formiche', 'Mosche']"
+  ],
+  [
+   173836,
+   37,
+   "scheda «Lumen»: la chiudo (opzioni viste: ['Vai dal bambino'])"
+  ],
+  [
+   173848,
+   37,
+   "scheda «Dal tavolo del bambino»: tocco «Tieni 🧸 giocattolo» (altre opzioni: ['Tieni 🪞 specchio', 'Lascia fuori', 'Dopo'])"
+  ],
+  [
+   173854,
+   37,
+   "scheda «STANOTTE ·  · 🌕 ·  · C’è la luna piena.»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   173862,
+   37,
+   "scheda «TI È VENUTA UN’IDEA ·  · Oggi voglio sap»: tocco «Osserva il vaso» (altre opzioni: ['Dopo'])"
+  ],
+  [
+   173865,
+   37,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   173874,
+   37,
+   "scheda «Formiche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   173893,
+   37,
+   "scheda «Come sta il vaso»: apro il gruppo «🪰 Mosche 34 ↗»"
+  ],
+  [
+   173907,
+   37,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   173917,
+   37,
+   "scheda «Formiche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   173929,
+   37,
+   "scheda «Formiche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   173948,
+   37,
+   "menu: 🧊 Passa alla vista 3D / ⏩ Scorri i giorni (demo) / 🌳 Albero del vaso / 📓 Quaderno / ⚙️ Impostazioni"
+  ],
+  [
+   173965,
+   38,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   173976,
+   38,
+   "scheda «Formiche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   173983,
+   38,
+   "scheda «BISCOTTO · IL REGALO ·  · 🐈 ·  · Biscott»: scelgo «Lo metti nel vaso» fra ['Lo metti nel vaso', 'Lo riporti in giardino']"
+  ],
+  [
+   173989,
+   38,
+   "scheda «BISCOTTO · IL REGALO ·  · Il coleottero»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   173995,
+   38,
+   "scheda «STANOTTE ·  · 💤 ·  · Sogni il sasso che»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   174000,
+   39,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   174013,
+   39,
+   "scheda «UNA MUTAZIONE ·  · 🪰 ·  · Le mosche: gig»: scelgo «Lascia fare può non succedere niente» fra ['Proteggili si fissa, e gli dai una mano', 'Riportali com’erano ci riproveranno più tardi', 'Lascia fare può non succedere niente']"
+  ],
+  [
+   174031,
+   39,
+   "fine visita 7: giorno del vaso 39, bisogni {'um': 75, 'ter': 74, 'pul': 73}, vivono ['Formiche', 'Mosche', 'Coleotteri'], durata 199 s"
+  ],
+  [
+   202831,
+   43,
+   "riapro il gioco dopo 1 giorno/i"
+  ],
+  [
+   202831,
+   43,
+   "visita 8: giorno del vaso 43, bisogni {'um': 57, 'ter': 60, 'pul': 72}, vivono ['Formiche', 'Mosche', 'Coleotteri']"
+  ],
+  [
+   202836,
+   43,
+   "scheda «Lumen»: la chiudo (opzioni viste: ['Vai dal bambino'])"
+  ],
+  [
+   202842,
+   43,
+   "scheda «STANOTTE ·  · ✉️ ·  · Sul comodino c’è u»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   202851,
+   43,
+   "scheda «Dopo la pioggia»: tocco «Accogli nel vaso» (altre opzioni: ['Lascia fuori', 'Dopo'])"
+  ],
+  [
+   202859,
+   43,
+   "scheda «TI È VENUTA UN’IDEA ·  · Oggi voglio sap»: tocco «Osserva il vaso» (altre opzioni: ['Dopo'])"
+  ],
+  [
+   202863,
+   43,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   202874,
+   43,
+   "scheda «Mosche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   202899,
+   43,
+   "menu: 🧊 Passa alla vista 3D / ⏩ Scorri i giorni (demo) / 🌳 Albero del vaso / 📓 Quaderno / ⚙️ Impostazioni"
+  ],
+  [
+   202917,
+   44,
+   "scheda «STANOTTE ·  · 🔦 ·  · Senti un graffio le»: scelgo «Lascia stare» fra ['Accendi la torcia', 'Lascia stare']"
+  ],
+  [
+   202923,
+   44,
+   "scheda «STANOTTE ·  · Torni a dormire. Il graffi»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   202929,
+   45,
+   "scheda «STANOTTE ·  · ⚡ ·  · Il sasso fa tre lam»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   202946,
+   45,
+   "fine visita 8: giorno del vaso 45, bisogni {'um': 78, 'ter': 93, 'pul': 65}, vivono ['Formiche', 'Mosche', 'Coleotteri', 'Lumache'], durata 115 s"
+  ],
+  [
+   231746,
+   49,
+   "riapro il gioco dopo 1 giorno/i"
+  ],
+  [
+   231746,
+   49,
+   "visita 9: giorno del vaso 49, bisogni {'um': 60, 'ter': 78, 'pul': 61}, vivono ['Formiche', 'Mosche', 'Coleotteri', 'Lumache']"
+  ],
+  [
+   231751,
+   49,
+   "scheda «Lumen»: la chiudo (opzioni viste: ['Vai dal bambino'])"
+  ],
+  [
+   231757,
+   49,
+   "scheda «STANOTTE ·  · 🌅 ·  · All’alba vedi una f»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   231764,
+   49,
+   "scheda «TI È VENUTA UN’IDEA ·  · Oggi voglio sap»: tocco «Osserva il vaso» (altre opzioni: ['Dopo'])"
+  ],
+  [
+   231769,
+   49,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   231780,
+   49,
+   "scheda «Mosche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   231800,
+   49,
+   "scheda «Come sta il vaso»: apro il gruppo «🪰 Mosche 32 ↘ · 👹»"
+  ],
+  [
+   231820,
+   49,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   231830,
+   49,
+   "scheda «Mosche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   231852,
+   49,
+   "menu: 🧊 Passa alla vista 3D / ⏩ Scorri i giorni (demo) / 🌳 Albero del vaso / 📓 Quaderno / ⚙️ Impostazioni"
+  ],
+  [
+   231874,
+   50,
+   "scheda «BISCOTTO · LA NOTTE DI BISCOTTO ·  · 🐈 ·»: scelgo «Lo lasci lì» fra ['Lo lasci lì', 'Lo porti nel tuo letto']"
+  ],
+  [
+   231881,
+   50,
+   "scheda «BISCOTTO · LA NOTTE DI BISCOTTO ·  · Al»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   231886,
+   50,
+   "scheda «STANOTTE ·  · 🪟 ·  · Hai lasciato la fin»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   231894,
+   51,
+   "scheda «STANOTTE ·  · 🌠 ·  · Una stella cade fuo»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   231911,
+   51,
+   "fine visita 9: giorno del vaso 51, bisogni {'um': 86, 'ter': 72, 'pul': 93}, vivono ['Formiche', 'Mosche', 'Coleotteri', 'Lumache'], durata 164 s"
+  ],
+  [
+   260711,
+   55,
+   "riapro il gioco dopo 1 giorno/i"
+  ],
+  [
+   260711,
+   55,
+   "visita 10: giorno del vaso 55, bisogni {'um': 68, 'ter': 58, 'pul': 83}, vivono ['Formiche', 'Mosche', 'Coleotteri', 'Lumache']"
+  ],
+  [
+   260714,
+   55,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   260720,
+   55,
+   "scheda «Lumen»: la chiudo (opzioni viste: ['Vai dal bambino'])"
+  ],
+  [
+   260726,
+   55,
+   "scheda «STANOTTE ·  · ⛈️ ·  · Fuori piove forte.»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   260729,
+   55,
+   "scheda «Ora sei Custode»: la chiudo (opzioni viste: ['Bene'])"
+  ],
+  [
+   260734,
+   55,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   260750,
+   55,
+   "scheda «Chiudi il capitolo?»: tocco «Chiudi il capitolo» (altre opzioni: ['Non ancora'])"
+  ],
+  [
+   260765,
+   55,
+   "scheda «TI È VENUTA UN’IDEA ·  · Oggi voglio sap»: tocco «Osserva il vaso» (altre opzioni: ['Dopo'])"
+  ],
+  [
+   260769,
+   55,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   260780,
+   55,
+   "scheda «Mosche»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   260816,
+   55,
+   "menu: 🧊 Passa alla vista 3D / ⏩ Scorri i giorni (demo) / 🌳 Albero del vaso / 📓 Quaderno / 🃏 Asso nella manica · 1 / ⚙️ Impostazioni"
+  ],
+  [
+   260831,
+   55,
+   "scheda «Il tuo mazzo»: tocco «Gioca» (altre opzioni: ['Chiudi'])"
+  ],
+  [
+   260835,
+   55,
+   "zoom sul vaso (Osserva)"
+  ],
+  [
+   260843,
+   55,
+   "scheda «Coleotteri»: la chiudo (opzioni viste: ['Chiudi'])"
+  ],
+  [
+   260852,
+   56,
+   "scheda «STANOTTE ·  · ✋ ·  · Un’ombra grande pas»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   260859,
+   57,
+   "scheda «STANOTTE ·  · 🔦 ·  · Senti un graffio le»: scelgo «Accendi la torcia» fra ['Accendi la torcia', 'Lascia stare']"
+  ],
+  [
+   260865,
+   57,
+   "scheda «STANOTTE ·  · Una fila di formiche lavor»: la chiudo (opzioni viste: ['Continua'])"
+  ],
+  [
+   260882,
+   57,
+   "fine visita 10: giorno del vaso 57, bisogni {'um': 74, 'ter': 85, 'pul': 76}, vivono ['Formiche', 'Mosche', 'Coleotteri', 'Lumache'], durata 170 s"
+  ]
+ ],
+ "segnalazioni": [
+  {
+   "t": 74,
+   "giorno": 0,
+   "tipo": "bello",
+   "testo": "«Dal bosco dietro casa»: qualcosa di nuovo arriva nel vaso",
+   "schermata": "screenshots/giocatore/2026-10-24-curioso-01-bello-momento.png"
+  },
+  {
+   "t": 29035,
+   "giorno": 6,
+   "tipo": "bello",
+   "testo": "«Dalla serra della nonna»: qualcosa di nuovo arriva nel vaso",
+   "schermata": "screenshots/giocatore/2026-10-24-curioso-02-bello-momento.png"
+  },
+  {
+   "t": 29109,
+   "giorno": 6,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 29119,
+   "giorno": 6,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 29156,
+   "giorno": 7,
+   "tipo": "bello",
+   "testo": "«Dal giardino»: qualcosa di nuovo arriva nel vaso",
+   "schermata": null
+  },
+  {
+   "t": 29157,
+   "giorno": 7,
+   "tipo": "frustrazione",
+   "testo": "non riesco a toccare «fermo lo scorrimento» (sopra c'è: CANVAS.)",
+   "schermata": "screenshots/giocatore/2026-10-24-curioso-03-frustrazione.png"
+  },
+  {
+   "t": 58245,
+   "giorno": 15,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 58247,
+   "giorno": 15,
+   "tipo": "frustrazione",
+   "testo": "non riesco a toccare «torno al vaso» (sopra c'è: CANVAS.)",
+   "schermata": "screenshots/giocatore/2026-10-24-curioso-04-frustrazione.png"
+  },
+  {
+   "t": 87066,
+   "giorno": 19,
+   "tipo": "bello",
+   "testo": "«Dalla finestra»: qualcosa di nuovo arriva nel vaso",
+   "schermata": null
+  },
+  {
+   "t": 87142,
+   "giorno": 19,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 87149,
+   "giorno": 20,
+   "tipo": "frustrazione",
+   "testo": "non riesco a toccare «Passa la notte» (qualcosa ci sta sopra: <button class=\"rb\" data-a=\"notte\" aria-label=\"Passa la notte\">…</button>   - attempting cl)",
+   "schermata": null
+  },
+  {
+   "t": 144946,
+   "giorno": 29,
+   "tipo": "bello",
+   "testo": "«UNA MUTAZIONE ·  · 🐜 ·  · Le formiche: r»: qualcosa di nuovo arriva nel vaso",
+   "schermata": null
+  },
+  {
+   "t": 144964,
+   "giorno": 31,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 173848,
+   "giorno": 37,
+   "tipo": "bello",
+   "testo": "«Dal tavolo del bambino»: qualcosa di nuovo arriva nel vaso",
+   "schermata": null
+  },
+  {
+   "t": 173901,
+   "giorno": 37,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 173911,
+   "giorno": 37,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 173921,
+   "giorno": 37,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 173931,
+   "giorno": 37,
+   "tipo": "noia",
+   "testo": "più di 60 s senza una novità (invito visibile: nessuno)",
+   "schermata": "screenshots/giocatore/2026-10-24-curioso-05-noia.png"
+  },
+  {
+   "t": 173931,
+   "giorno": 37,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 173941,
+   "giorno": 37,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 173951,
+   "giorno": 37,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 174013,
+   "giorno": 39,
+   "tipo": "bello",
+   "testo": "«UNA MUTAZIONE ·  · 🪰 ·  · Le mosche: gig»: qualcosa di nuovo arriva nel vaso",
+   "schermata": null
+  },
+  {
+   "t": 202851,
+   "giorno": 43,
+   "tipo": "bello",
+   "testo": "«Dopo la pioggia»: qualcosa di nuovo arriva nel vaso",
+   "schermata": null
+  },
+  {
+   "t": 231816,
+   "giorno": 49,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 231826,
+   "giorno": 49,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 231836,
+   "giorno": 49,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 231846,
+   "giorno": 49,
+   "tipo": "noia",
+   "testo": "più di 60 s senza una novità (invito visibile: nessuno)",
+   "schermata": null
+  },
+  {
+   "t": 231846,
+   "giorno": 49,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 231856,
+   "giorno": 49,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 260743,
+   "giorno": 55,
+   "tipo": "bello",
+   "testo": "la rivelazione del finale",
+   "schermata": null
+  },
+  {
+   "t": 260781,
+   "giorno": 55,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 260791,
+   "giorno": 55,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 260801,
+   "giorno": 55,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 260811,
+   "giorno": 55,
+   "tipo": "noia",
+   "testo": "più di 60 s senza una novità (invito visibile: nessuno)",
+   "schermata": null
+  },
+  {
+   "t": 260811,
+   "giorno": 55,
+   "tipo": "confusione",
+   "testo": "nessun invito chiaro su cosa fare",
+   "schermata": null
+  },
+  {
+   "t": 260844,
+   "giorno": 55,
+   "tipo": "frustrazione",
+   "testo": "non riesco a toccare «torno al vaso» (sopra c'è: CANVAS.)",
+   "schermata": null
+  }
+ ],
+ "schermate": [
+  "screenshots/giocatore/2026-10-24-curioso-01-bello-momento.png",
+  "screenshots/giocatore/2026-10-24-curioso-02-bello-momento.png",
+  "screenshots/giocatore/2026-10-24-curioso-03-frustrazione.png",
+  "screenshots/giocatore/2026-10-24-curioso-04-frustrazione.png",
+  "screenshots/giocatore/2026-10-24-curioso-05-noia.png"
+ ],
+ "errori_pagina": [],
+ "vedute": [
+  "Coleotteri",
+  "Formiche",
+  "Lumache",
+  "Mosche"
+ ],
+ "no3d": true
+}
