@@ -60,10 +60,7 @@ function apriCarta(id){ avviata(); var C=window.__carte;
   A.G.mazzo[id]=(A.G.mazzo[id]||0)+1; A.persist(); U.render(); return true; }
 function powerCard(){ avviata(); var P=A.powerCards;
   try{
-    if(typeof P==='function'){ P('salta2',6); }
-    else if(P&&typeof P.give==='function') P.give('salta2',6);
-    else if(P&&typeof P.add==='function') P.add('salta2',6);
-    else if(P&&typeof P==='object'){ P.salta2=6; }
+    P(); var max=(A.POWER&&A.POWER.max)||6; A.G.power=A.G.power||{}; A.G.power.salto=max;
   }catch(e){ A.toast('Power card: formato non riconosciuto'); return false; }
   A.persist(); U.render(); return true; }
 

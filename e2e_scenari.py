@@ -37,6 +37,8 @@ with sync_playwright() as p:
         n0=len(errs)
         pg.evaluate("(id)=>document.querySelector('#tst-pan [data-sc=\"'+id+'\"]').click()",sid)
         pg.wait_for_timeout(1400 if sid in('esporta','importa','azzera','video') else 700)
+        if sid in('importa','azzera'):
+            pg.wait_for_load_state('load'); pg.wait_for_function("window.__app && document.readyState==='complete'",timeout=15000); pg.wait_for_timeout(600)
         t(sid+': chiude il pannello',pg.locator('#tst-pan').count()==0)
         if sid not in('esporta','azzera','video','importa'):
             tx=pg.evaluate("(document.getElementById('toast')||{}).textContent||''")
@@ -44,7 +46,9 @@ with sync_playwright() as p:
         t(sid+': zero errori',len(errs)==n0,errs[n0:])
         if sid=='popolo':
             pg.wait_for_timeout(500); pg.screenshot(path='screenshots/test/scenario_popolo.png')
-        if sid=='importa': t('importa ricarica con una partita',pg.evaluate("!!__app.G"))
+        if sid=='importa':
+            pg.wait_for_load_state('load'); pg.wait_for_function("window.__app && !!__app.G",timeout=15000)
+            t('importa ricarica con una partita',pg.evaluate("!!__app.G"))
         if sid=='azzera':
             t('azzera: nessun salvataggio',pg.evaluate("__app.store.get()")is None or pg.evaluate("__ui.mode")=='film')
     t('console senza errori',not errs,errs[:5])
