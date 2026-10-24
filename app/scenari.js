@@ -2,7 +2,7 @@
    (window.__app, __ui, __vase, __film, __notti, __v3d). Senza ?test non fa nulla. */
 (function(){
 'use strict';
-var ON=false; try{ ON=/[?&]test(=|&|#|$)/.test(location.search); }catch(e){}
+var ON=false; try{ var q=location.search; if(/[?&]test=0(&|#|$)/.test(q)){ localStorage.removeItem('terrario-test'); } else if(/[?&]test(=|&|#|$)/.test(q)){ localStorage.setItem('terrario-test','1'); } ON=localStorage.getItem('terrario-test')==='1'; }catch(e){ try{ ON=/[?&]test(=|&|#|$)/.test(location.search)&&!/[?&]test=0/.test(location.search); }catch(e2){} }
 if(!ON) return;
 try{ boot(); }catch(e){ console.warn('scenari: avvio fallito', e&&e.message); }
 
@@ -128,7 +128,7 @@ const SEZ=[
 
 /* ---------- interfaccia ---------- */
 const css=document.createElement('style'); css.textContent=
-'#tst-btn{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom) + 88px);z-index:95;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;color:#EAF1F5;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);cursor:pointer;opacity:.78;transition:transform .15s ease,opacity .15s ease}'+
+'#tst-btn{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom) + 88px);z-index:95;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;color:#EAF1F5;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.6);box-shadow:0 2px 10px rgba(0,0,0,.35);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);cursor:pointer;opacity:1;transition:transform .15s ease,opacity .15s ease}'+
 '#tst-btn:active{transform:scale(.92);opacity:1}#tst-btn svg{width:20px;height:20px}'+
 '#tst-pan{position:fixed;inset:0;z-index:100;background:rgba(10,15,21,.95);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 30px);color:#EAF1F5;font:500 14px Manrope,system-ui,sans-serif}'+
 '#tst-pan .in{max-width:520px;margin:0 auto}#tst-pan header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}'+

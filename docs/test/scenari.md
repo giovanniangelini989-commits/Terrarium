@@ -49,3 +49,6 @@ Quasi tutti gli scenari di «Popolazioni» e «Partenza» creano una **nuova par
 
 ## Test automatico
 `python3 e2e_scenari.py` apre `dist/terrario-gioco.html?test`, tocca ogni voce disponibile e controlla zero errori in console. Schermate in `screenshots/test/`.
+
+## Attivazione che resta
+Basta aprire una volta il link con `?test`: il telefono se lo ricorda, anche aprendo il gioco dall'icona sulla schermata Home. Per toglierla, apri una volta il link con `?test=0`.
