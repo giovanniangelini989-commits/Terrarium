@@ -147,16 +147,6 @@ textarea.tx{width:100%;min-height:90px;border-radius:12px;border:1px solid var(-
 .mazzo{width:100%;margin:8px 0 0;padding:11px;border-radius:14px;background:rgba(180,155,255,.1);border:1px solid rgba(180,155,255,.4);color:var(--violet);font-weight:700;font-size:13px}
 .cardrow{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .cardrow .em{font-size:26px}.cardrow .m{font-size:12px}
-.tag.rare{color:var(--amber);border-color:#ffc46b66}
-.cardrev{position:fixed;inset:0;z-index:70;background:rgba(6,9,14,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px}
-.cardrev .cw{perspective:900px}
-.cardrev .c3{position:relative;width:230px;height:330px;transform-style:preserve-3d;transition:transform 1.1s cubic-bezier(.2,.8,.2,1)}
-.cardrev.flip .c3{transform:rotateY(180deg)}
-.cardrev .f{position:absolute;inset:0;border-radius:20px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px;text-align:center}
-.cardrev .bk{background:linear-gradient(145deg,#241a4e,#10163a);border:2px solid var(--violet);font-size:72px}
-.cardrev .fr{transform:rotateY(180deg);background:linear-gradient(160deg,#1b2733,#0f161d);border:2px solid var(--green)}
-.cardrev .fr.rare{border-color:var(--amber);box-shadow:0 0 36px #ffc46b55}
-.cardrev .ci{font-size:64px}.cardrev .fr b{font-size:18px}.cardrev .fr p{font-size:13px;color:var(--quiet);margin:0}
 
 .hud .bars{gap:5px}.bar{padding:4px 10px}
 

@@ -117,6 +117,9 @@ with sync_playwright() as p:
     # scorrimento veloce con cura automatica
     drain(); goto('vaso'); pg.wait_for_timeout(200); d0=pg.evaluate("__app.sim.d")
     def demo_on(): return pg.locator('#demoov.on').count()==1
+    def demo_pause():
+        try: pg.click('#demoBtn',timeout=1500)
+        except Exception: pass  # la demo si è già fermata da sola (popup o carta)
     def demo_start():
         for _ in range(5):
             drain(); pg.wait_for_timeout(250); drain()
@@ -125,12 +128,12 @@ with sync_playwright() as p:
             except Exception: continue
             if demo_on(): return
     dd0=pg.evaluate("__app.sim.d"); demo_start(); pg.wait_for_timeout(300); t('dal menu parte lo scorrimento veloce (si ferma da solo alle notifiche)',demo_on() or pg.evaluate("__app.sim.d")>dd0,(dd0,pg.evaluate("__app.sim.d")))
-    drain(); goto('vaso'); pg.evaluate("document.getElementById('demoov').classList.add('on')")
+    drain(); goto('vaso'); drain(); goto('vaso'); pg.evaluate("__app.popups.length=0; document.getElementById('demoov').classList.add('on')")
     pg.click('[data-a=demo-speed][data-s="16"]'); t('la velocità 16× si seleziona',pg.locator('[data-a=demo-speed][data-s="16"]').get_attribute('aria-pressed')=='true'); t('la cura automatica è attiva di default nella demo',pg.locator('[data-a=demo-auto]').get_attribute('aria-pressed')=='true'); pg.screenshot(path=f'screenshots/{tag}_k2_demo.png'); pg.evaluate("document.getElementById('demoov').classList.remove('on')")
     for _ in range(10):
         if demo_on():
             pg.wait_for_timeout(500)
-            if demo_on(): pg.click('#demoBtn'); pg.wait_for_timeout(200)
+            if demo_on(): demo_pause(); pg.wait_for_timeout(200)
         drain(); goto('vaso'); pg.wait_for_timeout(150)
         if pg.evaluate("__app.sim.d")>=d0+8 or pg.evaluate("!!__app.sim.finalePending"): break
         demo_start()
@@ -141,8 +144,14 @@ with sync_playwright() as p:
     # carte
     goto('imp'); pg.click('[data-a=t-carte]'); goto('vaso'); pg.wait_for_timeout(200)
     t('il mazzo ha almeno 12 carte',pg.evaluate("__app.mazzoTot()")>=12)
-    pg.click('[data-a=mazzo]'); pg.wait_for_timeout(250); pg.screenshot(path=f'screenshots/{tag}_k3_mazzo.png'); t('il mazzo elenca le 12 carte',pg.locator('.sheet .cardrow').count()==12)
-    pg.evaluate("__app.sim.charge(-100)"); e0=pg.evaluate("__app.sim.E"); pg.click('.sheet [data-a=carta-gioca][data-id=scintilla]'); pg.wait_for_timeout(400); drain(); e1=pg.evaluate("__app.sim.E"); t('Scintilla carica il meteorite (dal mazzo, in qualsiasi momento)',e1>e0+20,(e0,e1))
+    pg.click('[data-a=mazzo]'); pg.wait_for_timeout(250); pg.screenshot(path=f'screenshots/{tag}_k3_mazzo.png'); t('il ventaglio mostra tutte le carte del mazzo (almeno 12)',pg.locator('#hand .cardrow').count()>=12 and pg.locator('#hand .cardrow').count()==pg.evaluate("Object.keys(__app.G.mazzo).length"))
+    pg.evaluate("__app.sim.charge(-100)"); e0=pg.evaluate("__app.sim.E"); pg.click('#hand [data-a=carta-gioca][data-id=scintilla]'); pg.wait_for_timeout(400); drain(); e1=pg.evaluate("__app.sim.E"); t('Scintilla carica il meteorite (dal mazzo, in qualsiasi momento)',e1>e0+20,(e0,e1))
+    t('giocata la carta, il ventaglio si chiude',pg.locator('#hand').count()==0)
+    # trascinare una carta sul vaso la gioca
+    goto('vaso'); pg.click('[data-a=mazzo]'); pg.wait_for_timeout(250); n0=pg.evaluate("__app.G.mazzo.pioggia||0"); bb=pg.locator('#hand .cardrow[data-id=pioggia] .ct').bounding_box()
+    if bb:
+        pg.mouse.move(bb['x']+bb['width']/2,bb['y']+bb['height']/2); pg.mouse.down(); pg.mouse.move(bb['x']+bb['width']/2,bb['y']-60,steps=5); pg.mouse.move(VW/2,VH*.25,steps=8); pg.screenshot(path=f'screenshots/{tag}_k3b_trascina.png'); pg.mouse.up(); pg.wait_for_timeout(500); drain()
+    t('una carta trascinata sul vaso viene giocata',bb is not None and pg.evaluate("__app.G.mazzo.pioggia||0")==n0-1,(bb,n0))
     r=pg.evaluate("(()=>{ const A=__app, o={}; A.G.mazzo.sasso=2; A.G.mazzo.scudo=2; A.playCard('sasso'); o.met=A.sim.view().setup.meteorite; o.sasso2=A.canPlay('sasso'); A.playCard('moneta'); o.mon=A.sim.view().setup.oggetti.includes('moneta'); A.playCard('scudo'); o.scudo=A.G.ui.scudo; o.scudo2=A.canPlay('scudo'); o.bus=A.playCard('bussola').text; A.playCard('candela'); A.playCard('radio'); o.ogg=A.sim.view().setup.oggetti.length; return o; })()")
     t('Il sasso cresce, poi la carta si blocca; moneta/candela/radio entrano nel vaso',r['met']==2 and 'massimo' in r['sasso2'] and r['mon'] and r['ogg']>=3,r)
     t('Scudo di vetro pronto e non raddoppiabile; la Bussola dà un indizio',r['scudo']==1 and 'pronto' in r['scudo2'] and len(r['bus'])>40,r)
@@ -152,13 +161,15 @@ with sync_playwright() as p:
         if pg.locator('.sheet [data-a=sx]').count(): pg.locator('.sheet [data-a=sx]').first.click(); pg.wait_for_timeout(250)
         else: pg.wait_for_timeout(200)
     t('con lo scudo Biscotto non fa danni',pg.locator('.sheet h2').first.inner_text()=='Salvo' and pg.evaluate("__app.G.ui.scudo")==0); pg.click('.sheet [data-a=sx]')
-    drain(); goto('quaderno'); pg.click('[data-a=cdx][data-t=carte]'); pg.wait_for_timeout(250); pg.screenshot(path=f'screenshots/{tag}_k5_carte.png'); t('il Codex ha il tab Carte con le probabilità',pg.locator('text=Più probabile dopo').count()>=12)
+    drain(); goto('quaderno'); pg.click('[data-a=cdx][data-t=carte]'); pg.wait_for_timeout(250); pg.screenshot(path=f'screenshots/{tag}_k5_carte.png'); t('l’album mostra i quattro set e le quote della pesca',pg.locator('.alb-set').count()==4 and pg.locator('.alb-odds').count()==1 and '70%' in pg.inner_text('.alb-odds') and '8%' in pg.inner_text('.alb-odds'))
+    t('le carte mancanti sono sagome con «come arriva», mai «???»',pg.locator('.alb-sil').count()>=4 and '???' not in pg.inner_text('.alb'))
+    pg.locator('.alb-c').first.click(); pg.wait_for_timeout(300); t('toccando una carta dell’album si apre a schermo',pg.locator('#cardview .ct').count()==1); pg.screenshot(path=f'screenshots/{tag}_k6_visore.png'); pg.click('#cardview button[data-c=chiudi]'); pg.wait_for_timeout(200)
     # fino al finale scorrendo (cura automatica)
     while days<60 and not pg.evaluate("!!__app.sim.finalePending"):
         drain(); goto('vaso')
         if pg.evaluate("__app.sim.pending.length")==0: demo_start(); pg.wait_for_timeout(600)
         else: pg.evaluate("__app.queueDecisions(); __ui.showNextPopup()")
-        if demo_on(): pg.click('#demoBtn'); pg.wait_for_timeout(100)
+        if demo_on(): demo_pause(); pg.wait_for_timeout(100)
         days+=1
     drain()
     fp=pg.evaluate("__app.sim.finalePending"); t('con le cure arriva un finale di società, non lo spegnimento',bool(fp) and fp['finale']!='spento',fp); print('finale:',fp,'· giorno del vaso',pg.evaluate("__app.sim.d"),'· decisioni viste',seenDec)
@@ -169,7 +180,13 @@ with sync_playwright() as p:
             if pg.locator('#reveal').count(): break
             pg.wait_for_timeout(300)
         t('rivelazione con epilogo del bambino',pg.locator('#reveal .epi').count()==1); pg.screenshot(path=f'screenshots/{tag}_g8_rivelazione.png'); pg.click('[data-a=fin-continue]'); pg.wait_for_timeout(300); pg.click('[data-a=fin-close]'); pg.wait_for_timeout(500)
-        t('compare la carta ottenuta con il finale',pg.locator('#cardrev').count()==1); pg.wait_for_timeout(1300); pg.screenshot(path=f'screenshots/{tag}_k1_carta.png'); pg.click('[data-a=carta-ok]'); pg.wait_for_timeout(300)
+        t('compare la velina con la carta del finale',pg.locator('#cardrev').count()==1 and pg.locator('#cardrev .vel').count()==1); pg.wait_for_timeout(300); pg.screenshot(path=f'screenshots/{tag}_k1_velina.png')
+        vb=pg.locator('#cardrev .vel').bounding_box(); pg.mouse.move(vb['x']+vb['width']/2,vb['y']+vb['height']/2); pg.mouse.down(); pg.mouse.move(vb['x']+vb['width']/2,vb['y']+vb['height']/2-90,steps=6); pg.mouse.up(); pg.wait_for_timeout(400)
+        t('scorrendo, la velina si apre e sotto c’è la carta',pg.evaluate("document.getElementById('cardrev').dataset.st") in ('apertura','chiusa'),pg.evaluate("document.getElementById('cardrev').dataset.st"))
+        pg.locator('#cardrev .ct').click(); pg.wait_for_timeout(500); pg.screenshot(path=f'screenshots/{tag}_k1_carta.png')
+        t('toccando la carta si gira e si legge',pg.evaluate("document.getElementById('cardrev').dataset.st")=='lettura',pg.evaluate("document.getElementById('cardrev').dataset.st"))
+        pg.click('[data-a=carta-ok]'); pg.wait_for_timeout(400); t('«Nel mazzo» chiude l’unboxing e subito dopo arriva il ricordo «Il primo finale»',pg.locator('#cardrev').count()==0 or pg.locator('#cardrev.r-ricordo').count()==1 and pg.evaluate("!!__app.G.album.ric_finale"))
+        if pg.locator('#cardrev.r-ricordo').count(): pg.wait_for_timeout(300); pg.screenshot(path=f'screenshots/{tag}_k1b_ricordo.png')
         t('il finale è nel Libro',len(pg.evaluate("Object.keys(__app.G.libro)"))==1); t('il vaso continua (capitolo 2)',pg.evaluate("__app.sim.view().chapter")==2)
         drain()
     # ---- dentro la ciotola
