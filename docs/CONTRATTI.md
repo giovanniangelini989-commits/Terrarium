@@ -11,7 +11,7 @@
 | carte | `app/carte.js`, `docs/carte/` (dati `CARTE` in `app/app1.js` solo con il via dell'orchestratore) |
 | ecologo | `app/microclima.js`, `microclima_test.js`, `docs/ecologia/` (le regole di `sim.js` restano del motore) |
 | tre-d | `app/v3d.js`, `app/app2.js`, `app/materials.js`, `app/kimi.js`, `app/tex.js`, `vendor/` |
-| finali | nuovo `app/finali.js` (lettore dei mini video) |
+| finali | nuovo `app/finali.js` (lettore dei mini video), `app/apertura.js` (video iniziale in 3D), `e2e_apertura.py`; in `app/film.js` la messa in scena |
 | logica di gioco (orchestratore) | `app/app1.js`, `build_app.py` |
 | qa | nessuno (sola lettura), scrive solo in `screenshots/` e report |
 | luci | `app/luci.js`, `qa_luci.py` (in `app/v3d.js` solo la chiamata a `__LUCI`) |
@@ -53,6 +53,11 @@ Contratto completo in `docs/brief-kimi-v3.md` (tier swarm/close/hero, `_ANIM`, `
 - Un `InstancedMesh` per specie e per livello di dettaglio; i livelli si assegnano per grandezza a schermo entro un budget di triangoli per livello della guardia prestazioni (`level()` 0/1/2 → 64k/36k/20k): la guardia abbassa il dettaglio, mai il numero.
 - Animazione nel vertex shader: attributi per istanza `iAnim` (fase del passo, velocità, stato 0 idle · 1 walk · 2 carry · 3 fight · 4 eat · 5 dead, tempo nello stato) e `iMut` (0–1,3: intensità del bagliore `_EMIT` verde `#7CF5C8`); uniformi `uTime`, `uDry`.
 - `stats()` → `{<id>: {n, kind: 'glb'|'pass1', tiers: {close, swarm, lod1, lod2}}}` per QA e test. Esposto anche come `window.__v3d.modelli`.
+
+## Video iniziale in 3D (`window.__APERTURA`, in `app/apertura.js`, agente finali)
+`app/film.js` tiene testi, tocchi e stati (`window.__film` invariato: `start(cb,{replay})`, `scene`, `P`; in più `mode` ∈ `'2d'|'3d'`, `anchors()`, `info()`, `slots`, `_go(i)` solo per i test). Il film parte in 2D e passa al 3D appena `__APERTURA.create(el,{onFallback})` è pronto; resta in 2D con `window.__no3d`, errore, timeout (12 s) o guardia prestazioni (risoluzione → vetro semplice → 2D).
+`create() → {kind:'3d', canvas, fit(), size(), frame(t,{id,st,P,lineI,fast}), anchors(id) → punti a schermo in pixel fisici {star|stone|jar|center}, info(), slots, dispose()}`.
+**Slot dei modelli** (`slot(id)`, procedurale finché manca il file): `finestra`, `gelso`, `giardino`, `meteorite`, `barattolo`, `scrivania`, `lampada`, `quaderno`, `mano`. `build_app.py` incorpora `assets/kimi/<id>/close.glb` in `window.__GLB_APERTURA = {<id>: {close}}` (stesso formato di `__GLB`; mai `hero`); `apertura.js` legge anche `__GLB` per gli stessi id. Nomi dei nodi usati: `lid` (barattolo), `bulb` (lampada), `vetro`.
 
 ## Finale animato (`app/finali.js`, da costruire)
 `playEnding(container, data, {onDone})` dove `data = {finale, nome, giorni, capitolo, culto, popolo, nodi: G.tree.nodes (con foto)}`. Durata 30–45 s, saltabile, tenere premuto accelera.

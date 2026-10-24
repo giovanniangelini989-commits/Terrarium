@@ -1,6 +1,6 @@
 sim=open('sim.js').read(); css=open('app/app.css').read()
 a1=open('app/app1.js').read(); a2=open('app/app2.js').read(); a3=open('app/fx.js').read()+'\n'+open('app/app3.js').read()+'\n'+open('app/scenari.js').read()
-st=open('app/story.js').read()+'\n'+open('app/notti.js').read(); au=open('app/audio.js').read(); fl=open('app/film.js').read(); v3=open('app/modelli.js').read()+'\n'+open('app/v3d.js').read(); km=open('app/kimi.js').read()+'\n'+open('app/materials.js').read()+'\n'+open('app/tex.js').read()
+st=open('app/story.js').read()+'\n'+open('app/notti.js').read(); au=open('app/audio.js').read(); fl=open('app/apertura.js').read()+'\n'+open('app/film.js').read(); v3=open('app/modelli.js').read()+'\n'+open('app/v3d.js').read(); km=open('app/kimi.js').read()+'\n'+open('app/materials.js').read()+'\n'+open('app/tex.js').read()
 # Modelli di Kimi incorporati (tier swarm e close + LOD derivati in vendor/lod): il gioco resta un solo file HTML
 import base64, json, os
 def _b64(path): return base64.b64encode(open(path,'rb').read()).decode('ascii')
@@ -13,6 +13,13 @@ for sp in sorted(os.listdir('assets/kimi')):
         f='vendor/lod/'+sp+'_'+t+'.glb'
         if os.path.exists(f): GLB[sp][t]=_b64(f)
 glb='window.__GLB='+json.dumps(GLB,separators=(',',':'))+';'
+# Scenografia del video iniziale (app/apertura.js, agente finali): stessi file e stesso formato di __GLB ({id:{close}}),
+# in una chiave a parte perché non sono specie. Il meteorite entra qui (solo close, mai hero: DECISIONI §5).
+# Quando Kimi consegna la passata F basta mettere assets/kimi/<id>/close.glb e ricostruire.
+APERTURA_SLOTS=['meteorite','barattolo','scrivania','finestra','lampada','quaderno','gelso','giardino','mano']
+GLB_AP={i:{'close':_b64('assets/kimi/'+i+'/close.glb')} for i in APERTURA_SLOTS if os.path.exists('assets/kimi/'+i+'/close.glb')}
+glb+='window.__GLB_APERTURA='+json.dumps(GLB_AP,separators=(',',':'))+';'
+print('scenografia apertura:',sorted(GLB_AP))
 print('modelli incorporati:',{k:sorted(v) for k,v in GLB.items()},'base64',len(glb),'byte')
 html=f'''<!doctype html>
 <html lang="it">
