@@ -116,7 +116,8 @@ function move(dt,t,v,dry){ uni.uTime.value=t; uni.uDry.value=dry||0; const lv=Ma
   Object.values(crt).forEach(c=>{ c.items.forEach(it=>{ const tr=c.tiers[it.tier||0], i=tr.n++; _e.set(0,-it.ang,0); _q.setFromEuler(_e); _p.set(it.px,it.y,it.pz); _s.set(it.sz,it.sz,it.sz); _m.compose(_p,_q,_s); tr.im.setMatrixAt(i,_m); tr.ia.setXYZW(i,it.gait,it.spd,it.st,it.tw); tr.imu.setX(i,it.mut); });
     c.tiers.forEach(tr=>{ tr.im.count=tr.n; tr.im.instanceMatrix.needsUpdate=true; tr.ia.needsUpdate=true; tr.imu.needsUpdate=true; }); }); }
 // oggetti di Kimi (meteorite): una copia del tier close, materiale proprio (emissiva regolabile dal gioco)
-function object(id){ const m=models[id]; if(!m||!m.object) return null; const t=m.tiers.find(q=>q.name==='close')||m.tiers[0]; const mat=t.mat.clone(); const mesh=new THREE.Mesh(t.geo,mat); mesh.geometry.computeBoundingBox(); return {mesh,mat,tris:t.tris,box:mesh.geometry.boundingBox}; }
+function object(id){ const m=models[id]; if(!m||!m.object) return null; const t=m.tiers.find(q=>q.name==='close')||m.tiers[0]; const mat=t.mat.clone(); const mesh=new THREE.Mesh(t.geo,mat); mesh.geometry.computeBoundingBox(); const o={mesh,mat,tris:t.tris,box:mesh.geometry.boundingBox}; objs[id]=o; return o; }
+const objs={};
 function stats(){ const o={}; Object.values(crt).forEach(c=>{ o[c.id]={n:c.items.length,kind:c.kind,tiers:{}}; c.tiers.forEach(tr=>{ o[c.id].tiers[tr.name]=tr.n||0; }); }); return o; }
-return {crt,sync,move,ready,stats,object,get loaded(){ return loaded; },models};
+return {crt,sync,move,ready,stats,object,objs,get loaded(){ return loaded; },models};
 };
