@@ -52,10 +52,11 @@ function jar(t,o){ const g=jarGeom(), {x0,y0,jw,jh}=g; const lum=o.luce==null?1:
   cx.strokeStyle='rgba(190,215,230,.75)'; cx.lineWidth=2.2*dpr; rr(x0,y0,jw,jh,jw*.12); cx.stroke(); cx.fillStyle='rgba(255,255,255,.12)'; rr(x0+jw*.06,y0+jh*.1,jw*.05,jh*.5,jw*.025); cx.fill();
   // coperchio
   const lid=o.lid==null?-1:o.lid; const ly=y0-jh*.06-(1-Math.max(0,lid))*jh*.5; if(lid>=0){ cx.fillStyle='#8a6a4a'; rr(x0+jw*.08,ly,jw*.84,jh*.08,jw*.03); cx.fill(); } }
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&el&&!raf) raf=requestAnimationFrame(draw); });
 // ---------- scene ----------
 const starPos=t=>{ if(st.fall==null) return {x:w*.5+Math.sin(t/900)*2*dpr,y:h*.22+Math.cos(t/700)*2*dpr}; const f=Math.min(1,(t-st.fall)/(fast()?200:1800)); return {x:lerp(w*.5,w*.66,f),y:lerp(h*.22,h*.82,f*f)}; };
 const stonePos=()=>({x:w*.66,y:h*.84});
-function draw(t){ raf=requestAnimationFrame(draw); const id=SCN[sc]&&SCN[sc].id; if(!id) return; cx.setTransform(1,0,0,1,0,0); cx.textAlign='center';
+function draw(t){ if(document.hidden){ raf=0; return; } raf=requestAnimationFrame(draw); const id=SCN[sc]&&SCN[sc].id; if(!id) return; cx.setTransform(1,0,0,1,0,0); cx.textAlign='center';
   if(id==='cielo'){ sky(t); garden(); const p=starPos(t);
     if(st.fall!=null){ const f=(t-st.fall)/(fast()?200:1800); for(let i=1;i<=14;i++){ const ff=Math.max(0,f-i*.015); const q={x:lerp(w*.5,w*.66,Math.min(1,ff)),y:lerp(h*.22,h*.82,Math.min(1,ff)**2)}; circ(q.x,q.y,u*.012*(1-i/16),'rgba(255,230,180,'+(.5*(1-i/15)).toFixed(2)+')'); }
       if(f>=1){ if(!st.hit){ st.hit=t; AU.sfx('tonfo'); } const k=(t-st.hit)/700; glow(p.x,p.y,u*(.1+.5*k),'rgba(255,230,190,A)',Math.max(0,.8*(1-k))); cx.strokeStyle='rgba(255,230,190,'+Math.max(0,1-k).toFixed(2)+')'; cx.lineWidth=2*dpr; cx.beginPath(); cx.arc(p.x,p.y,u*.05+k*u*.4,0,6.28); cx.stroke(); if(!st.next&&t-st.hit>(fast()?200:1500)){ st.next=1; go(1); } } }
@@ -107,7 +108,7 @@ function onClick(e){ if(!el) return; const b=e.target.closest('[data-f]'); if(!b
   else if(a==='skip'){ if(replay) finish(); else go(3); } }
 function fit(){ if(!cv) return; dpr=Math.min(2,window.devicePixelRatio||1); w=Math.round(innerWidth*dpr); h=Math.round(innerHeight*dpr); cv.width=w; cv.height=h; u=Math.min(w,h*.7); }
 function start(cb,opts){ opts=opts||{}; replay=!!opts.replay; done=cb; P={luce:null,acqua:null,oggetto:undefined}; pair=[]; nm='Piccolo Mondo';
-  el=document.createElement('div'); el.id='film'; el.className='film'; el.innerHTML='<canvas></canvas><button class="f-skip" data-f="skip">Salta ›</button><div class="f-sub" aria-live="polite"></div><div class="f-hint"></div><div class="f-ctl"></div>'+(replay?'':'<div class="f-gate" data-f="gate"><div style="font-size:54px">🫙</div><div class="gt">TERRARIO</div><div class="gs">Tocca per iniziare</div><div class="gn">Meglio con l’audio acceso: il bambino ti racconta la storia a voce.</div></div>'); document.body.appendChild(el); cv=el.querySelector('canvas'); cx=cv.getContext('2d'); fit();
+  el=document.createElement('div'); el.id='film'; el.className='film'; el.innerHTML='<canvas></canvas><button class="f-skip" data-f="skip">Salta ›</button><div class="f-sub" aria-live="polite"></div><div class="f-hint"></div><div class="f-ctl"></div>'+(replay?'':'<div class="f-gate" data-f="gate"><div style="font-size:54px">🫙</div><div class="gt">TERRARIO</div><div class="gs">Tocca per iniziare</div><div class="gn">Meglio con l’audio acceso: la storia ti viene raccontata a voce.</div></div>'); document.body.appendChild(el); cv=el.querySelector('canvas'); cx=cv.getContext('2d'); fit();
   el.addEventListener('pointerdown',onDown); el.addEventListener('pointermove',onMove); el.addEventListener('pointerup',onUp); el.addEventListener('pointercancel',onUp); el.addEventListener('click',onClick); window.addEventListener('resize',fit);
   AU.unlock(); sc=0; st={}; lineI=-1; if(replay) enter(0); raf=requestAnimationFrame(draw); }
 window.__film={start,get scene(){ return sc>=0?SCN[sc].id:null; },get P(){ return P; }};

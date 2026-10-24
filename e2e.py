@@ -59,7 +59,7 @@ with sync_playwright() as p:
         for _ in range(14):
             if pg.locator('.sheet [data-a=arr-ok]').count(): break
             if pg.evaluate("__app.sim.view().needs.um")<.5: pg.click('[data-a=act][data-k=acqua]'); pg.wait_for_timeout(150)
-            if pg.locator('.sheet').count()==0: pg.click('[data-a=notte]'); pg.wait_for_timeout(400)
+            if pg.locator('.sheet').count()==0: pg.evaluate('__ui.passaNotte()'); pg.wait_for_timeout(400)
             for _ in range(5):
                 if pg.locator('#cine').count(): pg.wait_for_timeout(250)
                 elif pg.locator('.sheet [data-a=arr-ok]').count(): break
@@ -93,7 +93,7 @@ with sync_playwright() as p:
     pg.screenshot(path=f'screenshots/{tag}_n1_barre.png')
     pg.evaluate("window.__bakN=window.__notti.NOTTI; window.__notti.NOTTI=[]")
     for _ in range(5):
-        pg.click('[data-a=notte]'); pg.wait_for_timeout(300)
+        pg.evaluate('__ui.passaNotte()'); pg.wait_for_timeout(300)
         for _ in range(6):
             if pg.locator('#cine').count(): pg.wait_for_timeout(250)
             elif pg.locator('.sheet [data-a=nb], .sheet [data-a=gt]').count(): pg.locator('.sheet [data-a=nb], .sheet [data-a=gt]').first.click(); pg.wait_for_timeout(150)
