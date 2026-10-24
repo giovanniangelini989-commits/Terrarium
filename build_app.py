@@ -7,8 +7,9 @@ def _b64(path): return base64.b64encode(open(path,'rb').read()).decode('ascii')
 GLB={}
 for sp in sorted(os.listdir('assets/kimi')):
     d='assets/kimi/'+sp
-    if not os.path.exists(d+'/swarm.glb') or sp=='meteorite': continue  # il meteorite aspetta la correzione di Kimi
-    GLB[sp]={t:_b64(d+'/'+t+'.glb') for t in ('swarm','close') if os.path.exists(d+'/'+t+'.glb')}
+    if not os.path.exists(d+'/close.glb'): continue
+    tiers=('close',) if sp=='meteorite' else ('swarm','close')  # oggetti: basta il tier close
+    GLB[sp]={t:_b64(d+'/'+t+'.glb') for t in tiers if os.path.exists(d+'/'+t+'.glb')}
     for t in ('lod1','lod2'):
         f='vendor/lod/'+sp+'_'+t+'.glb'
         if os.path.exists(f): GLB[sp][t]=_b64(f)

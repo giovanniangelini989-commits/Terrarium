@@ -72,7 +72,7 @@ const tris=g=>g.index?g.index.count/3:g.attributes.position.count/3;
 const ready=(async()=>{ const ids=Object.keys(GLB); if(!ids.length) return; let GL; try{ GL=(await import(LOADER_URL)).GLTFLoader; }catch(e){ console.warn('GLTFLoader non disponibile',e&&e.message); return; }
   const loader=new GL(); const parse=buf=>new Promise((res,rej)=>loader.parse(buf,'',res,rej));
   for(const id of ids){ try{ const set=GLB[id], out={tiers:[]}; let swarmMat=null;
-      for(const tier of ['close','swarm','lod1','lod2']){ if(!set[tier]) continue; const m=takeMesh(await parse(b64buf(set[tier]))); let mat=m.material&&m.material.map?m.material:null; if(mat){ mat.side=THREE.FrontSide; patch(mat); if(tier==='swarm') swarmMat=mat; } out.tiers.push({name:tier,geo:m.geometry,mat,tris:tris(m.geometry),shadow:tier==='close'||tier==='swarm',px:PX[tier]||0}); }
+      for(const tier of ['close','swarm','lod1','lod2']){ if(!set[tier]) continue; const m=takeMesh(await parse(b64buf(set[tier]))); let mat=m.material&&m.material.map?m.material:null; const anim=!!m.geometry.attributes.aAnim; if(!anim) out.object=true; if(mat){ mat.side=THREE.FrontSide; if(anim) patch(mat); if(tier==='swarm') swarmMat=mat; } out.tiers.push({name:tier,geo:m.geometry,mat,tris:tris(m.geometry),shadow:tier==='close'||tier==='swarm',px:PX[tier]||0}); }
       out.tiers.forEach(t=>{ if(!t.mat) t.mat=swarmMat||out.tiers.find(q=>q.mat).mat; }); if(!out.tiers.length) continue; models[id]=out; }catch(e){ console.warn('modello Kimi',id,e&&e.message); } }
   loaded=true; })();
 // ---------- istanze per specie ----------
@@ -115,6 +115,9 @@ function move(dt,t,v,dry){ uni.uTime.value=t; uni.uDry.value=dry||0; const lv=Ma
     cands.forEach(it=>{ const T=it.c.tiers, last=T.length-1, minT=T[last].tris; minSum-=minT; let pick=last; for(let k=Math.min(maxTier,last);k<last;k++){ const tr=T[k]; if(it.pxs<tr.px) continue; if(tr.name==='close'&&closeN>=CLOSE_MAX) continue; if(tr.tris<=budget-minSum){ pick=k; break; } } if(T[pick].name==='close') closeN++; budget-=T[pick].tris; it.tier=pick; }); }
   Object.values(crt).forEach(c=>{ c.items.forEach(it=>{ const tr=c.tiers[it.tier||0], i=tr.n++; _e.set(0,-it.ang,0); _q.setFromEuler(_e); _p.set(it.px,it.y,it.pz); _s.set(it.sz,it.sz,it.sz); _m.compose(_p,_q,_s); tr.im.setMatrixAt(i,_m); tr.ia.setXYZW(i,it.gait,it.spd,it.st,it.tw); tr.imu.setX(i,it.mut); });
     c.tiers.forEach(tr=>{ tr.im.count=tr.n; tr.im.instanceMatrix.needsUpdate=true; tr.ia.needsUpdate=true; tr.imu.needsUpdate=true; }); }); }
+// oggetti di Kimi (meteorite): una copia del tier close, materiale proprio (emissiva regolabile dal gioco)
+function object(id){ const m=models[id]; if(!m||!m.object) return null; const t=m.tiers.find(q=>q.name==='close')||m.tiers[0]; const mat=t.mat.clone(); const mesh=new THREE.Mesh(t.geo,mat); mesh.geometry.computeBoundingBox(); const o={mesh,mat,tris:t.tris,box:mesh.geometry.boundingBox}; objs[id]=o; return o; }
+const objs={};
 function stats(){ const o={}; Object.values(crt).forEach(c=>{ o[c.id]={n:c.items.length,kind:c.kind,tiers:{}}; c.tiers.forEach(tr=>{ o[c.id].tiers[tr.name]=tr.n||0; }); }); return o; }
-return {crt,sync,move,ready,stats,get loaded(){ return loaded; },models};
+return {crt,sync,move,ready,stats,object,objs,get loaded(){ return loaded; },models};
 };

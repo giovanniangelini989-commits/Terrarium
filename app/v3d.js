@@ -4,7 +4,7 @@ const A=window.__app, T=A.T;
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const hashStr=s=>{ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; };
 const rngS=seed=>{ let s=(seed>>>0)||1; return ()=>{ s=(s+0x6D2B79F5)>>>0; let t=s; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; };
-window.__v3dLoad=async function(){ if(window.__v3d) return window.__v3d; const THREE=await import('three'); window.__v3d=build(THREE); return window.__v3d; };
+window.__v3dLoad=function(){ if(window.__v3d) return Promise.resolve(window.__v3d); return window.__v3dP||(window.__v3dP=(async()=>{ try{ const THREE=await import('three'); window.__v3d=build(THREE); return window.__v3d; }catch(e){ window.__v3dP=null; throw e; } })()); }; // una sola costruzione anche con chiamate concorrenti (menu + tentativo automatico)
 function build(THREE){
   const V3=THREE.Vector3, Col=THREE.Color;
   const canvas=document.createElement('canvas'); canvas.className='v3d'; canvas.style.touchAction='none';
@@ -214,6 +214,8 @@ function build(THREE){
   function kimiGeo(id){ if(!KM||!KM.creatures||!KM.creatures[id]) return null; const g=KM.creatures[id].build(THREE,{seed:1}).geometry; g.computeBoundingBox(); const len=g.boundingBox.max.x-g.boundingBox.min.x, f=(KLEN[id]||len)/len; g.scale(f,f,f); g.userData.final=true; return g; }
   // creature: conta esatta, instancing, livelli di dettaglio e animazione vivono in app/modelli.js (agente tre-d)
   const MOD=window.__MODELLI(THREE,{critG,S,KLEN,camera,viewH:()=>H,level:()=>level,anchorOf,kimiGeo,fallbackGeo:id=>(MODEL[id]||MODEL._)(),SIZE}); const crt=MOD.crt;
+  // meteorite di Kimi (assets/kimi/meteorite, tier close): scala a Ø 0,42 (Kimi l'ha consegnato a 0,60), appoggiato nella terra; le crepe viola sono nella emissiveTexture e si accendono con la carica
+  MOD.ready.then(()=>{ const o=MOD.object('meteorite'); if(!o) return; const bb=o.box, ext=Math.max(bb.max.x-bb.min.x,bb.max.z-bb.min.z), k=.42/ext; o.mesh.scale.setScalar(k); o.mesh.position.set(-(bb.max.x+bb.min.x)/2*k,-.17,-(bb.max.z+bb.min.z)/2*k); o.mesh.castShadow=true; o.mesh.receiveShadow=true; o.mat.emissiveIntensity=0; stone.visible=false; stoneG.add(o.mesh); S.metMat=o.mat; }).catch(e=>console.warn('meteorite Kimi',e&&e.message));
   function syncCreatures(v){ MOD.sync(v); }
   function moveCreatures(dt,t){ if(S.v) MOD.move(dt,t,S.v,S.dry); }
   // ---------- bolle ----------
@@ -261,7 +263,7 @@ function build(THREE){
     cracks.visible=S.dry>.3&&thick>0; cracks.position.y=S.soilTop+.004; cracks.material.opacity=clamp((S.dry-.3)*1.4);
     // meteorite
     const pulse=.5+.5*Math.sin(t*(2.2+v.E*.03)), fl=S.flash; S.flash=Math.max(0,S.flash-dt*1.4);
-    stoneG.position.set(0,S.soilTop+.13,0); stoneMat.emissiveIntensity=.3+(v.E/100)*1.5*pulse+fl*2.2; metLight.position.set(0,S.soilTop+.5,0); metLight.intensity=(.2+1.3*(v.E/100)*pulse+fl*5)*(S.night?1.1:1);
+    stoneG.position.set(0,S.soilTop+.13,0); stoneMat.emissiveIntensity=.3+(v.E/100)*1.5*pulse+fl*2.2; if(S.metMat) S.metMat.emissiveIntensity=(v.E/100)*(1.2+1.8*pulse)+fl*3; metLight.position.set(0,S.soilTop+.5,0); metLight.intensity=(.2+1.3*(v.E/100)*pulse+fl*5)*(S.night?1.1:1);
     // piante
     plantsG.children.forEach((g,i)=>{ g.position.y=S.soilTop; }); v.plants.forEach(p=>{ const o=plantObjs[p.id]; if(!o) return; const key=Math.round(p.v*40)+':'+Math.round(S.dry*40)+':'+(S.v&&S.v.R>.6?1:0); if(o.key!==key){ o.key=key; o.upd(p.v,S.dry); } });
     // oggetti
