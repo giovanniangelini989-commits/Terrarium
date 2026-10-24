@@ -31,7 +31,7 @@ function storyScan(){ const v=sim.view(); sim.log.filter(e=>(e.n||0)>G.ui.storyN
   else if(e.kind==='scisma') addPage('scisma',P.scisma[0],P.scisma[1],false); });
   G.ui.storyN=lastN(); }
 function updateCodex(){ const v=sim.view(); v.sp.forEach(x=>{ const c=G.codex.specie[x.id]||(G.codex.specie[x.id]={mut:[],soc:false}); x.mut.forEach(m=>{ if(!c.mut.includes(m)){ c.mut.push(m); if(sim.d>0) giveXP(10); } }); if(x.society){ c.soc=true; G.codex.cult[x.society.cult]=true; } if(x.monster) G.codex.anomalie[x.id]=true; }); storyScan(); }
-// ---------- richieste del bambino ----------
+// ---------- richieste: pensieri del giocatore ----------
 function makeRequest(){ const f=G.ui.fase==null?5:G.ui.fase; if(f<1) return {day:todayIdx(),kind:'terra',done:false}; if(f<2) return {day:todayIdx(),kind:'acqua',done:false}; const n=sim.view().needs; let k=f<4?'notte':'osserva'; if(n.pul<.55&&f>=3) k='pulisci'; else if(n.um<.45) k='acqua'; else if(n.ter<.35) k='nutri'; return {day:todayIdx(),kind:k,done:false}; }
 function reqCheck(kind){ if(G.letargo){ G.letargo=null; G.real.leth=0; G.ui.risvegli=(G.ui.risvegli||0)+1; } const r=G.req; if(r.done||r.kind!==kind) return false; r.done=true; r.doneAt=nowMs(); giveXP(20); G.ui.reqN=(G.ui.reqN||0)+1; G.ui.reqToday=(G.ui.reqToday||0)+1; if(G.ui.reqToday<=3) G.real.cure=Math.min(18,G.real.cure+2); const t=todayIdx(), p=G.player; if(p.lastReqDay!==t){ p.serie=(p.lastReqDay===t-1||(p.serie===0&&p.lastReqDay==null))?p.serie+1:1; p.serieMax=Math.max(p.serieMax,p.serie); p.lastReqDay=t; if(p.serie%7===0&&p.protezioni<2){ p.protezioni++; toast('Serie di '+p.serie+' giorni: hai guadagnato una protezione.'); } } return true; }
 // ---------- arrivi (le notifiche della storia) ----------
@@ -43,7 +43,7 @@ function materialize(a){ const v=sim.view(), R=T.rng(G.seed*13+a.id.length*7+sim
   if(a.slot==='insetto'){ if(have.insetti.length>=LIM.insetti) return false; const o=['mosche','coleotteri','termiti','lumache','ragni','formiche'].filter(id=>!have.insetti.includes(id)&&!refused.includes(id)&&(id!=='ragni'||alive>=2)); if(!o.length) return false; const id=o[Math.floor(R()*Math.min(2,o.length))]; const t=S.ARR.specie[id]; a.kind='specie'; a.param=id; a.title=t[0]; a.text=t[1]; return true; }
   if(a.slot==='pianta'){ if(have.piante.length>=LIM.piante) return false; const o=['fungo','succulenta','carnivora','felce','muschio'].filter(id=>!have.piante.includes(id)&&!refused.includes(id)&&(id!=='carnivora'||have.insetti.includes('mosche'))); if(!o.length) return false; const id=o[0]; const t=S.ARR.pianta[id]; a.kind='pianta'; a.param=id; a.title=t[0]; a.text=t[1]; return true; }
   if(have.oggetti.length>=LIM.oggetti) return false; const pool=['orologio','giocattolo','specchio','statuina','libro','moneta','radio','candela'].filter(id=>!have.oggetti.includes(id)&&!refused.includes(id)); if(pool.length<1) return false; const i0=Math.floor(R()*pool.length); const alt=pool.length>1?[pool[i0],pool[(i0+1+Math.floor(R()*(pool.length-1)))%pool.length]]:[pool[0]]; if(alt.length>1&&alt[0]===alt[1]) alt[1]=pool[(i0+1)%pool.length];
-  a.kind='oggetto'; a.alt=alt; a.title='Dal tavolo del bambino'; a.text=alt.length>1?'Il bambino ti lascia due cose sul tavolo: '+S.ARR.oggetto[alt[0]][0]+', e '+S.ARR.oggetto[alt[1]][0]+'. Il vaso ne regge una sola.':'Il bambino ti lascia '+S.ARR.oggetto[alt[0]][0]+'. Lo fai entrare?'; return true; }
+  a.kind='oggetto'; a.alt=alt; a.title='Dal tuo tavolo'; a.text=alt.length>1?'Sul tavolo trovi due cose: '+S.ARR.oggetto[alt[0]][0]+', e '+S.ARR.oggetto[alt[1]][0]+'. Il vaso ne regge una sola.':'Sul tavolo trovi '+S.ARR.oggetto[alt[0]][0]+'. Nel vaso c’è ancora posto.'; return true; }
 function dueArrivals(){ const t=sim.d, out=[]; for(const a of G.arrivi.list){ if(a.state!=='futuro'||a.due>t) continue; if(materialize(a)){ a.state='nuovo'; out.push(a); break; } else a.state='saltato'; } return out; }
 function takeArrival(id,choice){ const a=G.arrivi.list.find(x=>x.id===id), st=a&&a.state; const r=takeArrival0(id,choice); if(a&&st==='nuovo'){ try{ const nmA=a.kind==='specie'?nm('SPECIE',a.param):a.kind==='pianta'?nm('PIANTE',a.param):nm('OGGETTI',a.param), yes=choice!=='no'; treeNode({k:'scelta',lane:'vaso',t:'Arriva: '+lc1(nmA),ch:yes?'Lo accogli nel vaso':'Lo lasci fuori',alt:yes?'Lasciarlo fuori':'Accoglierlo nel vaso',major:true}); treeDiff(); }catch(e){} } return r; }
 function takeArrival0(id,choice){ const a=G.arrivi.list.find(x=>x.id===id); if(!a||a.state!=='nuovo') return false; let ok=false;
@@ -58,16 +58,16 @@ const inbox=()=>G.arrivi.list.filter(x=>x.state==='nuovo');
 // ---------- carte: asso nella manica ----------
 const CARTE={
  pioggia:{n:'Pioggia gentile',ic:'🌧️',r:'comune',d:'Più umido per qualche giorno, subito. Non costa cure.',x:'Una pioggia sottile scende dentro il vaso. Il muschio beve, il vetro si appanna.',w:{Quiete:3,Mostri:1,'Società':2,Conflitti:2}},
- terra:{n:'Terra buona',ic:'🪱',r:'comune',d:'Pulisce il vetro e nutre il suolo, senza usare cure.',x:'Il bambino versa una manciata di terra buona e passa uno straccio sul vetro.',w:{Quiete:3,Mostri:1,'Società':2,Conflitti:2}},
- scintilla:{n:'Scintilla',ic:'⚡',r:'comune',d:'Il meteorite si carica di colpo: più mutazioni, più in fretta.',x:'Una scintilla salta dal dito del bambino al sasso. Il battito si fa fitto.',w:{Quiete:1,Mostri:3,'Società':3,Conflitti:2}},
- ombra:{n:'Ombra fresca',ic:'🌫️',r:'comune',d:'Il meteorite si quieta: il vaso rallenta.',x:'Una mano stende un panno sul vaso. Il sasso rallenta, come chi si addormenta.',w:{Quiete:2,Mostri:3,'Società':1,Conflitti:3}},
- scudo:{n:'Scudo di vetro',ic:'🔰',r:'comune',d:'Salva dal prossimo Biscotto. Resta pronto finché non serve.',x:'Il bambino fissa una lastra di vetro sul davanzale. La prossima zampata di Biscotto non passerà.',w:{Quiete:2,Mostri:2,'Società':2,Conflitti:3}},
- tempo:{n:'Tempo in bottiglia',ic:'⏳',r:'comune',d:'+3 giorni di tempo accumulato.',x:'Il bambino stappa una bottiglietta che sembrava vuota: dentro c’era un po’ di tempo.',w:{Quiete:2,Mostri:2,'Società':3,Conflitti:2}},
- latte:{n:'Tazza di latte',ic:'🥛',r:'comune',d:'+6 cure.',x:'La nonna porta latte caldo e biscotti. Tutti ripartono con più energia.',w:{Quiete:3,Mostri:2,'Società':2,Conflitti:2}},
- bussola:{n:'Bussola',ic:'🧭',r:'comune',d:'Un indizio vago su dove sta andando il vaso.',x:'Il bambino gira una bussola rotta: l’ago indica, a tentoni, dove sta andando il vaso.',w:{Quiete:2,Mostri:2,'Società':2,Conflitti:2}},
+ terra:{n:'Terra buona',ic:'🪱',r:'comune',d:'Pulisce il vetro e nutre il suolo, senza usare cure.',x:'Versi una manciata di terra buona e passi uno straccio sul vetro.',w:{Quiete:3,Mostri:1,'Società':2,Conflitti:2}},
+ scintilla:{n:'Scintilla',ic:'⚡',r:'comune',d:'Il meteorite si carica di colpo: più mutazioni, più in fretta.',x:'Una scintilla salta dal tuo dito al sasso. Il battito si fa fitto.',w:{Quiete:1,Mostri:3,'Società':3,Conflitti:2}},
+ ombra:{n:'Ombra fresca',ic:'🌫️',r:'comune',d:'Il meteorite si quieta: il vaso rallenta.',x:'Stendi un panno sul vaso. Il sasso rallenta, come chi si addormenta.',w:{Quiete:2,Mostri:3,'Società':1,Conflitti:3}},
+ scudo:{n:'Scudo di vetro',ic:'🔰',r:'comune',d:'Salva dal prossimo Biscotto. Resta pronto finché non serve.',x:'Fissi una lastra di vetro sul davanzale. La prossima zampata di Biscotto non passerà.',w:{Quiete:2,Mostri:2,'Società':2,Conflitti:3}},
+ tempo:{n:'Tempo in bottiglia',ic:'⏳',r:'comune',d:'+3 giorni di tempo accumulato.',x:'Stappi una bottiglietta che sembrava vuota: dentro c’era un po’ di tempo.',w:{Quiete:2,Mostri:2,'Società':3,Conflitti:2}},
+ latte:{n:'Tazza di latte',ic:'🥛',r:'comune',d:'+6 cure.',x:'La nonna ti porta latte caldo e biscotti. Torni al vaso con le mani calde.',w:{Quiete:3,Mostri:2,'Società':2,Conflitti:2}},
+ bussola:{n:'Bussola',ic:'🧭',r:'comune',d:'Un indizio vago su dove sta andando il vaso.',x:'Giri una bussola rotta: l’ago indica, a tentoni, dove sta andando il vaso.',w:{Quiete:2,Mostri:2,'Società':2,Conflitti:2}},
  sasso:{n:'Il sasso cresce',ic:'☄️',r:'speciale',d:'Il meteorite diventa più grande: accumula energia più in fretta, per sempre.',x:'Il sasso fa un rumore come di ghiaccio che si incrina. Poi è un po’ più grande, e batte più forte.',w:{Quiete:1,Mostri:3,'Società':2,Conflitti:2}},
  moneta:{n:'Moneta d’argento',ic:'🪙',r:'speciale',d:'Mette una moneta nel vaso, anche se gli oggetti sono già al massimo.',x:'Una moneta d’argento rotola sul muschio e si ferma, in piedi, al centro del vaso.',w:{Quiete:1,Mostri:1,'Società':3,Conflitti:3}},
- candela:{n:'Candela eterna',ic:'🕯️',r:'speciale',d:'Mette una candela nel vaso, anche se gli oggetti sono già al massimo.',x:'Il bambino accende una candela che non si consuma. La mette vicino al vetro e se ne va in punta di piedi.',w:{Quiete:2,Mostri:1,'Società':3,Conflitti:1}},
+ candela:{n:'Candela eterna',ic:'🕯️',r:'speciale',d:'Mette una candela nel vaso, anche se gli oggetti sono già al massimo.',x:'Accendi una candela che non si consuma. La metti vicino al vetro e te ne vai in punta di piedi.',w:{Quiete:2,Mostri:1,'Società':3,Conflitti:1}},
  radio:{n:'Radio di notte',ic:'📻',r:'speciale',d:'Mette una radio nel vaso, anche se gli oggetti sono già al massimo.',x:'Una radiolina si accende da sola, appena. Dentro il fruscio sembra esserci una voce.',w:{Quiete:2,Mostri:1,'Società':3,Conflitti:1}}};
 const BUSSOLA={Quiete:'L’ago resta quasi fermo: il vaso va verso la quiete.',Mostri:'L’ago trema verso qualcosa di grosso, che deve ancora crescere.','Società':'L’ago gira in tondo, come una piccola folla.',Conflitti:'L’ago punta in due direzioni insieme.'};
 const mazzoTot=()=>Object.values(G.mazzo).reduce((a,b)=>a+b,0);
@@ -153,11 +153,11 @@ function scorri(mode){ regen(); const r=G.real, out={passi:0,eventi:[],pausa:fal
   while(out.passi<max&&r.tempo>0){ if(r.tempo>=TEMPO_MAX) r.tempoT=nowMs(); const st=sim.step(); if(st.paused){ queueDecisions(); out.pausa=true; break; } r.tempo--; out.passi++; giveXP(3); const hit=sim.log.some(e=>(e.n||0)>startN&&NOTA.includes(e.kind)); afterDay(); if(mode==='evento'&&hit) break; }
   out.eventi=sim.log.filter(e=>(e.n||0)>startN&&e.kind!=='azione'&&e.kind!=='meteorite'); updateCodex(); queueDecisions(); persist(); return out; }
 const TASKS={
- germoglio:{n:'Far germinare un seme',ic:'🌱',ms:10*60000,lv:1,x:'Il bambino pianta un seme in giardino e non gli stacca gli occhi di dosso. Domani, forse, un germoglio.',r:{cure:3,xp:10},rt:'3 cure'},
- esplora:{n:'Esplorare il giardino',ic:'🧭',ms:45*60000,lv:1,x:'Il bambino gira tra il gelso e la siepe con una scatola di cartone. Torna con le mani sporche e un segreto.',r:{arrivo:1,xp:25},rt:'porta qualcosa dal giardino'},
- veglia:{n:'Vegliare il sasso',ic:'🕯️',ms:2*3600000,lv:2,x:'Si è seduto accanto al vaso con una candela e ha ascoltato il battito per ore. Dice che gli ha risposto.',r:{tempo:2,cure:4,xp:40},rt:'2 giorni di tempo e 4 cure'},
- soffitta:{n:'Cercare in soffitta',ic:'📦',ms:4*3600000,lv:3,x:'È salito in soffitta con la torcia. Dice che lassù le cose hanno una storia, e che alcune vogliono essere trovate.',r:{arrivo:1,tempo:2,xp:70},rt:'qualcosa dalla soffitta e 2 giorni'},
- notte:{n:'Una notte sveglio',ic:'🌙',ms:8*3600000,lv:4,x:'È rimasto sveglio fino all’alba a guardare cosa fa il sasso quando nessuno lo guarda. Non ha voluto dire cosa ha visto.',r:{tempo:4,cure:8,xp:120},rt:'4 giorni di tempo e 8 cure'}};
+ germoglio:{n:'Far germinare un seme',ic:'🌱',ms:10*60000,lv:1,x:'Hai piantato un seme in giardino e non gli hai staccato gli occhi di dosso. Ecco: un germoglio.',r:{cure:3,xp:10},rt:'3 cure'},
+ esplora:{n:'Esplorare il giardino',ic:'🧭',ms:45*60000,lv:1,x:'Hai girato tra il gelso e la siepe con una scatola di cartone. Torni con le mani sporche e un segreto.',r:{arrivo:1,xp:25},rt:'porta qualcosa dal giardino'},
+ veglia:{n:'Vegliare il sasso',ic:'🕯️',ms:2*3600000,lv:2,x:'Ti sei seduto accanto al vaso con una candela e hai ascoltato il battito per ore. A un tratto, ti ha risposto.',r:{tempo:2,cure:4,xp:40},rt:'2 giorni di tempo e 4 cure'},
+ soffitta:{n:'Cercare in soffitta',ic:'📦',ms:4*3600000,lv:3,x:'Sei tornato dalla soffitta con la torcia ancora accesa. Lassù le cose hanno una storia, e alcune vogliono essere trovate.',r:{arrivo:1,tempo:2,xp:70},rt:'qualcosa dalla soffitta e 2 giorni'},
+ notte:{n:'Una notte sveglio',ic:'🌙',ms:8*3600000,lv:4,x:'Sei rimasto sveglio fino all’alba a guardare il sasso quando nessuno lo guarda. Quello che hai visto, lo tieni per te.',r:{tempo:4,cure:8,xp:120},rt:'4 giorni di tempo e 8 cure'}};
 const slotMax=()=>lvl()>=3?3:2;
 const taskLeft=s=>Math.max(0,s.ms-(nowMs()-s.t0));
 const readyTasks=()=>G.coda.slots.filter(s=>taskLeft(s)===0);
@@ -167,7 +167,7 @@ function collectTask(id){ const i=G.coda.slots.findIndex(s=>s.id===id); if(i<0) 
   if(r.tempo){ G.real.tempo=Math.min(24,G.real.tempo+r.tempo); lines.push('+'+r.tempo+(r.tempo>1?' giorni':' giorno')+' di tempo'); }
   if(r.cure){ G.real.cure=Math.min(18,G.real.cure+r.cure); lines.push('+'+r.cure+' cure'); }
   if(r.xp){ giveXP(r.xp); lines.push('+'+r.xp+' XP'); }
-  if(r.arrivo) lines.push(pullArrival()?'Il bambino ha trovato qualcosa':'Stavolta non ha trovato niente di nuovo');
+  if(r.arrivo) lines.push(pullArrival()?'Hai trovato qualcosa':'Stavolta non hai trovato niente di nuovo');
   G.ui.compiti=(G.ui.compiti||0)+1; persist(); return {t,lines}; }
 function taskPing(){ readyTasks().forEach(s=>{ if(!s.pinged){ s.pinged=true; popups.push({t:'compito',id:s.id}); } }); }
 function refreshReq(force){ if(G.req.done&&(force||nowMs()-(G.req.doneAt||0)>=45000)){ G.req=makeRequest(); return true; } return false; }
