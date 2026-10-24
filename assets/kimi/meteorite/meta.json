@@ -1,0 +1,17 @@
+{
+  "id": "meteorite",
+  "version": "1.0.0",
+  "class": "mixed",
+  "body_length": 0.60,
+  "triangles": { "hero": 58198, "close": 7750, "swarm": 1164 },
+  "parts": ["rock"],
+  "clips": {},
+  "emissive": "KHR_materials_emissive_strength 3.0 — purple-violet fluorescent crystal veins (5.2% of texels), emissive texture present in all tiers",
+  "notes": "object asset, no animation; front view of the reference sheet faces -Z after normalize (largest extent on X per gate); ground contact y=0; fusion crust dark charcoal-brown, regmaglypts, orange-rust oxidation speckles",
+  "generator": {
+    "tool": "Tripo v3.1 via Kimi agent-gw (model3d_generation), multiview mode (front/right/back views from user reference sheet), texture-quality extreme",
+    "prompt": "multiview generation from reference sheet A844E9F8 (6 views: front/right/back/top/bottom/night-fluorescence)",
+    "seed": "n/a (upstream task a7b85540-55f3-4247-a4ff-cff303ea4854)",
+    "license": "commercial use allowed: yes — Tripo terms grant paid/API users full rights to use, modify, distribute and commercially exploit generated models (tripo3d.ai/help/privacy-policy/how-to-use-tripo-models-commercially, verified 2026-10-24)"
+  }
+}

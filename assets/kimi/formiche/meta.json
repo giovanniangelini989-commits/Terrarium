@@ -1,0 +1,43 @@
+{
+  "id": "formiche",
+  "version": "3.0.1",
+  "class": "organic",
+  "body_length": 0.20,
+  "triangles": { "hero": 58168, "close": 7910, "swarm": 1184 },
+  "parts": [
+    "root", "thorax", "head",
+    "antenna_l_1", "antenna_l_2", "antenna_r_1", "antenna_r_2",
+    "mandible_l", "mandible_r",
+    "petiole", "gaster",
+    "leg_l1_coxa", "leg_l1_femur", "leg_l1_tibia", "leg_l1_tarsus",
+    "leg_l2_coxa", "leg_l2_femur", "leg_l2_tibia", "leg_l2_tarsus",
+    "leg_l3_coxa", "leg_l3_femur", "leg_l3_tibia", "leg_l3_tarsus",
+    "leg_r1_coxa", "leg_r1_femur", "leg_r1_tibia", "leg_r1_tarsus",
+    "leg_r2_coxa", "leg_r2_femur", "leg_r2_tibia", "leg_r2_tarsus",
+    "leg_r3_coxa", "leg_r3_femur", "leg_r3_tibia", "leg_r3_tarsus"
+  ],
+  "clips": {
+    "idle":  { "loop": true,  "duration": 2.40 },
+    "walk":  { "loop": true,  "duration": 0.50, "stride": 0.20, "coxa_swing_deg": 30 },
+    "run":   { "loop": true,  "duration": 0.30, "stride": 0.20, "coxa_swing_deg": 34 },
+    "carry": { "loop": true,  "duration": 0.50, "stride": 0.20 },
+    "fight": { "loop": true,  "duration": 0.90 },
+    "eat":   { "loop": true,  "duration": 1.00 },
+    "groom": { "loop": true,  "duration": 2.00 },
+    "die":   { "loop": false, "duration": 1.40, "ends": "on back, legs curled, body up axis -0.99" }
+  },
+  "rig": "every part node carries its origin on its own joint (coxa joints for legs, head-thorax joint, petiole joint, antenna/mandible bases); clips are rotation-only, translation only on root; geometry children <part>_geo hold model-space vertices",
+  "shader_attributes": {
+    "_ANIM": "vec4 — x part id (0 thorax, 1 head, 2 gaster, 3 antenna, 4 mandible, 5 leg), y limb index (front-to-back, left-then-right), z 0 root -> 1 tip, w -1 left / +1 right / 0 centre",
+    "_PIVOT": "vec3 — per-vertex pivot of its own part: 13 distinct joints (6 coxa, 2 antenna bases, 2 mandible bases, head-thorax, petiole, thorax)",
+    "_EMIT": "float — mutation glow: compound eyes 1.0, gaster veins 0.7, leg joints 0.45; 5.7% of vertices (close), 7.6% (swarm)"
+  },
+  "colour": { "chroma": 0.326, "luminance": 0.177, "reference": { "chroma": 0.30, "lum": 0.215 }, "note": "dark reddish-brown head/thorax, dark brown gaster, reddish-brown legs lighter at joints; dark matte compound eyes; mandibles same chitin as head, darker tips; no painted highlights" },
+  "generator": {
+    "tool": "Tripo v3.1 via Kimi agent-gw (model3d_generation), texture-quality extreme; segmentation Tripo v2.0 detailed; rig/animation/tiers via kit tools (gltf-transform)",
+    "prompt": "Photorealistic 3D model of a red wood ant worker (Formica rufa), real-world anatomy and proportions, macro photography realism. Standing in rest pose with all six tarsi flat on the ground, legs spread symmetrically, front legs pointing forward-and-down (NOT raised, NOT folded near the head, no praying-mantis pose), antennae forward at 30 degrees, closed mandibles, reddish-brown head and thorax, dark brown gaster, petiole node. Single object, centred, no base, no ground plane, no background. PBR materials, glossy chitin with fine pitting and sparse hairs, no baked lighting.",
+    "seed": "n/a (upstream task a02923fe-255e-4d86-a709-2e120b1daf05)",
+    "license": "commercial use allowed: yes — Tripo terms grant paid/API users full rights to use, modify, distribute and commercially exploit generated models (tripo3d.ai/help/privacy-policy/how-to-use-tripo-models-commercially, verified 2026-10-24)"
+  },
+  "changelog": "v3.0.1 fixes Pass A review points 1-5: mahogany colour grade vs reference (chroma 0.415->0.326, lum 0.278->0.177), matte dark eyes + chitin mandibles, roughness 0.23->0.66 with pitting noise; _PIVOT per-part (13 distinct joints); _EMIT eyes/veins/joints; hero node origins on joints with rotation-only clips; walk coxa swing 16->30 deg with visible tarsus lift, 8-frame top-view strip in contact-sheet.png"
+}
