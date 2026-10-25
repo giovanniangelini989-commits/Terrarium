@@ -19,7 +19,7 @@ with sync_playwright() as p:
     menu3d(); pg.wait_for_function("__vase.is3d",timeout=20000); pg.wait_for_timeout(1500)
     t('toccando «3D» si carica Three.js e compare la vista 3D',pg.evaluate("__vase.is3d") and pg.locator('#vb canvas.v3d').count()==1 ); vbshot(path=f'screenshots/{tag}_3d_giorno.png')
     t('la scelta 3D è salvata',pg.evaluate("__app.G.settings.v3d")==True)
-    t('la vista 3D è leggera (< 40.000 triangoli, < 200 chiamate)',pg.evaluate("window.__v3d.info.tris")<40000 and pg.evaluate("window.__v3d.info.renderer")<200,pg.evaluate("JSON.stringify(window.__v3d.info)"))
+    t('la vista 3D sta nel budget iPhone 12 (< 90.000 triangoli per fotogramma con ombre, < 200 chiamate)',pg.evaluate("window.__v3d.info.tris")<90000 and pg.evaluate("window.__v3d.info.renderer")<200,pg.evaluate("JSON.stringify(window.__v3d.info)"))
     gid=pg.evaluate("__app.sim.view().sp.find(x=>x.alive).id"); pos=pg.evaluate(f"__vase.screenOf('{gid}')"); t('si trova la posizione a schermo di un gruppo',pos is not None and 0<pos['x']<VW and 0<pos['y']<VH,pos)
     pg.mouse.click(pos['x'],pos['y']); pg.wait_for_timeout(500); t('toccando il gruppo nel 3D si apre la scheda',pg.locator('.sheet').count()==1,pos); pg.screenshot(path=f'screenshots/{tag}_3d_scheda.png'); pg.click('.sheet [data-a=sx]'); pg.wait_for_timeout(300)
     box=pg.locator('#vb canvas.v3d').bounding_box(); cx,cy=box['x']+box['width']*.5,box['y']+box['height']*.3

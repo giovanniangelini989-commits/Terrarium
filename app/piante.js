@@ -1,0 +1,214 @@
+/* Piante vive — app/piante.js (agente tre-d)
+   Le piante crescono e vivono nel vaso guidate dal microclima (__app.micro().piante = {id:{vigore,crescita}}).
+   Geometria procedurale costruita UNA volta, con gli stessi attributi che chiediamo a Kimi (brief v3 §5.3):
+   _GROW (ordine di comparsa) e _SWAY (0 base → 1 punta), più tre pose per organo (chiusa · mezza · aperta) che fanno
+   da morph target «uncurl» (felce, carnivora) o «emerge» (succulenta, fungo). Tutto il movimento è nel vertex shader:
+   crescita, srotolamento, turgore, afflosciamento, vento. La CPU aggiorna solo qualche uniforme per fotogramma.
+   Quando arriveranno i modelli veri, l'adattatore in fondo (ADATTA) mappa gli stessi stati su _GROW/_SWAY/morph. */
+window.__PIANTE=function(THREE,env){
+  const {S,ptex,TX,rngS,clamp,SLOTS,A}=env; const V3=THREE.Vector3, Col=THREE.Color, M4=THREE.Matrix4;
+  const Y=new V3(0,1,0);
+  // ---------- stati visivi e mappe di crescita ----------
+  // crescita = ore «buone» accumulate dal microclima (≈ 12–19 al giorno reale con vigore alto)
+  const GROW={muschio:c=>Math.min(1.3,c/190), felce:c=>Math.min(1.25,c/260), succulenta:c=>Math.min(1.2,c/600), carnivora:c=>Math.min(1.2,c/300), fungo:c=>c/60};
+  const GMIN={muschio:.2, felce:.14, succulenta:.14, carnivora:.12, fungo:0};
+  const KIND={felce:1,succulenta:2,carnivora:3,fungo:4};
+  const CURL_FUN=5, CURL_MUS=5, CURL_SPK=6;
+
+  // ---------- shader comune ----------
+  const GLSL_ROT='vec3 rotA(vec3 v,vec3 a,float t){ float c=cos(t),s=sin(t); return v*c+cross(a,v)*s+a*dot(a,v)*(1.-c); }\n';
+  const HEAD_ORG=`uniform float uGrow,uTurgor,uDroop,uDry,uRot,uDew,uWind,uTime;
+attribute vec3 aP0,aP1,aPivot,aAxis,aSpine; attribute float aGrow,aSway,aPhase,aType;
+varying float vDry,vRot,vShade;
+${GLSL_ROT}
+struct Org{ float open,sc,bend,wilt; };
+Org org(){ Org o; o.wilt=0.;
+#if KIND==1
+  o.open=smoothstep(aGrow,aGrow+.25,uGrow); o.sc=(.2+.8*o.open)*(.55+.45*min(uGrow,1.)); o.bend=-uDroop*aSway*.95;
+#elif KIND==2
+  o.open=smoothstep(aGrow,aGrow+.18,uGrow); o.sc=(.35+.65*o.open)*(.4+.6*min(uGrow,1.)); o.bend=-uDroop*aSway*.7;
+#elif KIND==3
+  o.open=smoothstep(aGrow,aGrow+.22,uGrow); o.sc=(.25+.75*o.open)*(.5+.5*min(uGrow,1.)); o.bend=-uDroop*aSway*.85;
+#else
+  float u=uGrow-aPhase; u=uGrow<1.?max(0.,u):fract(u);
+  o.open=smoothstep(.12,.5,u); float w=max(smoothstep(.62,.95,u),uDroop); o.sc=smoothstep(0.,.32,u)*(1.-.4*w); o.bend=-w*aSway*1.1; o.wilt=w;
+#endif
+  return o; }
+vec3 plantPos(Org o){ vec3 p=o.open<.5?mix(aP0,aP1,o.open*2.):mix(aP1,position,o.open*2.-1.);
+  float ap=smoothstep(.7,1.,o.open); float lat=mix(1.,1.-.45*uDroop,ap); if(aType==3.) lat=uDew*ap;
+  p=aSpine+(p-aSpine)*lat; p=aPivot+(p-aPivot)*o.sc; p=aPivot+rotA(p-aPivot,aAxis,o.bend);
+  float w=uWind*aSway*aSway*.011*o.sc; p+=aAxis*w*(sin(uTime*1.6+aPhase*6.28+aSway*2.)+.5*sin(uTime*2.7+aPhase*3.1))+vec3(0.,1.,0.)*w*.35*sin(uTime*2.1+aPhase*5.);
+  return p; }
+`;
+  const HEAD_INST=`uniform float uGrow,uTurgor,uDry,uRot,uWind,uTime; attribute float iGrow,iPhase; varying float vDry,vRot,vShade;\n`;
+  const FRAG_HEAD='uniform float uGloss; varying float vDry,vRot,vShade;\n';
+  const FRAG_COL=`#include <color_fragment>
+diffuseColor.rgb*=vShade;
+diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.35,1.1,.5)+vec3(.14,.09,.0),clamp(vDry,0.,1.));
+diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.32,.28,.2),clamp(vRot,0.,1.));`;
+  const FRAG_ROUGH='#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,roughnessFactor*.5,uGloss);';
+  function patch(mat,U,kind,inst){ const head=inst?HEAD_INST:HEAD_ORG;
+    const begin=inst?(kind===CURL_SPK
+      ?`float op=smoothstep(iGrow-.12,iGrow+.08,uGrow); float sc=op*(.6+.4*min(uGrow,1.)); vec3 transformed=position*sc; transformed.xz*=(.35+.65*uTurgor); transformed.y*=(.55+.45*uTurgor); transformed.x+=uWind*.0025*sin(uTime*2.2+iPhase*6.28)*position.y*25.; vDry=uDry; vRot=uRot; vShade=1.;`
+      :`float op=smoothstep(iGrow-.12,iGrow+.08,uGrow); float sc=op*(.6+.4*min(uGrow,1.)); vec3 transformed=position*sc; transformed.y*=(.42+.58*uTurgor); vDry=uDry; vRot=uRot; vShade=.45+.55*clamp(position.y*.75+.45,0.,1.);`)
+      :`Org o_=org(); vec3 transformed=plantPos(o_); vDry=uDry+o_.wilt*.55; vRot=uRot+o_.wilt*.6; vShade=1.;`;
+    mat.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,U);
+      sh.vertexShader=sh.vertexShader.replace('void main() {','#define KIND '+kind+'\n'+head+'void main() {').replace('#include <begin_vertex>',begin);
+      if(!inst) sh.vertexShader=sh.vertexShader.replace('#include <beginnormal_vertex>','Org on_=org(); vec3 objectNormal=rotA(normal,aAxis,on_.bend);');
+      sh.fragmentShader=sh.fragmentShader.replace('void main() {',FRAG_HEAD+'void main() {').replace('#include <color_fragment>',FRAG_COL).replace('#include <roughnessmap_fragment>',FRAG_ROUGH); };
+    mat.customProgramCacheKey=()=>'pianta'+kind+(inst?'i':'o')+(mat.isMeshDepthMaterial?'d':'m'); return mat; }
+  function uniforms(){ return {uGrow:{value:0},uTurgor:{value:1},uDroop:{value:0},uDry:{value:0},uRot:{value:0},uDew:{value:0},uWind:{value:0},uTime:{value:0},uGloss:{value:0}}; }
+  function shadowed(mesh,U,kind,inst){ mesh.customDepthMaterial=patch(new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking}),U,kind,inst); mesh.castShadow=true; mesh.receiveShadow=true; return mesh; }
+
+  // ---------- costruttore di geometria con attributi ----------
+  // addOrgan(buildFn(q)→{pos:[],nor:[],uv:[],col:[],idx:[],meta:[{sway,spine:V3}]}, {pivot,axis,grow,phase,type,group})
+  function Builder(){ const G={}; const grp=k=>G[k]||(G[k]={pos:[],nor:[],uv:[],col:[],p0:[],p1:[],piv:[],ax:[],sp:[],gr:[],sw:[],ph:[],ty:[],idx:[],n:0});
+    return {
+      add(build,o){ const g=grp(o.group||0), a=build(1), b=build(0), c=build(.5), base=g.n;
+        for(let i=0;i<a.pos.length/3;i++){ const m=a.meta[i]; g.pos.push(a.pos[i*3],a.pos[i*3+1],a.pos[i*3+2]); g.nor.push(a.nor[i*3],a.nor[i*3+1],a.nor[i*3+2]); g.uv.push(a.uv[i*2],a.uv[i*2+1]); g.col.push(a.col[i*3],a.col[i*3+1],a.col[i*3+2]);
+          g.p0.push(b.pos[i*3],b.pos[i*3+1],b.pos[i*3+2]); g.p1.push(c.pos[i*3],c.pos[i*3+1],c.pos[i*3+2]); g.piv.push(o.pivot.x,o.pivot.y,o.pivot.z); g.ax.push(o.axis.x,o.axis.y,o.axis.z); g.sp.push(m.spine.x,m.spine.y,m.spine.z);
+          g.gr.push(o.grow); g.sw.push(m.sway); g.ph.push(o.phase); g.ty.push(m.type!=null?m.type:(o.type||0)); }
+        a.idx.forEach(k=>g.idx.push(k+base)); g.n+=a.pos.length/3; },
+      geo(){ const keys=Object.keys(G).sort(), out=new THREE.BufferGeometry(), F=(arr,n)=>new THREE.Float32BufferAttribute(arr,n); const all={pos:[],nor:[],uv:[],col:[],p0:[],p1:[],piv:[],ax:[],sp:[],gr:[],sw:[],ph:[],ty:[]}, idx=[]; let off=0;
+        keys.forEach((k,j)=>{ const g=G[k]; Object.keys(all).forEach(f=>{ all[f].push(...g[f]); }); out.addGroup(idx.length,g.idx.length,j); g.idx.forEach(i=>idx.push(i+off)); off+=g.n; });
+        out.setAttribute('position',F(all.pos,3)); out.setAttribute('normal',F(all.nor,3)); out.setAttribute('uv',F(all.uv,2)); out.setAttribute('color',F(all.col,3));
+        out.setAttribute('aP0',F(all.p0,3)); out.setAttribute('aP1',F(all.p1,3)); out.setAttribute('aPivot',F(all.piv,3)); out.setAttribute('aAxis',F(all.ax,3)); out.setAttribute('aSpine',F(all.sp,3));
+        out.setAttribute('aGrow',F(all.gr,1)); out.setAttribute('aSway',F(all.sw,1)); out.setAttribute('aPhase',F(all.ph,1)); out.setAttribute('aType',F(all.ty,1)); out.setIndex(idx); out.computeBoundingSphere(); return {geo:out,groups:keys}; } }; }
+  // una parte = geometria three (già trasformata) + funzioni per gli attributi
+  function part(geo,m,o){ geo=geo.clone(); geo.applyMatrix4(m); if(!geo.index){ const a=[]; for(let i=0;i<geo.attributes.position.count;i++) a.push(i); geo.setIndex(a); }
+    const p=geo.attributes.position, n=geo.attributes.normal, uv=geo.attributes.uv, out={pos:[],nor:[],uv:[],col:[],idx:Array.from(geo.index.array),meta:[]}, c=new Col(), v=new V3();
+    for(let i=0;i<p.count;i++){ v.set(p.getX(i),p.getY(i),p.getZ(i)); out.pos.push(v.x,v.y,v.z); out.nor.push(n.getX(i),n.getY(i),n.getZ(i)); out.uv.push(uv?uv.getX(i):0,uv?uv.getY(i):0); const cc=o.color(v,i); c.set(cc); out.col.push(c.r,c.g,c.b); out.meta.push({sway:o.sway?o.sway(v,i):0,spine:o.spine?o.spine(v,i):v.clone(),type:o.type}); }
+    geo.dispose(); return out; }
+  function merge(parts){ const out={pos:[],nor:[],uv:[],col:[],idx:[],meta:[]}; let off=0; parts.forEach(p=>{ out.pos.push(...p.pos); out.nor.push(...p.nor); out.uv.push(...p.uv); out.col.push(...p.col); p.idx.forEach(k=>out.idx.push(k+off)); out.meta.push(...p.meta); off+=p.pos.length/3; }); return out; }
+  // spina dorsale di un organo: integra l'angolo della tangente (2D: x in fuori, y in alto)
+  function spine(n,L,phi0,kappa){ const pts=[],tg=[]; let x=0,y=0,phi=phi0; const ds=L/n; for(let k=0;k<=n;k++){ const u=k/n; pts.push([x,y]); tg.push(phi); phi+=kappa(u)*ds; x+=Math.cos(phi)*ds; y+=Math.sin(phi)*ds; } return {pts,tg}; }
+  // nastro lungo una spina 3D: P[k], T[k] tangenti, E[k] laterali, w(u) semilarghezza, fold = alzata del bordo, cols = vertici trasversali (3)
+  function ribbon(P,T,E,w,fold,uvw){ const pos=[],nor=[],uv=[],idx=[],meta=[], n=P.length-1, cols=3; const N=new V3();
+    for(let k=0;k<=n;k++){ const u=k/n, hw=w(u); N.crossVectors(E[k],T[k]).normalize(); for(let j=0;j<cols;j++){ const s=j/(cols-1)*2-1, p=P[k].clone().addScaledVector(E[k],s*hw).addScaledVector(N,Math.abs(s)*fold*hw); pos.push(p.x,p.y,p.z); const nn=N.clone().addScaledVector(E[k],-s*fold*.8).normalize(); nor.push(nn.x,nn.y,nn.z); uv.push(j/(cols-1),u*(uvw||1)); meta.push({sway:u,spine:P[k].clone(),s}); } }
+    for(let k=0;k<n;k++) for(let j=0;j<cols-1;j++){ const a=k*cols+j, b=a+1, c=a+cols, d=c+1; idx.push(a,c,b,b,c,d); }
+    return {pos,nor,uv,idx,meta}; }
+  function tube(P,r,sides){ const pos=[],nor=[],uv=[],idx=[],meta=[], n=P.length-1; let X=new V3(1,0,0);
+    for(let k=0;k<=n;k++){ const u=k/n, T=(k<n?P[k+1].clone().sub(P[k]):P[k].clone().sub(P[k-1])).normalize(); if(Math.abs(T.dot(X))>.9) X=new V3(0,0,1); const e1=new V3().crossVectors(T,X).normalize(), e2=new V3().crossVectors(T,e1); X=e1;
+      for(let j=0;j<=sides;j++){ const a=j/sides*6.283, nn=e1.clone().multiplyScalar(Math.cos(a)).addScaledVector(e2,Math.sin(a)), p=P[k].clone().addScaledVector(nn,r(u)); pos.push(p.x,p.y,p.z); nor.push(nn.x,nn.y,nn.z); uv.push(j/sides,u); meta.push({sway:u,spine:P[k].clone()}); } }
+    for(let k=0;k<n;k++) for(let j=0;j<sides;j++){ const a=k*(sides+1)+j, b=a+1, c=a+sides+1, d=c+1; idx.push(a,c,b,b,c,d); }
+    return {pos,nor,uv,idx,meta}; }
+  const colorize=(part,fn)=>{ part.col=[]; const c=new Col(); for(let i=0;i<part.pos.length/3;i++){ c.set(fn(part.meta[i],i,part.pos[i*3],part.pos[i*3+1],part.pos[i*3+2])); part.col.push(c.r,c.g,c.b); } if(fn.type!=null) part.meta.forEach(m=>{ m.type=fn.type; }); return part; };
+  const vary=(hex,r,k)=>new Col(hex).offsetHSL((r()-.5)*.03,(r()-.5)*.1,(r()-.5)*k);
+  const to3=(pt,a,base)=>new V3(base.x+Math.cos(a)*pt[0],base.y+pt[1],base.z+Math.sin(a)*pt[0]);
+
+  // ---------- FELCE: fronde con pastorali che si srotolano ----------
+  function buildFelce(r){ const B=Builder(), NF=7, Lf=.5;
+    for(let f=0;f<NF;f++){ const a=f*2.399+r()*.5, base=new V3((r()-.5)*.03,.01,(r()-.5)*.03), axis=new V3(-Math.sin(a),0,Math.cos(a)), L=Lf*(.8+r()*.35), colG=vary(0x4a8a44,r,.06), ph=r();
+      // pose: q=1 aperta · q=.5 mezza · q=0 pastorale arrotolato
+      const build=q=>{ const len=L*(.45+.55*q), phi0=1.15+.3*(1-q), n=16;
+        const kap=u=>{ const open=-(1.5)/len*(.6+.4*q); const curl=q>=1?0:(q>.25?Math.max(0,u-.5)*Math.max(0,u-.5)*110/len*(1-q)*2:u*u*48/len); return open*(q)+curl+(q>0.25&&q<1?-(1.1/len)*Math.min(1,u*2):0); };
+        const sp=spine(n,len,phi0,kap), P=sp.pts.map(p=>to3(p,a,base)), T=sp.tg.map(t=>new V3(Math.cos(a)*Math.cos(t),Math.sin(t),Math.sin(a)*Math.cos(t))), E=P.map(()=>axis);
+        const parts=[colorize(tube(P,u=>.011*(1-.7*u)*(.5+.5*q),4),()=>colG.clone().multiplyScalar(.75))];
+        const NP=14, sweep=.55+(1-q)*.95, lat=.12+.88*q, tilt=.25;
+        for(let i=0;i<NP;i++){ const u=.12+.85*i/(NP-1), k=Math.round(u*n), Pk=P[k], Tk=T[k]; const lp=.11*Math.pow(Math.sin(Math.PI*(.12+.88*u)),.7)*(.7+.3*q);
+          for(const side of[-1,1]){ const Nf=new V3().crossVectors(Tk,axis).normalize(); const d=axis.clone().multiplyScalar(side*Math.cos(sweep)).addScaledVector(Tk,Math.sin(sweep)).normalize().multiplyScalar(Math.cos(tilt)).addScaledVector(Nf,-Math.sin(tilt)*(q)).normalize(), e=new V3().crossVectors(Nf,d).normalize();
+            const m=3, PP=[],TT=[],EE=[]; for(let s=0;s<=m;s++){ const t=s/m; PP.push(Pk.clone().addScaledVector(d,t*lp).addScaledVector(Nf,-t*t*lp*.3*q)); TT.push(d); EE.push(e); }
+            parts.push(colorize(ribbon(PP,TT,EE,t=>.026*lat*Math.pow(Math.sin(Math.PI*Math.min(1,t*.92+.04)),.6)*(1-.3*t)*(1+.09*Math.sin(t*34)),.22,1),mm=>colG.clone().offsetHSL(0,0,.04*Math.sin(mm.sway*20)-.03*Math.abs(mm.s||0)))); } }
+        return merge(parts); };
+      B.add(build,{pivot:base,axis,grow:f/NF,phase:ph,type:2}); }
+    return B.geo(); }
+  // ---------- SUCCULENTA: rosetta che si allarga, foglie che emergono dal centro ----------
+  function buildSucculenta(r){ const B=Builder(), N=19, leafGeo=new THREE.SphereGeometry(1,7,6);
+    { const p=leafGeo.attributes.position; for(let i=0;i<p.count;i++){ const x=p.getX(i),y=p.getY(i),z=p.getZ(i), t=(y+1)/2; p.setXYZ(i,x*(.15+.85*Math.pow(Math.sin(Math.PI*Math.pow(t,.8)),.8))*.42,y,z*(.45+.55*Math.sin(Math.PI*t))*.17*(z>0?1:.6)); } leafGeo.computeVertexNormals(); }
+    for(let i=0;i<N;i++){ const f=i/N, a=i*2.399+.3, rad=.012+.045*Math.pow(f,.85), base=new V3(Math.cos(a)*rad,.015+.006*(1-f),Math.sin(a)*rad), axis=new V3(-Math.sin(a),0,Math.cos(a)), colG=vary(0x7aa386,r,.06), tip=new Col(0xa8605a);
+      const build=q=>{ const tiltF=.2+1.15*Math.pow(f,.9), tilt=tiltF*(.15+.85*q), len=(.075+.075*f)*(.45+.55*q), lat=.35+.65*q;
+        const m=new M4().makeTranslation(base.x,base.y,base.z).multiply(new M4().makeRotationY(-a)).multiply(new M4().makeRotationZ(-tilt)).multiply(new M4().makeTranslation(0,len/2,0)).multiply(new M4().makeScale(lat*len,len/2,lat*len));
+        return part(leafGeo,m,{color:(v,k)=>{ const t=clamp((leafGeo.attributes.position.getY(k)+1)/2); return colG.clone().lerp(tip,Math.pow(t,3)*.8).offsetHSL(0,0,.03*(1-t)); },sway:(v,k)=>clamp((leafGeo.attributes.position.getY(k)+1)/2)*.35,spine:v=>{ const d=v.clone().sub(base), up=new V3(Math.cos(a)*Math.sin(tilt),Math.cos(tilt),Math.sin(a)*Math.sin(tilt)); return base.clone().addScaledVector(up,d.dot(up)); }}); };
+      B.add(build,{pivot:base,axis,grow:f*.95,phase:r(),type:2}); }
+    leafGeo.dispose(); return B.geo(); }
+  // ---------- CARNIVORA (Drosera): foglie a nastro con tentacoli e gocce ----------
+  function buildCarnivora(r){ const B=Builder(), NL=6, dropGeo=new THREE.SphereGeometry(1,5,3);
+    for(let i=0;i<NL;i++){ const f=i/NL, a=i*2.399+1.1, base=new V3(Math.cos(a)*.012,.012,Math.sin(a)*.012), axis=new V3(-Math.sin(a),0,Math.cos(a)), L=.2*(.75+.3*f+r()*.1), colG=vary(0x5f9a4e,r,.05), red=new Col(0xc0423a), ph=r();
+      const build=q=>{ const len=L*(.45+.55*q), n=12, phi0=.95+.45*(1-q), kap=u=>(q>=1?-.9/len:(q>.25?-(1.2/len)*Math.min(1,u*2)+Math.max(0,u-.45)*Math.max(0,u-.45)*120/len*(1-q)*2:u*u*52/len));
+        const sp=spine(n,len,phi0,kap), P=sp.pts.map(p=>to3(p,a,base)), T=sp.tg.map(t=>new V3(Math.cos(a)*Math.cos(t),Math.sin(t),Math.sin(a)*Math.cos(t))), E=P.map(()=>axis), lat=.3+.7*q;
+        const leaf=colorize(ribbon(P,T,E,u=>(u<.35?.0085:.017*lat*Math.pow(Math.sin(Math.PI*Math.min(1,(u-.35)/.68)),.45)),-.35,1),mm=>mm.sway<.35?colG.clone().multiplyScalar(.9):colG.clone().lerp(red,.3*Math.abs(mm.s||0)+.1));
+        const parts=[leaf];
+        // tentacoli: gambo rosso + goccia (aType 3: scala con la rugiada)
+        const rows=5, cols=[-.62,0,.62]; for(let k=0;k<rows;k++){ const u=.42+.54*k/(rows-1), idx=Math.round(u*n), Pk=P[idx], Nf=new V3().crossVectors(axis,T[idx]).normalize(), hw=.017*lat*Math.pow(Math.sin(Math.PI*Math.min(1,(u-.35)/.68)),.45);
+          cols.forEach((s,ci)=>{ const root=Pk.clone().addScaledVector(axis,s*hw).addScaledVector(Nf,Math.abs(s)*-.35*hw), dir=Nf.clone().addScaledVector(axis,s*.9).normalize(), ln=(.011+.008*Math.abs(s))*lat, tipP=root.clone().addScaledVector(dir,ln);
+            parts.push(colorize(tube([root,tipP],()=>.0012,3),()=>red.clone().offsetHSL(0,0,-.1)));
+            const d=part(dropGeo,new M4().makeTranslation(tipP.x,tipP.y,tipP.z).multiply(new M4().makeScale(.0036,.0036,.0036)),{color:()=>0xffffff,sway:()=>u,spine:()=>tipP.clone(),type:3}); d.meta.forEach(m=>{ m.sway=u; }); parts.push(d); }); }
+        return merge(parts); };
+      B.add(build,{pivot:base,axis,grow:f*.9,phase:ph,type:2}); }
+    dropGeo.dispose(); return B.geo(); }
+  // ---------- FUNGO: ondate di corpi fruttiferi (spillo → bottone → cappello aperto → appassito) ----------
+  function buildFungo(r){ const B=Builder(), N=5;
+    for(let i=0;i<N;i++){ const a=i*2.399+r(), rad=.05+.12*Math.sqrt(r()), base=new V3(Math.cos(a)*rad,0,Math.sin(a)*rad), axis=new V3(-Math.sin(a+.7),0,Math.cos(a+.7)), sz=.8+r()*.45, lean=(r()-.5)*.25, capC=vary(0xb8825a,r,.08), gill=new Col(0x6a4a34), stemC=vary(0xe6dccb,r,.03), ph=i*.09+r()*.06;
+      const build=q=>{ const h=.11*sz*(.25+.75*q), R=.058*sz*(.32+.68*q), V=.95-.52*q, n=6; const P=[]; for(let k=0;k<=n;k++){ const u=k/n; P.push(base.clone().add(new V3(Math.sin(lean)*u*h,u*h,0))); }
+        const parts=[colorize(tube(P,u=>.011*sz*(1.25-.35*u),7),()=>stemC)];
+        // cappello: emisfero schiacciato + fondo (lamelle)
+        const top=P[n], rows=5, segs=12, pos=[],nor=[],uv=[],idx=[],meta=[]; const push=(p,nn,sw)=>{ pos.push(p.x,p.y,p.z); nor.push(nn.x,nn.y,nn.z); uv.push(0,0); meta.push({sway:sw,spine:top.clone()}); };
+        for(let k=0;k<=rows;k++){ const al=k/rows*Math.PI/2; for(let j=0;j<=segs;j++){ const b=j/segs*6.283, x=Math.sin(al)*R*Math.cos(b), z=Math.sin(al)*R*Math.sin(b), y=Math.cos(al)*R*V; push(top.clone().add(new V3(x,y-R*V*.15,z)),new V3(x,y/V,z).normalize(),1); } }
+        for(let k=0;k<rows;k++) for(let j=0;j<segs;j++){ const A1=k*(segs+1)+j, B1=A1+1, C1=A1+segs+1, D1=C1+1; idx.push(A1,B1,C1,B1,D1,C1); }
+        const nTop=pos.length/3; for(let j=0;j<=segs;j++){ const b=j/segs*6.283; push(top.clone().add(new V3(R*Math.cos(b),-R*V*.15,R*Math.sin(b))),new V3(0,-1,0),1); } push(top.clone().add(new V3(0,-R*V*.15-R*.12*q,0)),new V3(0,-1,0),1);
+        const c=pos.length/3-1; for(let j=0;j<segs;j++) idx.push(nTop+j,c,nTop+j+1);
+        const cap={pos,nor,uv,idx,meta}; colorize(cap,(m,k,x,y,z)=>{ const under=k>=nTop; const d=Math.hypot(x-top.x,z-top.z)/R; return under?gill.clone().offsetHSL(0,0,.05*Math.sin(k*2.3)):capC.clone().offsetHSL(0,0,-.16*(1-d)+.04*Math.sin(k*1.7)); }); parts.push(cap);
+        return merge(parts); };
+      B.add(build,{pivot:base,axis,grow:0,phase:ph,type:4}); }
+    return B.geo(); }
+  // ---------- MUSCHIO: cuscini istanziati che si allargano e si infittiscono ----------
+  function buildMuschio(g,r,U){ const MB=TX?0xb7d39c:0x3e8e68, SB=TX?0x5e8a46:0x4e9060;
+    const cg=new THREE.IcosahedronGeometry(1,2); { const p=cg.attributes.position; for(let k=0;k<p.count;k++){ const x=p.getX(k),y=p.getY(k),z=p.getZ(k), n=1+.1*Math.sin(x*9.1+z*7.3)+.08*Math.sin(y*11+x*5)+.05*Math.sin(z*13-y*6); p.setXYZ(k,x*n,y*n,z*n); } cg.computeVertexNormals(); }
+    const mat=patch(new THREE.MeshStandardMaterial(TX?{color:MB,map:ptex('Moss002_col',3),normalMap:ptex('Moss002_nor',3,false),normalScale:new THREE.Vector2(1.2,1.2),roughness:1}:{color:MB,roughness:1}),U,CURL_MUS,true);
+    const sg=new THREE.ConeGeometry(.0055,.034,5,2); sg.translate(0,.017,0); { const p=sg.attributes.position; for(let k=0;k<p.count;k++){ const y=p.getY(k); p.setX(k,p.getX(k)+y*y*6); } sg.computeVertexNormals(); }
+    const smat=patch(new THREE.MeshStandardMaterial({color:SB,roughness:1}),U,CURL_SPK,true);
+    const N=16, SP=10, im=new THREE.InstancedMesh(cg,mat,N), st=new THREE.InstancedMesh(sg,smat,N*SP), m=new M4(), q=new THREE.Quaternion(), ig=new Float32Array(N), ip=new Float32Array(N), sgr=new Float32Array(N*SP), sph=new Float32Array(N*SP);
+    for(let i=0;i<N;i++){ const a=r()*6.283, d=(i<3?.08:.34)*Math.sqrt(r()), x=Math.cos(a)*d, z=Math.sin(a)*d, s=.075+r()*.065; ig[i]=clamp(.08+d/.34*1.05+(r()-.5)*.12,0,1.22); ip[i]=r();
+      m.compose(new V3(x,s*.18,z),q,new V3(s,s*.6,s)); im.setMatrixAt(i,m);
+      for(let j=0;j<SP;j++){ const th=r()*6.283, phh=r()*1.15, dir=new V3(Math.cos(th)*Math.sin(phh),Math.cos(phh)+.6,Math.sin(th)*Math.sin(phh)).normalize(), qq=new THREE.Quaternion().setFromUnitVectors(Y,dir).multiply(new THREE.Quaternion().setFromAxisAngle(Y,r()*6.283)), sc=.7+r()*.6, k=i*SP+j;
+        m.compose(new V3(x+dir.x*s,s*.18+dir.y*s*.6,z+dir.z*s),qq,new V3(sc,sc,sc)); st.setMatrixAt(k,m); sgr[k]=Math.min(1.25,ig[i]+.04+j/SP*.45); sph[k]=r(); } }
+    cg.setAttribute('iGrow',new THREE.InstancedBufferAttribute(ig,1)); cg.setAttribute('iPhase',new THREE.InstancedBufferAttribute(ip,1)); sg.setAttribute('iGrow',new THREE.InstancedBufferAttribute(sgr,1)); sg.setAttribute('iPhase',new THREE.InstancedBufferAttribute(sph,1));
+    im.instanceMatrix.needsUpdate=true; st.instanceMatrix.needsUpdate=true; shadowed(im,U,CURL_MUS,true); shadowed(st,U,CURL_SPK,true); st.castShadow=false; g.add(im,st); return [im,st]; }
+
+  // ---------- creazione ----------
+  const objs={};
+  function mk(id,slot,seed){ const g=new THREE.Group(), r=rngS(seed), [sx,sz]=SLOTS[slot%SLOTS.length]; g.position.set(sx,.1,sz); const U=uniforms(), meshes=[]; let emiss=null;
+    if(id==='muschio') meshes.push(...buildMuschio(g,r,U));
+    else { const kind=KIND[id]||KIND.felce, built=(id==='felce'?buildFelce:id==='succulenta'?buildSucculenta:id==='carnivora'?buildCarnivora:buildFungo)(r);
+      const leaf=patch(new THREE.MeshStandardMaterial({vertexColors:true,color:0xffffff,roughness:id==='fungo'?.75:id==='succulenta'?.5:.62,side:THREE.DoubleSide}),U,kind,false);
+      const mats=built.groups.map(k=>k==='0'?leaf:patch(new THREE.MeshPhysicalMaterial({vertexColors:true,color:0xffffff,roughness:.05,clearcoat:1,clearcoatRoughness:.03,transparent:true,opacity:.7,specularIntensity:1,depthWrite:false}),U,kind,false));
+      const mesh=new THREE.Mesh(built.geo,mats.length===1?mats[0]:mats); shadowed(mesh,U,kind,false); g.add(mesh); meshes.push(mesh); if(id==='fungo') emiss=leaf; }
+    const o={id,g,U,meshes,emiss,st:null,key:'',
+      upd(){}, // compatibilità con il vecchio ciclo di v3d: tutto passa da tick()
+      dispose(){ meshes.forEach(m=>{ m.geometry.dispose(); [].concat(m.material).forEach(x=>x.dispose()); if(m.customDepthMaterial) m.customDepthMaterial.dispose(); }); } };
+    objs[id]=o; return o; }
+
+  // ---------- stato dal microclima → bersagli visivi ----------
+  let forced=null, lastPull=-1, micro=null;
+  function target(id,p,v,m){ const q=m&&m.piante&&m.piante[id], f=forced&&forced[id]||{};
+    const vig=f.vigore!=null?f.vigore:q?q.vigore:clamp(p.v), cre=f.crescita!=null?f.crescita:q?q.crescita:1e9;
+    const um=S.n?clamp(S.n.um):.6, wetS=f.superficie!=null?f.superficie:m?m.acqua.superficie:um, wetT=f.terriccio!=null?f.terriccio:m?m.acqua.terriccio:um, rh=f.rh!=null?f.rh:m?m.aria.rh:.85, rist=f.ristagno!=null?f.ristagno:m?m.acqua.ristagno:0;
+    const aperto=f.aperto!=null?f.aperto:m?!!m.aperto:!!(v.clima&&v.clima.aperto);
+    const grow=Math.max(GMIN[id]||0,(GROW[id]||GROW.felce)(cre));
+    let tur; if(id==='muschio') tur=.3*vig+.7*clamp((wetS-.08)/.45); else if(id==='felce') tur=.45*vig+.55*clamp((wetT-.3)/.4); else if(id==='carnivora') tur=.5*vig+.5*clamp((wetT-.4)/.4); else tur=vig;
+    const droop=Math.max(clamp((.55-vig)/.4),clamp((.5-tur)/.5)*.8), dry=clamp((.55-tur)/.45)*(1-clamp(rist-.3)*2);
+    const rotC=id==='succulenta'?(rist>.3||rh>.8?1:0):clamp((rist-.3)/.5), rot=rotC*clamp((.85-vig)/.6);
+    const dew=id==='carnivora'?clamp((rh-.6)/.3)*tur:0, gloss=clamp((vig-.65)/.25)*clamp(tur), wind=aperto?1:.12;
+    return {grow,vig,tur,droop,dry,rot,dew,gloss,wind,mut:v.R>.6?1:0}; }
+  const ease=(a,b,k)=>a+(b-a)*Math.min(1,k);
+  function tick(dt,t,v,plantObjs){
+    if(t-lastPull>.5){ lastPull=t; try{ micro=A.micro?A.micro():null; }catch(e){ micro=null; } }
+    Object.keys(objs).forEach(id=>{ if(!plantObjs[id]||plantObjs[id]!==objs[id]){ objs[id].dispose(); delete objs[id]; } });
+    v.plants.forEach(p=>{ const o=objs[p.id]; if(!o) return; o.g.position.y=S.soilTop; const T=target(p.id,p,v,micro); let s=o.st;
+      if(!s){ s=o.st=Object.assign({},T); }
+      else { s.grow=ease(s.grow,T.grow,dt*.6); s.vig=ease(s.vig,T.vig,dt*.5); s.tur=ease(s.tur,T.tur,T.tur>s.tur?dt*.45:dt*.07); s.droop=ease(s.droop,T.droop,T.droop<s.droop?dt*.4:dt*.08); s.dry=ease(s.dry,T.dry,T.dry<s.dry?dt*.35:dt*.06); s.rot=ease(s.rot,T.rot,dt*.08); s.dew=ease(s.dew,T.dew,dt*.3); s.gloss=ease(s.gloss,T.gloss,dt*.4); s.wind=ease(s.wind,T.wind,dt*.5); s.mut=T.mut; }
+      const U=o.U; U.uGrow.value=s.grow; U.uTurgor.value=s.tur; U.uDroop.value=s.droop; U.uDry.value=s.dry; U.uRot.value=s.rot; U.uDew.value=s.dew; U.uGloss.value=s.gloss; U.uWind.value=s.wind; U.uTime.value=t;
+      if(o.emiss){ const k=s.mut?'m':'n'; if(o.key!==k){ o.key=k; o.emiss.emissive.set(s.mut?0x3a1020:0x000000); } } }); }
+  // QA e test: forza gli stati (force(null) toglie), settle() salta le transizioni
+  function force(st){ forced=st; lastPull=-1; }
+  function settle(){ Object.values(objs).forEach(o=>{ o.st=null; }); }
+  function state(){ const r={}; Object.values(objs).forEach(o=>{ r[o.id]=o.st&&Object.assign({},o.st); }); return r; }
+  // Adattatore per i modelli veri di Kimi (brief v3 §5.3): stessi stati, attributi _GROW/_SWAY e morph target.
+  // Dato un mesh glTF con attributi _GROW/_SWAY e morph «uncurl»/«trap_close», ADATTA(mesh) restituisce {U, apply(st)}:
+  // il materiale riceve la stessa patch (gli attributi glTF vengono rinominati aGrow/aSway e, mancando aP0/aP1/aPivot, si usano morph e posizione).
+  function ADATTA(mesh,kind){ const U=uniforms(); const g=mesh.geometry; if(g.attributes._GROW&&!g.attributes.aGrow) g.setAttribute('aGrow',g.attributes._GROW); if(g.attributes._SWAY&&!g.attributes.aSway) g.setAttribute('aSway',g.attributes._SWAY);
+    const n=g.attributes.position.count, z=new Float32Array(n*3); ['aP0','aP1','aSpine'].forEach(k=>{ if(!g.attributes[k]) g.setAttribute(k,g.attributes.position); }); if(!g.attributes.aPivot) g.setAttribute('aPivot',new THREE.BufferAttribute(z,3)); if(!g.attributes.aAxis){ const ax=new Float32Array(n*3); for(let i=0;i<n;i++) ax[i*3]=1; g.setAttribute('aAxis',new THREE.BufferAttribute(ax,3)); } if(!g.attributes.aPhase) g.setAttribute('aPhase',new THREE.BufferAttribute(new Float32Array(n),1)); if(!g.attributes.aType) g.setAttribute('aType',new THREE.BufferAttribute(new Float32Array(n),1));
+    [].concat(mesh.material).forEach(m=>patch(m,U,kind||1,false)); shadowed(mesh,U,kind||1,false);
+    return {U,apply(s){ U.uGrow.value=s.grow; U.uTurgor.value=s.tur; U.uDroop.value=s.droop; U.uDry.value=s.dry; U.uRot.value=s.rot; U.uDew.value=s.dew; U.uGloss.value=s.gloss; U.uWind.value=s.wind; const mi=mesh.morphTargetDictionary; if(mi&&mesh.morphTargetInfluences){ if('uncurl' in mi) mesh.morphTargetInfluences[mi.uncurl]=clamp(s.grow); if('trap_close' in mi) mesh.morphTargetInfluences[mi.trap_close]=s.trap||0; } }}; }
+  return {mk,tick,force,settle,state,target,GROW,ADATTA,objs};
+};
