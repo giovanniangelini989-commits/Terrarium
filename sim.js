@@ -88,7 +88,7 @@ function createSim(setup0,opts){
   const flags={pace:false,warEnded:false}; const log=[]; let evN=0, lumMod=0, lumModLeft=0;
   const ev=(d,kind,icon,text,why)=>{ const en={d,kind,icon,text,why:why||[]}; if(opts.game) en.n=++evN; log.push(en); if(kind==='pace') flags.pace=true; if(kind==='guerra'&&text.indexOf('La guerra finisce')===0) flags.warEnded=true; };
   let s,w,T,H,met,wBoost=0;
-  let Wres=ACQUA[setup0.acqua==null?1:setup0.acqua].w, nw={um:false,ter:false,pul:false}; let E=20,pulse=0,muffa=ACQUA[setup.acqua].w>.7?.3:.05,detr=(opts.needs?DET0:.2); let muffaWarn=false, siccita=false;
+  let Wres=ACQUA[setup0.acqua==null?1:setup0.acqua].w, nw={um:false,ter:false,pul:false}; const ERED=opts.eredita||{}; let E=ERED.E!=null?ERED.E:20,pulse=0,muffa=ACQUA[setup.acqua].w>.7?.3:.05,detr=(opts.needs?DET0:.2); if(NEEDS&&ERED.um!=null) Wres=clamp(ERED.um,0,1); let muffaWarn=false, siccita=false;
   const climaZero=()=>({tappo:0,ap:0,apOggi:0,dren:0,rist:0,umG:0,colle:0,rin:0,Tc:22,Hc:.8,pv:.7,f:{}}); let clima=climaZero();
   const mkPlant=id=>({id,...PIANTE[id],mut:false,v:0});
   const mkSp=id=>{ const b=SPECIE[id]; return {id,...b,tol:{...b.tol},pop:12,mut:[],mutIdx:0,X:0,gen:0,genAcc:0,society:null,suscept:1,tossico:false,alive:true,intBonus:0,monster:false,rep0:b.rep}; };
@@ -99,7 +99,7 @@ function createSim(setup0,opts){
   function recompute(){ s=LUCE[setup.luce].s; ogg.forEach(o=>{ if(OGGETTI[o].luce) s=clamp(s+OGGETTI[o].luce); }); if(lumModLeft>0) s=clamp(s-lumMod); w=NEEDS?clamp(Wres,0,1):clamp(ACQUA[setup.acqua].w+wBoost,0,1); met=METEO[setup.meteorite]; T=.3+.7*s; H=clamp(w*.85-(T-.5)*.25+(plants.some(p=>p.id==='muschio')?.08:0)); }
   recompute();
   plants.forEach(p=>{ if(!p.v) p.v=clamp(1-1.1*Math.abs(s-p.opt.l)-1.1*Math.abs(w-p.opt.w)); });
-  let radSum=0,radN=0,lastR=0.3; let d=0; const pending=[]; let chapterStart=0, chapterNo=1, finalePending=null, monsterSince=0, lastNotable=0, lastFinale=null;
+  let radSum=0,radN=0,lastR=0.3; let d=0; const pending=[]; let chapterStart=0, chapterNo=opts.capitolo||1, finalePending=null, monsterSince=0, lastNotable=0, lastFinale=ERED.ultimo||null;
   function applyMut(x,pick){
     x.mut.push(pick); const M=MUT[pick];
 
@@ -314,7 +314,7 @@ function createSim(setup0,opts){
     if(NEEDS&&(name==='acqua'||name==='nutri'||name==='pulisci'||name==='terra')) climaCura(name);
     if(name==='pulisci'){ muffa=clamp(muffa-(NEEDS?.4:.25)); if(!NEEDS) detr=clamp(detr-.1); ev(d,'azione','🧽','Hai pulito il vetro e il fondo.',['La muffa cala.']); return 'Più pulito: la muffa cala.'; }
     if(name==='terra'){ detr=clamp(detr+.6); ev(d,'azione','🪴','Versi una manciata di terra nel barattolo. Il sasso si scurisce un poco, come se ascoltasse.',['Il terreno parte da zero.']); return 'Terra nel barattolo.'; }
-    if(name==='acqua'){ if(NEEDS) Wres=clamp(Wres+.3); else wBoost=Math.min(.3,wBoost+.15); recompute(); ev(d,'azione','💧','Hai versato un po’ d’acqua.',['Il vaso è più umido per qualche giorno.']); return 'Più umido, per qualche giorno.'; }
+    if(name==='acqua'){ if(NEEDS&&Wres>=.95){ muffa=clamp(muffa+.05); ev(d,'ambiente','🌫️','Troppa acqua: il vetro si appanna e l’acqua cola sul fondo.',['Il vaso era già pieno d’acqua: l’umido in più nutre la muffa sul vetro.']); } if(NEEDS) Wres=clamp(Wres+.3); else wBoost=Math.min(.3,wBoost+.15); recompute(); ev(d,'azione','💧','Hai versato un po’ d’acqua.',['Il vaso è più umido per qualche giorno.']); return 'Più umido, per qualche giorno.'; }
     if(name==='nutri'){ detr=clamp(detr+(NEEDS?.35:.2)); ev(d,'azione','🌱','Hai nutrito il suolo.',['C’è più cibo per chi mangia il marcio.']); return 'Più cibo nel suolo.'; }
     return ''; }
   function resolve(id,choice){

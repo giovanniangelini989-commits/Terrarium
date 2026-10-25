@@ -28,6 +28,19 @@ function guerra(a,b){ var x=sp(a),y=sp(b); if(!x||!y) return; A.sim.wars.push({k
 function giorni(n){ var tot=0; for(var i=0;i<n;i++){ var r=A.passaNotte(); if(r.pausa) break; tot++; } A.popups.splice(0,A.popups.length,...A.popups.filter(p=>p.t!=='notte')); return tot; }
 function avantiFinoFinale(){ var g=0, s=A.sim; while(!s.finalePending&&g<400){ g++; var r=A.demoDay(true); if(r.pausa){ var p=s.pending[0]; s.resolve(p.id,p.type==='mutazione'?'proteggi':p.type==='guerra'?'lascia':'nascosto'); } } A.popups.length=0; return s.finalePending; }
 
+/* ---------- microclima: lo stato si scrive in una copia (__MICRO.create), poi si rimette nel salvataggio e si ricarica ---------- */
+const MC=function(){ return window.__MICRO; };
+function microCopia(){ var m=MC().create({}); A.persist(); if(A.G&&A.G.micro&&A.G.micro.S) m.load(JSON.parse(JSON.stringify(A.G.micro))); return m; }
+function microInietta(m,ofs){ A.persist(); var g=JSON.parse(A.store.get()); g.micro=Object.assign(m.save(),{ofs:(ofs!=null?ofs:(g.micro&&g.micro.ofs)||0)}); A.store.set(JSON.stringify(g)); A.loadSave(); lasciaGioco(); U.render(); }
+function microOre(m,ora,n,pos,st){ m.step(n,function(t){ return Object.assign(MC().ambienteDi(ora+t,{stagione:st||'mezza',posizione:pos||'mezza'}),{letargo:false}); }); }
+function microScena(f,needs){ avviata(); if(!MC()||typeof A.micro!=='function'||!A.micro()) return false;
+  if(needs) A.sim.setNeeds(needs);
+  var m=microCopia(); f(m,m._S,MC().JAR); microInietta(m); return true; }
+const microOk=function(){ return (MC()&&typeof A.micro==='function'&&typeof A.tappo==='function')||'in arrivo'; };
+function segmento(t){ U.mode='game'; U.tab='quaderno'; U.render(); setTimeout(function(){ var b=$('[data-a="cdx"][data-t="'+t+'"]'); if(b) b.click(); },150); }
+function mazzoPieno(){ avviata(); Object.keys(A.CARTE).forEach(function(id){ A.G.mazzo[id]=A.G.mazzo[id]||1; }); A.persist(); }
+function assenza(n){ avviata(); A.G.real.lastDay=A.todayIdx()-n; A.persist(); A.checkNewDay(); popup(); return true; }
+
 /* ---------- finali: ingredienti per specie ---------- */
 const INV={sacro:'fede',sapere:'accademia',commercio:'mercato',gioco:'carnevale',mistero:'mistero',comunicazione:'voci',fuoco:'fiamma',agricoltura:'giardinieri'};
 const CULTDI={}; Object.keys(INV).forEach(c=>CULTDI[INV[c]]=c);
@@ -38,7 +51,7 @@ const RICETTA={
   voci:[['formiche'],['muschio'],['radio']], fiamma:[['formiche'],['muschio'],['candela']], giardinieri:[['formiche'],['fungo','muschio'],[]],
   scisma:[['formiche'],['muschio'],['statuina','orologio']], conquista:[['formiche','termiti'],['muschio'],[]], patto:[['formiche','termiti'],['muschio'],['moneta']]
 };
-function finale(k){
+function finale(k,chiudiPoi){
   var r=RICETTA[k]||[['formiche'],['muschio'],[]]; nuova(r[0],r[1],r[2]); var s=A.sim;
   var fp=avantiFinoFinale();
   if(!fp){ A.toast('Finale non raggiunto in 400 giorni'); return false; }
@@ -46,18 +59,20 @@ function finale(k){
   var F=T.FINALI[k];
   if(F&&F.fam==='Società'&&!s.sp.some(x=>x.society)) societa(r[0][0],CULTDI[k]||'tribale');
   A.G.ui.snoozeFinale=0; A.persist(); U.render();
-  setTimeout(function(){ var b=$('[data-a="fin-open"]'); if(b) b.click(); },500);
+  setTimeout(function(){ var b=$('[data-a="fin-open"]'); if(b) b.click(); if(chiudiPoi){ var n=0, h=setInterval(function(){ var c=$('[data-a="fin-close"]'); if(c){ clearInterval(h); c.click(); } else if(++n>20){ clearInterval(h); try{ A.closeChapter(); U.render(); }catch(e){} } },200); } },500);
   return true; }
 
 /* ---------- le voci ---------- */
+function VN(id,l,run,ok,sub){ var v=V(id,l,run,ok,sub); v.noTutto=true; return v; }
 function V(id,l,run,ok,sub){ return {id:id,l:l,run:run,ok:ok||function(){return true;},sub:sub||''}; }
 const finaliVoci=function(){ var F=T.FINALI||{}; return Object.keys(F).map(function(k){ return V('finale-'+k,F[k].icon+' '+F[k].nome,function(){ return finale(k); },null,F[k].fam); }); };
 const gatti=function(){ var N=window.__notti; var G=N&&N.GATTO||[]; var out=[]; G.forEach(function(g,i){ out.push(V('biscotto-'+i,'Capitolo '+(i+1)+(g?': '+g.t:': la zampa'),function(){ avviata(); A.popups.push(i===1?{t:'biscotto'}:{t:'gatto',s:i}); A.G.ui.gatto=Math.max(A.G.ui.gatto||0,i); popup(); },function(){ return !!N; })); }); if(!out.length) out.push(V('biscotto-x','Notte di Biscotto',nope,function(){ return 'in arrivo'; })); return out; };
-const carteRar=function(){ var C=A.CARTE||{}, ids=Object.keys(C), seen={}, out=[]; ids.forEach(function(id){ var r=C[id].r; if(!seen[r]){ seen[r]=1; out.push(V('carta-'+r,'Carta '+r+': '+C[id].n,function(){ return apriCarta(id); })); } }); return out.length?out:[V('carta-x','Una carta',nope,function(){return 'in arrivo';})]; };
-function apriCarta(id){ avviata(); var C=window.__carte;
-  if(C&&typeof C.reveal==='function'){ C.reveal(id); return true; }
+const RARITA={carta:'Busta «carta» (comune)',argento:'Busta d’argento',sasso:'Busta del sasso',ricordo:'Busta del ricordo'};
+const carteRar=function(){ var C=A.CARTE||{}, ids=Object.keys(C), seen={}, out=[]; ids.forEach(function(id){ var r=C[id].r; if(!seen[r]){ seen[r]=1; out.push(V('carta-'+r,(RARITA[r]||'Busta '+r)+': '+C[id].n,function(){ return apriCarta(id); })); } }); return out.length?out:[V('carta-x','Una busta',nope,function(){return 'in arrivo';})]; };
+function apriCarta(id){ avviata(); var C=window.__carte; A.G.mazzo[id]=(A.G.mazzo[id]||0)+1; A.persist(); U.render();
+  if(C&&typeof C.reveal==='function'){ try{ C.init({app:A,audio:window.__au,vase:window.__vase}); }catch(e){} C.reveal({id:id,fonte:'capitolo',nuova:true},nope); return true; }
   if(U.cardReveal){ U.cardReveal(id,nope); return true; }
-  A.G.mazzo[id]=(A.G.mazzo[id]||0)+1; A.persist(); U.render(); return true; }
+  return true; }
 function powerCard(){ avviata(); var P=A.powerCards;
   try{
     P(); var max=(A.POWER&&A.POWER.max)||6; A.G.power=A.G.power||{}; A.G.power.salto=max;
@@ -85,7 +100,7 @@ function vista3d(on){ window.__noguard=true; return window.__vase.set3d(on).then
 /* ---------- elenco ---------- */
 const SEZ=[
  {t:'Partenza',v:[
-  V('video','Nuova partita con il video',function(){ A.store.del(); setTimeout(function(){ location.reload(); },300); return 'skip'; }),
+  VN('video','Nuova partita con il video',function(){ A.store.del(); setTimeout(function(){ location.reload(); },300); return 'skip'; }),
   V('vuoto','Nuova partita senza video (vaso vuoto)',function(){ nuova([],[],[]); return true; }),
   V('avviato','Vaso avviato: muschio, felce, formiche',function(){ nuova([],[],[]); A.skipStart(); entra(); return true; })]},
  {t:'Popolazioni',v:[
@@ -96,12 +111,14 @@ const SEZ=[
   V('popolo','Popolo fondato',function(){ nuova(['formiche'],['muschio','felce'],['statuina']); pop('formiche',60); societa('formiche','sacro'); A.updateCodex(); entra(); return true; }),
   V('guerra','Guerra in corso',function(){ nuova(['formiche','termiti'],['muschio','felce'],[]); pop('formiche',70); pop('termiti',70); societa('formiche','tribale'); societa('termiti','tribale'); guerra('formiche','termiti'); A.updateCodex(); entra(); return true; })]},
  {t:'Tempo',v:[
-  V('giorno','Giorno',function(){ avviata(); A.G.settings.tempo='giorno'; entra(); return true; }),
-  V('sera','Sera',function(){ window.__vase.setTempo('sera'); return true; },function(){ return (window.__vase&&typeof window.__vase.setTempo==='function')||'in arrivo'; }),
-  V('notte','Notte',function(){ avviata(); A.G.settings.tempo='notte'; entra(); return true; }),
-  V('n1','Avanti di 1 notte',function(){ avviata(); giorni(1); popup(); return true; }),
+  V('n1','Avanti di 6 ore (una notte)',function(){ avviata(); giorni(1); popup(); return true; }),
   V('n7','Avanti di 7 notti',function(){ avviata(); giorni(7); popup(); return true; }),
-  V('assenza3','Ritorno dopo 3 giorni di assenza',function(){ avviata(); A.G.real.lastDay=A.todayIdx()-3; A.persist(); A.checkNewDay(); popup(); return true; })]},
+  V('mani0','Mani a zero',function(){ avviata(); if(A.G.real) { A.G.real.cure=0; A.G.real.cureT=A.nowMs?A.nowMs():Date.now(); } A.persist(); entra(); return true; },function(){ return (A.G||typeof A.mani==='function'||typeof A.CURE_MAX==='number')?true:'in arrivo'; }),
+  V('mani6','Mani piene',function(){ avviata(); var mx=(typeof A.mani==='function'&&A.mani()&&A.mani().max)||A.CURE_MAX||6; A.G.real.cure=mx; A.G.real.cureT=A.nowMs?A.nowMs():Date.now(); A.persist(); entra(); return true; },function(){ return (A.G||typeof A.mani==='function'||typeof A.CURE_MAX==='number')?true:'in arrivo'; }),
+  V('calendario','Calendario del mese con eventi',function(){ avviata(); giorni(8); A.persist(); U.render(); segmento('calendario'); return true; },function(){ return typeof A.calendario==='function'||'in arrivo'; }),
+  V('salto2','Salta 2 giorni',function(){ avviata(); try{ A.powerCards(); }catch(e){} if(A.G.power) A.G.power.salto=Math.max(A.G.power.salto||0,2); A.persist(); var r=A.usaSalto(); popup(); return !!r; },function(){ return typeof A.usaSalto==='function'||'in arrivo'; }),
+  V('assenza3','Ritorno dopo 3 giorni di assenza',function(){ return assenza(3); }),
+  V('assenza5','Ritorno dopo 5 giorni (letargo, «Mentre non c’eri»)',function(){ return assenza(5); })]},
  {t:'Cura',v:[
   V('min','Bisogni al minimo',function(){ avviata(); A.sim.setNeeds({um:.04,ter:.04,pul:.04}); entra(); return true; }),
   V('max','Bisogni pieni',function(){ avviata(); A.sim.setNeeds({um:1,ter:1,pul:1}); if(typeof A.CURE_MAX==='number') A.G.real.cure=A.CURE_MAX; entra(); return true; }),
@@ -111,19 +128,47 @@ const SEZ=[
   {sub:'Notte di Biscotto',grp:gatti},
   {sub:'Finale imminente',grp:finaliVoci}]},
  {t:'Carte',v:[
-  V('mazzo','Mazzo completo',function(){ avviata(); Object.keys(A.CARTE).forEach(function(id){ A.G.mazzo[id]=(A.G.mazzo[id]||0)+1; }); entra(); return true; }),
-  {grp:carteRar}]},
+  {sub:'Apri una busta',grp:carteRar},
+  V('mazzo','Mazzo completo (una copia di ogni carta)',function(){ mazzoPieno(); entra(); return true; }),
+  V('album-pieno','Album completo',function(){ mazzoPieno(); segmento('carte'); return true; }),
+  V('album-vuoto','Album vuoto',function(){ avviata(); A.G.mazzo={}; A.persist(); segmento('carte'); return true; }),
+  V('ventaglio','Ventaglio pieno',function(){ mazzoPieno(); entra(); var C=window.__carte; C.init({app:A,audio:window.__au,vase:window.__vase}); C.hand({onPlay:nope}); return true; },function(){ return (window.__carte&&typeof window.__carte.hand==='function')||'in arrivo'; })]},
  {t:'Power card',v:[
   V('power','Dai 6 «Salta 2 giorni»',powerCard,function(){ return !!A.powerCards||'in arrivo'; })]},
- {t:'Prestazioni',v:[
+ {t:'Microclima',v:[
+  V('mc-apri','Tappo aperto',function(){ avviata(); A.tappo(true); entra(); return true; },microOk),
+  V('mc-chiudi','Tappo chiuso',function(){ avviata(); A.tappo(false); entra(); return true; },microOk),
+  V('mc-troppa','Troppa acqua: drenaggio pieno e ristagno',function(){ return microScena(function(m,S,J){ S.acqua.superficie=J.cap.superficie; S.acqua.terriccio=J.cap.terriccio; S.acqua.drenaggio=J.cap.drenaggio; S.marciume=.65; },{um:1,rist:.7}); },microOk),
+  V('mc-serra','Vaso al sole col tappo chiuso (serra)',function(){ avviata(); A.tappo(false); return microScena(function(m,S){ S.posizione='sole'; microOre(m,10,6,'sole','estate'); }); },microOk),
+  V('mc-muffa','Muffa che nasce',function(){ return microScena(function(m,S){ S.detrito=.85; S.muffa.terra=.5; S.muffa.vetro=.3; S.muffa.foglie=.2; },{um:.9,pul:.2}); },microOk),
+  V('mc-combatti','Muffa combattuta: apri, pulisci, collemboli',function(){ avviata(); A.tappo(true); return microScena(function(m){ m.act('pulisci'); m.act('collemboli',.6); },{pul:.85}); },microOk),
+  V('mc-alba','Vetro appannato all’alba',function(){ return microScena(function(m,S,J){ J.zone.forEach(function(z){ S.film[z]=J.filmCap*.9; }); S.gocce=.5; S.rh=.98; S.sporcoVetro=.3; S.T.vetro.alto=S.T.vetro.medio=S.T.vetro.basso=S.T.vetro.tappo=14; },null); },microOk),
+  V('mc-secco','Terreno secco',function(){ return microScena(function(m){ m.act({tipo:'imposta',v:{um:.04}}); },{um:.04}); },microOk),
+  V('mc-bagnato','Terreno bagnato',function(){ return microScena(function(m){ m.act({tipo:'imposta',v:{um:1}}); },{um:1}); },microOk)]},
+ {t:'Fine del vaso',v:[
+  V('fv-fine','Porta il vaso a fine capitolo',function(){ return finale('tribu'); }),
+  V('fv-chiudi','Chiudi il capitolo (con la carta)',function(){ return finale('equilibrio',true); }),
+  V('fv-nuovo','Vaso nuovo: solo il meteorite',function(){ nuova(['formiche'],['muschio','felce'],[]); avantiFinoFinale(); var r=A.closeChapter(); entra(); return !!r; },function(){ return (typeof A.archiviaVaso==='function'||(A.G&&Array.isArray(A.G.vasi)))||'in arrivo'; }),
+  V('fv-mensola','Mensola con 3 vasi finiti',function(){ avviata(); var d=A.todayIdx?A.todayIdx():0; A.G.vasi=[
+      {n:1,k:'equilibrio',dal:d-90,al:d-60,dv:30,popoli:1,mut:3,specie:['formiche'],nodi:[]},
+      {n:2,k:'tribu',dal:d-59,al:d-30,dv:29,popoli:2,mut:5,specie:['formiche','termiti'],nodi:[]},
+      {n:3,k:'fede',dal:d-29,al:d-1,dv:28,popoli:1,mut:7,specie:['formiche'],nodi:[]}]; A.persist(); segmento('vasi'); return true; },function(){ return (A.G&&Array.isArray(A.G.vasi))||(typeof A.archiviaVaso==='function')||'in arrivo'; })]},
+ {t:'Vista',v:[
+  V('giorno','Giorno',function(){ avviata(); A.G.settings.tempo='giorno'; entra(); return true; }),
+  V('sera','Sera',function(){ window.__vase.setTempo('sera'); return true; },function(){ return (window.__vase&&typeof window.__vase.setTempo==='function')||'in arrivo'; }),
+  V('notte','Notte',function(){ avviata(); A.G.settings.tempo='notte'; entra(); return true; }),
   V('p3d','Forza 3D pieno',function(){ vista3d(true); return true; },function(){ return (window.__vase&&window.__vase.set3d&&!window.__no3d)||'non disponibile qui'; }),
-  V('p3dr','Forza 3D ridotto',function(){ window.__v3d.setLevel(1); return true; },function(){ return (window.__v3d&&typeof window.__v3d.setLevel==='function')||'in arrivo'; }),
   V('p2d','Forza 2D',function(){ vista3d(false); return true; }),
-  V('fps','Mostra fps, triangoli, chiamate di disegno',contatore)]},
+  V('lv0','Guardia prestazioni: livello 0 (pieno)',function(){ window.__noguard=true; window.__v3d.setLevel(0); return true; },function(){ return (window.__v3d&&typeof window.__v3d.setLevel==='function')||'in arrivo'; }),
+  V('lv1','Guardia prestazioni: livello 1',function(){ window.__noguard=true; window.__v3d.setLevel(1); return true; },function(){ return (window.__v3d&&typeof window.__v3d.setLevel==='function')||'in arrivo'; }),
+  V('lv2','Guardia prestazioni: livello 2 (minimo)',function(){ window.__noguard=true; window.__v3d.setLevel(2); return true; },function(){ return (window.__v3d&&typeof window.__v3d.setLevel==='function')||'in arrivo'; }),
+  VN('fps','Mostra fps, triangoli, chiamate di disegno',contatore)]},
+ {t:'Prova tutto',v:[
+  VN('tutto','Prova tutto: ogni scenario, uno dopo l’altro (2 s di pausa)',provaTutto)]},
  {t:'Salvataggio',v:[
-  V('esporta','Esporta (copia negli appunti)',esporta),
-  V('importa','Importa (incolla)',importa),
-  V('azzera','Azzera la partita',azzera)]}
+  VN('esporta','Esporta (copia negli appunti)',esporta),
+  VN('importa','Importa (incolla)',importa),
+  VN('azzera','Azzera la partita',azzera)]}
 ];
 
 /* ---------- interfaccia ---------- */
@@ -136,6 +181,7 @@ const css=document.createElement('style'); css.textContent=
 '#tst-pan .k{margin:20px 0 8px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#A88BFF}#tst-pan .k2{margin:12px 0 6px;font-size:12px;font-weight:700;color:#9AACB8}'+
 '#tst-pan .it{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:46px;margin:0 0 6px;padding:8px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#EAF1F5;font:600 14px Manrope,sans-serif;text-align:left;cursor:pointer;transition:transform .15s ease,border-color .15s ease}'+
 '#tst-pan .it:active{transform:scale(.98);border-color:#7CF5C8}#tst-pan .it[disabled]{opacity:.38;cursor:default}#tst-pan .it small{font-size:11px;font-weight:700;color:#9AACB8;white-space:nowrap}'+
+'#tst-run{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 8px);z-index:101;pointer-events:none;padding:6px 12px;border-radius:999px;background:rgba(10,15,21,.78);color:#A88BFF;font:700 12px Manrope,sans-serif;text-align:center}'+
 '#tst-stat{position:fixed;left:62px;bottom:calc(env(safe-area-inset-bottom) + 98px);z-index:94;pointer-events:none;padding:3px 9px;border-radius:999px;background:rgba(10,15,21,.6);color:#7CF5C8;font:700 11px/1.4 ui-monospace,Menlo,monospace}';
 document.head.appendChild(css);
 
@@ -145,14 +191,36 @@ document.body.appendChild(btn);
 
 function toast(m){ A.toast('Scenario: '+m); }
 function chiudi(){ var p=$('#tst-pan'); if(p) p.remove(); }
-function pulisciPopup(){ try{ if(U.closeSheet) U.closeSheet(); }catch(e){} ['cine','cardrev','reveal'].forEach(function(i){ var e=document.getElementById(i); if(e) e.remove(); }); }
+function pulisciPopup(){ try{ if(U.closeSheet) U.closeSheet(); }catch(e){} ['cine','cardrev','reveal','hand','cardview'].forEach(function(i){ var e=document.getElementById(i); if(e) e.remove(); }); }
+function esegui(v){ chiudi(); pulisciPopup(); var r; try{ r=v.run(); }catch(e){ console.warn('scenario',v.id,e); A.toast('Scenario non riuscito: '+v.l); return 'errore'; } if(r!=='skip'&&r!==false) toast(v.l); return r; }
 function voce(v,host){
   var ok=v.ok(); var b=document.createElement('button'); b.type='button'; b.className='it'; b.dataset.sc=v.id;
   var l=document.createElement('span'); l.textContent=v.l; b.appendChild(l);
   if(ok!==true){ b.disabled=true; var s=document.createElement('small'); s.textContent=typeof ok==='string'?ok:'in arrivo'; b.appendChild(s); }
   else if(v.sub){ var s2=document.createElement('small'); s2.textContent=v.sub; b.appendChild(s2); }
-  b.addEventListener('click',function(){ if(b.disabled) return; chiudi(); pulisciPopup(); var r; try{ r=v.run(); }catch(e){ console.warn('scenario',v.id,e); A.toast('Scenario non riuscito: '+v.l); return; } if(r!=='skip'&&r!==false) toast(v.l); });
+  b.addEventListener('click',function(){ if(b.disabled) return; esegui(v); });
   host.appendChild(b); }
+function tutteLeVoci(){ var out=[]; SEZ.forEach(function(sz){ sz.v.forEach(function(v){ if(v.grp) v.grp().forEach(function(x){ out.push(x); }); else out.push(v); }); }); return out; }
+/* Prova tutto: ogni scenario disponibile in fila, pausa tra l'uno e l'altro, riepilogo finale */
+var provaInCorso=false;
+function provaTutto(){ if(provaInCorso) return 'skip'; provaInCorso=true;
+  var voci=tutteLeVoci().filter(function(v){ return !v.noTutto&&v.ok()===true; }), pausa=window.__scenariPausa!=null?window.__scenariPausa:2000;
+  var errs=[], onErr=function(e){ errs.push(String(e&&e.message||e&&e.reason||e).slice(0,140)); }, ce=console.error;
+  window.addEventListener('error',onErr); window.addEventListener('unhandledrejection',onErr);
+  console.error=function(){ errs.push(Array.prototype.join.call(arguments,' ').slice(0,140)); return ce.apply(console,arguments); };
+  var bar=document.createElement('div'); bar.id='tst-run'; document.body.appendChild(bar);
+  var buoni=0, falliti=[], i=0;
+  function fine(){ window.removeEventListener('error',onErr); window.removeEventListener('unhandledrejection',onErr); console.error=ce; bar.remove(); provaInCorso=false; pulisciPopup();
+    var rep={totale:voci.length,ok:buoni,falliti:falliti,errori:errs.slice()}; window.__scenariEsito=rep;
+    chiudi(); var p=document.createElement('div'); p.id='tst-pan'; var d=document.createElement('div'); d.className='in'; d.id='tst-esito';
+    d.innerHTML='<header><h2>Prova tutto</h2><button class="x" type="button" data-x aria-label="Chiudi">✕</button></header><div class="k">Riepilogo</div><div class="it" style="cursor:default"><span>Scenari riusciti</span><small>'+buoni+' / '+voci.length+'</small></div><div class="it" style="cursor:default"><span>Errori in console</span><small>'+errs.length+'</small></div>'+
+      (falliti.length?'<div class="k2">Non riusciti</div>'+falliti.map(function(x){ return '<div class="it" style="cursor:default"><span>'+x+'</span></div>'; }).join(''):'')+
+      (errs.length?'<div class="k2">Errori</div>'+errs.slice(0,8).map(function(x){ return '<div class="it" style="cursor:default;font-size:12px"><span>'+x.replace(/</g,'&lt;')+'</span></div>'; }).join(''):'');
+    p.appendChild(d); p.addEventListener('click',function(e){ if(e.target.closest('[data-x]')||e.target===p) chiudi(); }); document.body.appendChild(p); }
+  function avanti(){ if(i>=voci.length){ fine(); return; } var v=voci[i++], n0=errs.length; bar.textContent='Prova tutto '+i+'/'+voci.length+' · '+v.l;
+    var r=esegui(v); if(r==='errore'||r===false){ falliti.push(v.l); } else if(errs.length>n0){ falliti.push(v.l+' (errori in console)'); } else buoni++;
+    setTimeout(avanti,pausa); }
+  chiudi(); setTimeout(avanti,200); return 'skip'; }
 function apri(){ chiudi(); var p=document.createElement('div'); p.id='tst-pan'; var in_=document.createElement('div'); in_.className='in';
   in_.innerHTML='<header><h2>Modalità test</h2><button class="x" type="button" aria-label="Chiudi" data-x>✕</button></header><div style="color:#9AACB8;font-size:12px">Un tocco applica lo scenario e chiude il pannello. Le voci grigie dipendono da funzioni non ancora presenti.</div>';
   SEZ.forEach(function(sz){ var k=document.createElement('div'); k.className='k'; k.textContent=sz.t; in_.appendChild(k);
@@ -160,6 +228,6 @@ function apri(){ chiudi(); var p=document.createElement('div'); p.id='tst-pan'; 
   p.appendChild(in_); p.addEventListener('click',function(e){ if(e.target.closest('[data-x]')||e.target===p) chiudi(); }); document.body.appendChild(p); }
 btn.addEventListener('click',apri);
 
-window.__scenari={SEZ:SEZ,apri:apri,chiudi:chiudi};
+window.__scenari={SEZ:SEZ,apri:apri,chiudi:chiudi,provaTutto:provaTutto,voci:tutteLeVoci};
 }
 })();

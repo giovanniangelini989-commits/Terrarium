@@ -262,7 +262,7 @@ const H={
  'dec-open'(){ A.queueDecisions(); showNextPopup(); },
  'arr-open'(){ const a=A.inbox()[0]; if(a) A.popups.unshift({t:'arrivo',id:a.id}); showNextPopup(); },
  'arr-ok'(d){ const ok=A.takeArrival(d.id,d.c); closeSheet(); AU.sfx('arrivo'); const last=A.sim.log[A.sim.log.length-1]; render(); if(last) flashCap(S.narra(last)); if(FASE()>=4&&!A.G.ui.hintTap){ A.G.ui.hintTap=1; setTimeout(()=>flashCap('Tocca una creatura per conoscerla.'),2600); } A.toast(ok?'Il vaso ha qualcosa di nuovo.':'Non è entrato.'); checkPopups(); setTimeout(showNextPopup,300); },
- 'arr-no'(d){ A.takeArrival(d.id,'no'); closeSheet(); render(); A.toast('Lo riporti fuori.'); setTimeout(showNextPopup,200); },
+ 'arr-no'(d){ A.takeArrival(d.id,'no'); closeSheet(); render(); A.toast(A.G.ui.fase<4?'Lo lasci sul davanzale. Quando vuoi, tocca la notifica.':'Lo riporti fuori.'); setTimeout(showNextPopup,200); },
  'bis'(d){ bisResult(d.c); render(); },
  'why'(d){ const e=A.sim.log[+d.i]; if(!e) return; const v=A.sim.view(); sheet('<h2>'+e.icon+' Cosa è successo</h2><p class="nar" style="text-align:center">'+esc(S.narra(e))+'</p><div class="kicker" style="text-align:center;margin-top:10px">In parole semplici</div><p class="muted" style="text-align:center;margin:2px 0">'+esc(e.text)+'</p><div class="kicker" style="text-align:center;margin-top:10px">Cosa potrebbe c’entrare</div><div style="text-align:center;margin-top:6px">'+whyClues(e,v).map(c=>'<span class="tag">'+esc(c)+'</span>').join('')+'</div><p class="muted" style="text-align:center">Non è una certezza: è un indizio.</p><div class="stack"><button class="btn s" data-a="sx">Chiudi</button></div>'); },
  'fin-open'(){ if(window.__fx) __fx.grande('rgba(255,226,160,.62)'); openFinale(); },

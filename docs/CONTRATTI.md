@@ -12,7 +12,7 @@
 | ecologo | `app/microclima.js`, `microclima_test.js`, `docs/ecologia/` (le regole di `sim.js` restano del motore) |
 | modellatore | `assets/kimi/<id>/`, `docs/modelli/` (asset 3D generati internamente al posto di Kimi) |
 | tre-d | `app/v3d.js`, `app/app2.js`, `app/materials.js`, `app/kimi.js`, `app/tex.js`, `vendor/` |
-| finali | nuovo `app/finali.js` (lettore dei mini video) |
+| finali | nuovo `app/finali.js` (lettore dei mini video), `app/apertura.js` (video iniziale in 3D), `e2e_apertura.py`; in `app/film.js` la messa in scena |
 | logica di gioco (orchestratore) | `app/app1.js`, `build_app.py` |
 | qa | nessuno (sola lettura), scrive solo in `screenshots/` e report |
 | luci | `app/luci.js`, `qa_luci.py` (in `app/v3d.js` solo la chiamata a `__LUCI`) |
@@ -23,13 +23,36 @@
 | lancio | `docs/lancio/`, `store/` |
 
 ## Motore → app (`sim.js`)
-`createSim(setup,{seed,game,decisions,needs})` → `{step, view, act, resolve, addSpecies, removeSpecies, addPlant, removePlant, addObject, removeObject, setNeeds, charge, growMeteo, setMalus, closeChapter, save, load, log, pending, d, chapter, E}`.
+`createSim(setup,{seed,game,decisions,needs,capitolo?,eredita?:{E,um,ultimo}})` → `{step, view, act, resolve, addSpecies, removeSpecies, addPlant, removePlant, addObject, removeObject, setNeeds, charge, growMeteo, setMalus, closeChapter, save, load, log, pending, d, chapter, E}`.
 `view()` → `{d, chapter, setup, vit, E, sp:[{id,nome,icon,pop,alive,mut[],society:{name,cult,since,culto}|null,monster,size,gen}], plants, wars:[[a,b]], pending, needs:{um,ter,pul}}`.
 `log[]` → `{d, kind, icon, text, why[]}`.
 
 ## Logica → interfaccia (`window.__app`)
 Funzioni principali: `newGame, act, passaNotte, takeArrival, resolveDecision, playCard, closeChapter, nightFx, gattoChoice, pickNight, treeDiff, persist`. Stato in `__app.G` (salvato). Letargo (docs/DECISIONI.md §1): `G.letargo = {da, giorni}` (giorno reale d'inizio e giorni di assenza; `null` quando il vaso è sveglio), `G.ui.letargoN` e `G.ui.risvegli` contatori; `G.real.leth` è interno.
 Power card «Salta 2 giorni» (si consumano, non entrano nell'album): stato in `G.power = {salto, ultimoDono, donoN, usate, resto}`. `__app.POWER` → `{max:6, dono:2, giorni:2}`. `__app.powerCards()` → `{salto, max, nuove, resto, why}` con `why` ∈ `'' | carte | inizio | letargo | finale | decisione` (`''` = usabile; chiamarla esegue il dono del giorno se dovuto). `__app.usaSalto()` → `{ok, why?, passi, pausa, resto, eventi}`: due notti vere, una sola notte viva in coda; se la prima notte si ferma su una decisione, la seconda riparte da sola dopo `resolveDecision`. Regole: 2 al primo accesso di ogni giorno reale (non si accumulano in assenza), tetto 6, bloccate in avvio, letargo, finale da chiudere, decisione in sospeso; non toccano la serie. Popup in coda `__app.popups` con `t` ∈ `arrivo, decisione, finale, pagina, risveglio, biscotto, notte, gatto, livello, carta`.
+
+## Tempo, mani, calendario, fine del vaso (docs/gameplay/tempo.md; logica in `app1.js`, interfaccia in `app3.js`)
+**Orologio.** Nel vaso passa una notte ogni 6 ore della stanza (alle 0, 6, 12, 18 locali). `__app.checkNewDay()` (già chiamata da `app3.js` ogni 15 s quando non è `busy()`) svolge le notti maturate: su un nuovo giorno reale torna `{nuovi}` e mette in coda il popup `risveglio` come oggi; su una notte a orario nello stesso giorno torna `{nuovi, notti}` e mette in coda `{t:'notte-ora', eventi, notti}` (l'interfaccia lo tratta come una `notte` senza scheda se `eventi` è vuoto). Letargo invariato (DECISIONI §1): le notti dovute oltre le prime 4 dall'ultima visita, quando mancano ≥ 2 giorni reali, sono in letargo.
+- `__app.orologio()` → `{d, vaso, quarto (0..3), prossimaNotteMs, notti:4, letargo (bool), dovute, oggi:{t, data:'YYYY-MM-DD'}}`.
+- Stato: `G.real.lastSlot` (indice dell'ultima fascia di 6 ore svolta; i salvataggi vecchi lo ricavano da `lastDay`). **Via** `G.real.tempo/tempoT`, `G.coda`, `scorri, TASKS, startTask, collectTask, taskPing, readyTasks, taskLeft, slotMax, minToTempo, TEMPO_MAX, minToCure, CURE_MAX, spend, regen` (i gestori `task-*`, `t-tempo` e il popup `compito` in `app3.js` sono da togliere: interfaccia). La carta «Tempo in bottiglia» dà +2 «Salta 2 giorni» (tetto 6); «La chiave del cassetto» idem, più l'arrivo.
+- `G.dev.offset` è in giorni e può essere frazionario (0.25 = 6 ore) per i test.
+
+**Mani** (l'energia delle cure: una mano = una cura `pulisci/acqua/nutri/terra`). Stato `G.real.cure/cureT`. Massimo 6 (8 dal livello 3, 10 dal livello 5); ricarica 1 ogni 20 min sotto il massimo; +2 per richiesta esaudita (max 3 al giorno) fino a massimo+2; «Tazza di latte» riempie a massimo+2; nuovo giorno reale e risveglio → piene.
+- `__app.mani()` → `{n, max, bonus, minuti (alla prossima mano, 0 se piene), why:''|'zero'}`.
+- `__app.doAct(k)` → `{ok, text, mani, gratis, troppa}` oppure `{ok:false, why:'zero', text, mani}` quando non hai mani **e** il bisogno sta bene. Regola anti-ansia: a zero mani la cura passa lo stesso (`gratis:true`) se il bisogno è sotto il 35 % (acqua/terra/nutri) o sotto il 50 % (pulizia), e `terra` nella fase 0. `troppa:true` = acqua con umidità ≥ 95 %: il motore appanna il vetro (pulizia −.05, evento 🌫️; solo con `needs:true`).
+- Interfaccia: perline delle mani sotto i pulsanti rotondi (`mani().n` su `max`, le oltre `max` sono il bonus), a `why==='zero'` il pulsante si abbassa di scala e mostra `text` (da `S.TEMPO.maniZero`); mai un conto alla rovescia in evidenza.
+
+**Calendario.** Stato `G.cal = {v:1, t0, r:[[dt, d0, f], ...]}` (≤ 400 righe, ~13 byte l'una): `dt = t − t0` (giorno reale), `d0` = primo giorno del vaso di quel giorno reale, `f` bit: 1 visitato · 2 letargo · 4 salto · 8 risveglio · 16 nuovo vaso. Le righe nascono nelle notti svolte (`catchUp`, `passaNotte`) e alla visita.
+- `__app.calendario(mese?)` (`mese` = `'YYYY-MM'`, assente = mese corrente) → `{oggi:{t, data}, vaso:{n, dal}, prossimaNotteMs, saltiOggi, mese:{anno, mese, primo (0=lunedì), giorni:[{t, data, g, oggi, futuro, vaso, dal, al, notti, letargo, salti, risveglio, visitato, nuovoVaso, icona, eventi:[{d, k, icon, text, major, img?}]}]}}`. `k` degli eventi = quelli dell'albero (`G.tree`) più `pagina`; per i vasi passati gli eventi vengono da `G.vasi[n].nodi`. Icona = l'evento più importante del giorno (priorità: finale › popolo › guerra · pace › mostro › nasce · estinta › muta › letargo · risveglio › pagina).
+- `S.CAL[k]` etichette brevi per `k` dell'albero, `S.TEMPO` testi del tempo (`story.js`).
+
+**Fine del vaso: si riparte dal sasso** (tempo.md §7). `__app.closeChapter()` → `{k, first, culto, carta, cartaNuova, vaso}`: libro, pagina, carta come oggi, poi **archivia il vaso e riparte dalla fase 0** con il solo meteorite (stessa grandezza, stessa luce e acqua), nuovo seme, bisogni a zero, `sim.d=0`, capitolo +1, albero nuovo con il nodo «Il vaso ricomincia dal sasso», `G.ui.fase=0`, richiesta «terra». Si conservano `G.mazzo, G.libro, G.quaderno (le pagine nuove hanno vaso:n), G.codex, G.player, G.power (resto 0), G.real.cure, G.ui.gatto*, G.ui.scudo, G.cal`.
+- Mensola: `G.vasi = [{n, k, dal, al, dv, popoli, mut, specie:[id], img?, nodi:[{k,t,d}] (max 24 maggiori)}]`; `vaso.n` 1-based; `G.ui.vasoN` = numero del vaso attuale; `G.ui.vasoDal` = giorno reale d'inizio.
+- Eredità del finale (una riga a `S.TEMPO.eredita[fam]`, in `G.ui.eredita = {fam, testo}` finché il vaso nuovo non arriva alla fase 4): Quiete → umidità .3; Mostri → sasso a 40; Società → il primo oggetto offerto è quello del culto; Conflitti → la prima specie arriva un giorno prima.
+- Interfaccia: ordine finale → carta → conferma «Chiudi il capitolo» → transizione (oggi `fin-close` chiama `closeChapter` prima della carta); segmento «Vasi» nel quaderno; contatore «Vaso N · Giorno D» (`orologio().vaso`).
+- Motore: `createSim(setup,{…, capitolo, eredita:{E, um, ultimo}})`, opzioni facoltative (capitolo di partenza, carica iniziale, umidità iniziale, ultimo finale per la regola «serve un finale diverso»); senza opzioni il comportamento è identico (`equiv.js` a 0).
+
+**Diario.** `S.diario(view, G)` viene chiamato una volta per notte del vaso (`afterDay`) e la pagina entra nel quaderno con `addPage` (id con suffisso `-vN` dal secondo vaso).
 
 ## Microclima (`window.__MICRO`, `__app.micro()`, `__app.tappo()`, `G.micro`)
 Modello in `app/microclima.js` (ecologo), incluso da `build_app.py` prima di `app1.js`. Dettagli e numeri in `docs/ecologia/modello.md` §8.
@@ -61,6 +84,11 @@ Contratto completo in `docs/brief-kimi-v3.md` (tier swarm/close/hero, `_ANIM`, `
 - Un `InstancedMesh` per specie e per livello di dettaglio; i livelli si assegnano per grandezza a schermo entro un budget di triangoli per livello della guardia prestazioni (`level()` 0/1/2 → 64k/36k/20k): la guardia abbassa il dettaglio, mai il numero.
 - Animazione nel vertex shader: attributi per istanza `iAnim` (fase del passo, velocità, stato 0 idle · 1 walk · 2 carry · 3 fight · 4 eat · 5 dead, tempo nello stato) e `iMut` (0–1,3: intensità del bagliore `_EMIT` verde `#7CF5C8`); uniformi `uTime`, `uDry`.
 - `stats()` → `{<id>: {n, kind: 'glb'|'pass1', tiers: {close, swarm, lod1, lod2}}}` per QA e test. Esposto anche come `window.__v3d.modelli`.
+
+## Video iniziale in 3D (`window.__APERTURA`, in `app/apertura.js`, agente finali)
+`app/film.js` tiene testi, tocchi e stati (`window.__film` invariato: `start(cb,{replay})`, `scene`, `P`; in più `mode` ∈ `'2d'|'3d'`, `anchors()`, `info()`, `slots`, `_go(i)` solo per i test). Il film parte in 2D e passa al 3D appena `__APERTURA.create(el,{onFallback})` è pronto; resta in 2D con `window.__no3d`, errore, timeout (12 s) o guardia prestazioni (risoluzione → vetro semplice → 2D).
+`create() → {kind:'3d', canvas, fit(), size(), frame(t,{id,st,P,lineI,fast}), anchors(id) → punti a schermo in pixel fisici {star|stone|jar|center}, info(), slots, dispose()}`.
+**Slot dei modelli** (`slot(id)`, procedurale finché manca il file): `finestra`, `gelso`, `giardino`, `meteorite`, `barattolo`, `scrivania`, `lampada`, `quaderno`, `mano`. `build_app.py` incorpora `assets/kimi/<id>/close.glb` in `window.__GLB_APERTURA = {<id>: {close}}` (stesso formato di `__GLB`; mai `hero`); `apertura.js` legge anche `__GLB` per gli stessi id. Nomi dei nodi usati: `lid` (barattolo), `bulb` (lampada), `vetro`.
 
 ## Finale animato (`app/finali.js`, da costruire)
 `playEnding(container, data, {onDone})` dove `data = {finale, nome, giorni, capitolo, culto, popolo, nodi: G.tree.nodes (con foto)}`. Durata 30–45 s, saltabile, tenere premuto accelera.

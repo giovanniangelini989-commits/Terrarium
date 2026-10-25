@@ -100,6 +100,62 @@ Vincoli che valgono per tutte (da `docs/ricerca/regole.md` e `docs/DECISIONI.md`
 
 **Chi.** Motore, storia, interfaccia.
 
+## 8. Una cosa da salvare (scelta che conta, alla fine del vaso) — terzo giro, 24 ottobre
+
+**Cosa fa.** Quando chiudi il capitolo e il vaso si svuota (tempo.md §7), prima della transizione il gioco ti chiede **una sola cosa da portare nel vaso nuovo**: un seme di una pianta che c'era (arriva già alla fase 2, senza aspettare l'arrivo), un oggetto dal tavolo (torna come primo arrivo), oppure «niente, solo il sasso». La scelta va nell'albero come nodo maggiore con la strada non presa e nella mensola (`G.vasi[n].salvato`). Mai una specie: gli animali non si salvano in tasca, e così il vaso nuovo resta un vaso nuovo.
+
+**Perché funziona.** Il momento della fine è il più carico di emozione e oggi non ha nessuna scelta: la carta esce da sola. I giochi che fanno «ricominciare» (roguelite di cura come Cultist Simulator o il ciclo di Spiritfarer, `concorrenti.md`) tengono il giocatore perché ogni ripartenza porta un segno della partita prima. È la versione a scelta esplicita dell'«eredità» già costruita (§7: Quiete → terra umida, ecc.), che invece è automatica.
+
+**Rischi etici.** Bassi. Nessuna perdita: «niente» è un'opzione piena, con una riga sua nel quaderno. Da evitare: pesare le tre opzioni in modo che una sia «giusta».
+
+**Costo.** Basso. Logica: ½ giorno (`closeChapter(scelta)`: un campo in `G.ui.eredita`, `forceArrival` già esiste). Interfaccia: ½ giorno (tre pulsanti nella scheda «Chiudi il capitolo»). Storia: 3 righe + 1 pagina.
+
+**Chi.** Orchestratore (logica), interfaccia, storia, motore (test nel blocco 9).
+
+---
+
+## 9. Stare svegli (gestione del tempo: la notte in diretta)
+
+**Cosa fa.** Se sei nel gioco quando scatta una delle quattro notti a orario (`orologio().prossimaNotteMs` sotto i 2 minuti), compare una sola riga: «Sta per farsi notte. Resti a guardare?». Se resti, la notte si svolge **in diretta** in 20 secondi (il vaso si scurisce davvero, le barre scendono con l'animazione, le creature si muovono di più) e la notte viva, se c'è, la **scegli tu** tra due invece di riceverla. Se non resti, tutto come oggi (popup `notte-ora`). Non si accumula, non dà XP in più: cambia solo come la vivi.
+
+**Perché funziona.** Il nuovo tempo a orario fisso crea un appuntamento naturale (alle 18, a mezzanotte) e la ricerca chiede momenti da aspettare senza premi (`SINTESI.md`, azione 2: «riassunto al ritorno come premio»; qui è il contrario: l'evento in diretta). Pokémon Sleep e Animal Crossing usano l'orologio reale per rendere speciale «esserci». Costa zero in equilibrio di gioco.
+
+**Rischi etici.** Medi se mal fatto: niente notifica push per «la notte sta arrivando», nessun bonus per chi resta. L'avviso compare solo se l'app è già aperta.
+
+**Costo.** Medio. Motore: nessuno (usa `passaNotte` e `pickNight` due volte). Interfaccia: 1,5 giorni (sequenza di 20 s con `__LUCI.set('notte')`, scelta tra due notti). Storia: 1 riga.
+
+**Chi.** Interfaccia, luci, suono (un suono per la notte in diretta).
+
+---
+
+## 10. La pagina del mese (obiettivo a medio termine, senza obiettivo)
+
+**Cosa fa.** Il primo giorno di ogni mese della stanza il quaderno scrive **una pagina del mese** con i dati del calendario (`G.cal`): quante notti ha vissuto il vaso, quante ne ha dormite, il giorno con più eventi, la foto migliore dell'albero, un popolo nato, un finale. In prima persona, come un bambino che riguarda il mese («A ottobre il vaso ha fatto 71 notti. Ho dormito solo tre giorni»). Niente voti, niente «potevi fare meglio», niente confronto con il mese prima. La pagina ha un segnalibro nel calendario (bordo viola sulla casella del 1°).
+
+**Perché funziona.** Trasforma il calendario da strumento in ricordo. I «riepiloghi» periodici (Spotify Wrapped, i resoconti annuali di Animal Crossing) sono tra le cose più condivise di qualunque prodotto e non chiedono nulla al giocatore (`concorrenti.md`). È l'obiettivo a medio termine della ricerca (`SINTESI.md`) senza la forma della missione.
+
+**Rischi etici.** Bassi. La pagina non conta i giorni mancati come colpa: «ho dormito tre giorni» è un fatto, non un rimprovero. Mai percentuali di presenza.
+
+**Costo.** Basso. Motore: ½ giorno (`riassuntoMese(anno, mese)` su `G.cal`, `G.tree`, `G.vasi`: tutto già esposto da `calendario()`). Storia: 10 frasi a incastro. Interfaccia: ½ giorno (segnalibro nel calendario, pagina già nel quaderno).
+
+**Chi.** Motore, storia, interfaccia.
+
+---
+
+## 11. La mensola viva (ricompensa che cambia la stanza, dai vasi passati)
+
+**Cosa fa.** I vasi finiti (`G.vasi`) non sono solo schede: stanno **sulla mensola dietro al vaso**, in miniatura, nella scena 3D (fino a 5 visibili, poi scorrono). Ogni barattolo ha il colore del suo finale (famiglia: Quiete verde cupo, Società ambra, Mostri viola, Conflitti ruggine) e una luce dentro che batte piano. Toccarne uno apre la sua scheda. Una volta ogni tanto (seme del giorno, ~1 su 10 visite) un vaso passato «si fa sentire»: una pagina del quaderno in prima persona che ricorda quel vaso, legata a quello che sta succedendo adesso («Anche le formiche del primo vaso facevano così, prima di dividersi»).
+
+**Perché funziona.** Dà alla «fine del vaso» una ricompensa visibile e permanente dentro la scena (regola della direzione: «ricompense che cambiano il vaso»). Il collezionismo di Neko Atsume e dei finali di Reigns (`concorrenti.md`) funziona quando la collezione si vede sempre, non in un menu. E le pagine-ricordo collegano i vasi tra loro: la storia diventa una vita, non una serie di partite.
+
+**Rischi etici.** Bassi. Nessun incentivo a chiudere vasi in fretta: la mensola mostra la durata («112 giorni»), non il numero.
+
+**Costo.** Medio-alto. Tre-d: 1,5 giorni (barattoli in miniatura con `materials.js`, entro i 90k triangoli: un barattolo = 200 triangoli). Logica: ½ giorno (`G.vasi` già c'è; pagine-ricordo con 10 predicati). Storia: 10 pagine. Interfaccia: tocco e scheda (½ giorno).
+
+**Chi.** Tre-d, direttore-artistico (colori delle famiglie), storia, orchestratore, interfaccia.
+
+---
+
 ## Riepilogo
 
 | # | Meccanica | Impatto | Costo | Rischio etico |
@@ -111,5 +167,9 @@ Vincoli che valgono per tutte (da `docs/ricerca/regole.md` e `docs/DECISIONI.md`
 | 5 | Clima del davanzale | medio | medio | basso |
 | 6 | La festa del popolo | medio-alto | medio | basso |
 | 7 | Il biglietto di domani | medio | basso | medio (se diventa una serie) |
+| 8 | Una cosa da salvare | alto | basso | basso |
+| 9 | Stare svegli | medio-alto | medio | medio (se compare una notifica) |
+| 10 | La pagina del mese | medio | basso | basso |
+| 11 | La mensola viva | medio-alto | medio-alto | basso |
 
-Ordine consigliato: prima il sistema «Tempo e calendario» (`tempo.md`: è la base di 6 e 7), poi 3, poi 1, poi 7, poi 2.
+Ordine consigliato: il sistema «Tempo e calendario» è costruito (24 ottobre, logica e motore; manca l'interfaccia). Poi 8 (costa poco, chiude bene la fine del vaso), 3, 10, 1, 7, 9, 2, 11.

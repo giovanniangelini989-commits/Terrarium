@@ -90,21 +90,21 @@ window.__TERRENO=function(THREE,o){
       wrap(hg,x,y,g=>{ g.rotate(rot); g.globalAlpha=hgt; g.drawImage(D2,-sx,-sy,sx*2,sy*2); });
       wrap(cg,x,y,g=>{ g.rotate(rot); const gr=g.createRadialGradient(0,0,0,0,0,sx); gr.addColorStop(0,'rgba(30,20,12,.22)'); gr.addColorStop(1,'rgba(30,20,12,0)'); g.fillStyle=gr; g.beginPath(); g.ellipse(0,0,sx,sy,0,0,6.283); g.fill(); }); }
     // --- grani (1–3 mm): ~4200 per tessera di 10 cm, per lo più bruni; i chiari sono rari ---
-    const GR=[[96,70,46],[82,58,38],[70,48,30],[122,92,60],[44,30,20],[58,40,26],[90,62,44],[140,112,76],[160,140,110],[76,54,36]];
+    const GR=[[96,70,46],[82,58,38],[70,48,30],[112,84,54],[44,30,20],[58,40,26],[90,62,44],[66,46,30],[124,98,68],[76,54,36],[52,36,24]]; // bruni; un solo tono chiaro (sabbia), niente grigi
     for(let i=0;i<4200;i++){ const x=r()*N, y=r()*N, rad=(.5+r()*1)*MM, sx=rad*(1+r()*.6), sy=rad, rot=r()*3.14, col=GR[(r()*GR.length)|0], hgt=.12+r()*.18, a=.45+r()*.35;
       wrap(hg,x,y,g=>{ g.rotate(rot); g.globalAlpha=hgt; g.drawImage(D1,-sx,-sy,sx*2,sy*2); });
-      wrap(cg,x,y,g=>{ g.rotate(rot); g.beginPath(); g.ellipse(0,0,sx,sy,0,0,6.283); shade(g,col,a); g.fill(); g.beginPath(); g.ellipse(-sx*.25,-sy*.25,sx*.45,sy*.4,0,0,6.283); g.fillStyle='rgba(255,240,220,.12)'; g.fill(); }); }
+      wrap(cg,x,y,g=>{ g.rotate(rot); g.beginPath(); g.ellipse(0,0,sx,sy,0,0,6.283); shade(g,col,a); g.fill(); g.beginPath(); g.ellipse(-sx*.25,-sy*.25,sx*.45,sy*.4,0,0,6.283); g.fillStyle='rgba(255,236,210,.07)'; g.fill(); }); }
     // --- sassolini (3–8 mm): quarzo, basalto, arenaria ---
-    const PB=[[150,142,130],[118,110,100],[172,160,140],[90,84,78],[200,196,188],[134,118,96]];
-    for(let i=0;i<30;i++){ const x=r()*N, y=r()*N, rad=(1.5+r()*2.5)*MM, sx=rad*(1+r()*.5), sy=rad, rot=r()*3.14, col=PB[(r()*PB.length)|0], hgt=.5+r()*.5, rf=150+(r()*50|0), sp=[]; for(let k=0;k<6;k++) sp.push([(r()-.5)*sx*1.4,(r()-.5)*sy*1.4,.6*MM*r()+.3,r()<.5]);
+    const PB=[[132,120,104],[108,98,86],[150,134,110],[84,76,68],[164,150,128],[124,106,84]];
+    for(let i=0;i<22;i++){ const x=r()*N, y=r()*N, rad=(1.5+r()*2.5)*MM, sx=rad*(1+r()*.5), sy=rad, rot=r()*3.14, col=PB[(r()*PB.length)|0], hgt=.5+r()*.5, rf=150+(r()*50|0), sp=[]; for(let k=0;k<6;k++) sp.push([(r()-.5)*sx*1.4,(r()-.5)*sy*1.4,.6*MM*r()+.3,r()<.5]);
       wrap(hg,x,y,g=>{ g.rotate(rot); g.globalAlpha=hgt; g.drawImage(D2,-sx,-sy,sx*2,sy*2); });
       wrap(cg,x,y,g=>{ g.rotate(rot); g.beginPath(); g.ellipse(0,0,sx,sy,0,0,6.283); shade(g,col,1); g.fill(); const gr=g.createRadialGradient(-sx*.3,-sy*.3,0,0,0,sx); gr.addColorStop(0,'rgba(255,255,250,.28)'); gr.addColorStop(.7,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(20,14,10,.45)'); g.fillStyle=gr; g.fill(); sp.forEach(s=>{ g.beginPath(); g.arc(s[0],s[1],s[2],0,6.283); g.fillStyle=s[3]?'rgba(0,0,0,.18)':'rgba(255,255,255,.14)'; g.fill(); }); });
       wrap(rg,x,y,g=>{ g.rotate(rot); g.beginPath(); g.ellipse(0,0,sx,sy,0,0,6.283); g.fillStyle='rgb(255,'+rf+',0)'; g.fill(); }); }
     // --- fibre e radichette (0,3–0,6 mm di spessore, 1–4 cm) ---
-    for(let i=0;i<44;i++){ const x=r()*N, y=r()*N, len=(10+r()*30)*MM, w=(.3+r()*.4)*MM, col=r()<.5?[186,166,128]:[112,88,60], pts=[]; { let px=0,py=0,a=r()*6.283; for(let s=0;s<8;s++){ a+=(r()-.5)*.9; px+=Math.cos(a)*len/8; py+=Math.sin(a)*len/8; pts.push([px,py]); } }
+    for(let i=0;i<22;i++){ const x=r()*N, y=r()*N, len=(8+r()*22)*MM, w=(.25+r()*.3)*MM, col=r()<.3?[150,128,92]:[96,74,50], pts=[]; { let px=0,py=0,a=r()*6.283; for(let s=0;s<8;s++){ a+=(r()-.5)*.9; px+=Math.cos(a)*len/8; py+=Math.sin(a)*len/8; pts.push([px,py]); } }
       const stroke=(g,st,lw)=>{ g.beginPath(); g.moveTo(0,0); pts.forEach(p=>g.lineTo(p[0],p[1])); g.strokeStyle=st; g.lineWidth=lw; g.lineCap='round'; g.lineJoin='round'; g.stroke(); };
       wrap(hg,x,y,g=>{ g.globalAlpha=1; stroke(g,'rgba(255,255,255,.16)',w*2.2); });
-      wrap(cg,x,y,g=>{ stroke(g,'rgba(0,0,0,.25)',w*2.4); stroke(g,'rgba('+col[0]+','+col[1]+','+col[2]+',.75)',w*1.2); }); }
+      wrap(cg,x,y,g=>{ stroke(g,'rgba(0,0,0,.18)',w*2.2); stroke(g,'rgba('+col[0]+','+col[1]+','+col[2]+',.6)',w*1.1); }); }
     // --- frammenti di foglia secca (4–12 mm) con nervature ---
     for(let i=0;i<11;i++){ const x=r()*N, y=r()*N, L=(4+r()*8)*MM, Wd=L*(.35+r()*.3), rot=r()*6.283, col=r()<.5?[150,112,58]:[118,84,46], pts=[]; const n=7+(r()*4|0); for(let k=0;k<n;k++){ const a=k/n*6.283, rr2=(.8+r()*.3); pts.push([Math.cos(a)*L*.5*rr2,Math.sin(a)*Wd*.5*rr2]); }
       const poly=g=>{ g.beginPath(); pts.forEach((p,k)=>k?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1])); g.closePath(); };
