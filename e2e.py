@@ -189,6 +189,9 @@ with sync_playwright() as p:
         pg.click('[data-a=carta-ok]'); pg.wait_for_timeout(400); t('«Nel mazzo» chiude l’unboxing e subito dopo arriva il ricordo «Il primo finale»',pg.locator('#cardrev').count()==0 or pg.locator('#cardrev.r-ricordo').count()==1 and pg.evaluate("!!__app.G.album.ric_finale"))
         if pg.locator('#cardrev.r-ricordo').count(): pg.wait_for_timeout(300); pg.screenshot(path=f'screenshots/{tag}_k1b_ricordo.png')
         t('il finale è nel Libro',len(pg.evaluate("Object.keys(__app.G.libro)"))==1); t('il vaso continua (capitolo 2)',pg.evaluate("__app.sim.view().chapter")==2)
+        # NUOVO VASO (tempo.md §7): dopo il finale il vaso riparte dal sasso; per i test che seguono lo si riempie con skipStart (come lo scenario «salta l'avvio»)
+        t('dopo il finale il vaso riparte dal sasso: fase 0, giorno 0, mensola con un vaso',pg.evaluate("__app.G.ui.fase")==0 and pg.evaluate("__app.sim.d")==0 and pg.evaluate("__app.G.vasi.length")==1 and pg.evaluate("__app.sim.view().sp.length")==0)
+        pg.screenshot(path=f'screenshots/{tag}_v1_vaso_nuovo.png'); pg.evaluate("__app.skipStart(); __app.persist(); __ui.render&&__ui.render()"); pg.wait_for_timeout(600); drain()
         drain()
     # ---- dentro la ciotola
     drain(); goto('vaso'); pg.wait_for_timeout(600)
