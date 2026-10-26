@@ -8,7 +8,7 @@
 window.__PIANTE=function(THREE,env){
   const {S,ptex,TX,rngS,clamp,SLOTS,A,FOTO}=env;
   // materiali fotografici (foto vere: muschio ripetibile 5 cm, fronda di felce scontornata); senza __MAT_FOTO restano i colori procedurali
-  const FM=FOTO?FOTO.mat('muschio'):null, FF=FOTO?FOTO.mat('foglia_felce'):null, FS=FOTO?FOTO.mat('foglia_succulenta'):null, FD=FOTO?FOTO.mat('drosera'):null, FU=FOTO?FOTO.mat('fungo'):null, FMS=FOTO?FOTO.mat('muschio_secco'):null, FXM=FOTO?FOTO.mat('funghi_magici'):null, FXC=FOTO?FOTO.mat('carnivora_magica'):null, FXL=FOTO?FOTO.mat('foglia_magica'):null, FOTOMATS=[], SECCOMATS=[]; let fotoLvl=0;
+  const FM=FOTO?FOTO.mat('muschio'):null, FF=FOTO?FOTO.mat('foglia_felce'):null, FS=FOTO?FOTO.mat('foglia_succulenta'):null, FD=FOTO?FOTO.mat('drosera'):null, FU=FOTO?FOTO.mat('fungo'):null, FMS=FOTO?FOTO.mat('muschio_secco'):null, FXM=FOTO?FOTO.mat('funghi_magici'):null, FXC=FOTO?FOTO.mat('carnivora_magica'):null, FXL=FOTO?FOTO.mat('foglia_magica'):null, FXMU=FOTO?FOTO.mat('muschio_magico'):null, FOTOMATS=[], SECCOMATS=[]; let fotoLvl=0;
   function fotoBind(mat,F,depth){ FOTOMATS.push({mat,F,depth}); F.when(()=>fotoApply(mat,F,depth)); }
   function fotoApply(mat,F,depth){ const M=F.maps(fotoLvl); if(!M) return; mat.map=M.map; mat.normalMap=M.normalMap||null; mat.roughnessMap=M.roughnessMap||null; if(mat.normalMap) mat.normalScale.set(1,1); mat.needsUpdate=true; if(depth){ depth.map=M.map; depth.needsUpdate=true; } }
   // muschio secco: seconda foto mescolata alla prima in base a uDry (vDry nel fragment)
@@ -215,7 +215,7 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
       const fotoF=id==='felce'?FF:id==='succulenta'?FS:id==='carnivora'?FD:id==='fungo'?FU:null, leaf=patch(new THREE.MeshStandardMaterial(Object.assign({vertexColors:true,color:0xffffff,roughness:id==='fungo'?.75:id==='succulenta'?.5:.62,side:THREE.DoubleSide},fotoF?{alphaTest:.5,roughness:.55}:{})),U,kind,false); if(fotoF) U.uTrans.value=id==='felce'||id==='carnivora'?.6:.25;
       const mats=built.groups.map(k=>k==='0'?leaf:patch(new THREE.MeshPhysicalMaterial({vertexColors:true,color:0xffffff,roughness:.05,clearcoat:1,clearcoatRoughness:.03,transparent:true,opacity:.7,specularIntensity:1,depthWrite:false}),U,kind,false));
       const mesh=new THREE.Mesh(built.geo,mats.length===1?mats[0]:mats); shadowed(mesh,U,kind,false); if(fotoF){ mesh.customDepthMaterial.alphaTest=.5; fotoBind(leaf,fotoF,mesh.customDepthMaterial); } g.add(mesh); meshes.push(mesh); if(id==='fungo') emiss=leaf; }
-    const mag=[]; if(id==='fungo'&&FXM) mag.push(magCluster(FXM,.55,3,.25,r,false)); if(id==='carnivora'&&FXC) mag.push(magCluster(FXC,.6,2,.2,r,false)); if((id==='felce'||id==='succulenta')&&FXL) mag.push(magCluster(FXL,.5,2,.22,r,true)); mag.forEach(c=>g.add(c));
+    const mag=[]; if(id==='fungo'&&FXM) mag.push(magCluster(FXM,.55,3,.25,r,false)); if(id==='carnivora'&&FXC) mag.push(magCluster(FXC,.6,2,.2,r,false)); if(id==='muschio'&&FXMU) mag.push(magCluster(FXMU,.4,4,.3,r,true)); if((id==='felce'||id==='succulenta')&&FXL) mag.push(magCluster(FXL,.5,2,.22,r,true)); mag.forEach(c=>g.add(c));
     const o={id,g,U,meshes,emiss,st:null,key:'', mag,
       upd(){}, // compatibilità con il vecchio ciclo di v3d: tutto passa da tick()
       dispose(){ meshes.forEach(m=>{ m.geometry.dispose(); [].concat(m.material).forEach(x=>x.dispose()); if(m.customDepthMaterial) m.customDepthMaterial.dispose(); }); } };
@@ -244,7 +244,7 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
       if(!s){ s=o.st=Object.assign({},T); }
       else { s.grow=ease(s.grow,T.grow,dt*.6); s.vig=ease(s.vig,T.vig,dt*.5); s.tur=ease(s.tur,T.tur,T.tur>s.tur?dt*.45:dt*.07); s.droop=ease(s.droop,T.droop,T.droop<s.droop?dt*.4:dt*.08); s.dry=ease(s.dry,T.dry,T.dry<s.dry?dt*.35:dt*.06); s.rot=ease(s.rot,T.rot,dt*.08); s.dew=ease(s.dew,T.dew,dt*.3); s.gloss=ease(s.gloss,T.gloss,dt*.4); s.wind=ease(s.wind,T.wind,dt*.5); s.mut=ease(s.mut,T.mut,dt*.5); s.E=ease(s.E,T.E,dt*.8); }
       const U=o.U; U.uGrow.value=s.grow; U.uTurgor.value=s.tur; U.uDroop.value=s.droop; U.uDry.value=s.dry; U.uRot.value=s.rot; U.uDew.value=s.dew; U.uGloss.value=s.gloss; U.uWind.value=s.wind; U.uTime.value=t; U.uMut.value=s.mut; U.uCharge.value=s.E;
-      if(o.mag) o.mag.forEach(c=>{ const need=id_(o)==='fungo'?.15:id_(o)==='carnivora'?.25:.45, k=clamp((s.mut-need)/.25)*clamp(s.grow*1.2); c.visible=k>.02&&s.vig>.15; if(c.visible){ c.scale.setScalar(.35+.65*k); c.userData.m.emissiveIntensity=(1.4+1.8*s.E)*(1+.15*Math.sin(t*2.1+o.g.position.x*9)); } });
+      if(o.mag) o.mag.forEach(c=>{ const need=id_(o)==='muschio'?.4:id_(o)==='fungo'?.15:id_(o)==='carnivora'?.25:.45, k=clamp((s.mut-need)/.25)*clamp(s.grow*1.2); c.visible=k>.02&&s.vig>.15; if(c.visible){ c.scale.setScalar(.35+.65*k); c.userData.m.emissiveIntensity=(1.4+1.8*s.E)*(1+.15*Math.sin(t*2.1+o.g.position.x*9)); } });
       if(o.sat){ o.sat.forEach(q=>{ q.visible=s.grow>=q.userData.at&&s.vig>.12; }); } }); }
   // QA e test: forza gli stati (force(null) toglie), settle() salta le transizioni
   function force(st){ forced=st; lastPull=-1; }

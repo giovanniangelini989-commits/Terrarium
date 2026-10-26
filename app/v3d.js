@@ -36,7 +36,7 @@ function build(THREE){
   const SOIL0=.2, GH=.19, AMP=.032, DISC_REP=1.9; // DISC_REP: tessere da 10 cm sul disco Ø 19 cm
   // ---------- materiali fotografici (foto vere di Giovanni: assets/materiali/<id>, incorporate da build_app.py in window.__MAT_FOTO) ----------
   // FOTO_SCALA: lato della foto in unità (1 unità = 10 cm); null = immagine singola non ripetibile (fronda scontornata).
-  const MF=window.__MAT_FOTO||null, FOTO_SCALA={terriccio:1,ghiaia:.6,muschio:.5,muffa:.6,muschio_secco:.5,legno:3,coperchio:null,vetro_sporco:null,foglia_felce:null,foglia_succulenta:null,fungo:null,drosera:null,funghi_magici:null,carnivora_magica:null,foglia_magica:null}, FOTOS={};
+  const MF=window.__MAT_FOTO||null, FOTO_SCALA={terriccio:1,ghiaia:.6,muschio:.5,muffa:.6,muschio_secco:.5,legno:3,coperchio:null,vetro_sporco:null,foglia_felce:null,foglia_succulenta:null,fungo:null,drosera:null,funghi_magici:null,carnivora_magica:null,foglia_magica:null,muschio_magico:null}, FOTOS={};
   function fotoMat(id){ if(FOTOS[id]!==undefined) return FOTOS[id]; const src=MF&&MF[id]; if(!src||!(src.colore||src.maschera)) return FOTOS[id]=null;
     const scala=FOTO_SCALA[id]===undefined?1:FOTO_SCALA[id], F={id,scala,ready:false,img:{},H:null,N:0,cache:{},q:[]}, keys=Object.keys(src); let left=keys.length;
     const done=()=>{ F.ready=!!(F.img.colore||F.img.maschera); const q=F.q; F.q=[]; if(F.ready) q.forEach(cb=>{ try{ cb(F); }catch(e){} }); };
