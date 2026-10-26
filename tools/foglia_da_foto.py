@@ -18,6 +18,9 @@ c = np.concatenate([a[:20, :20].reshape(-1, 3), a[:20, -20:].reshape(-1, 3), a[-
 dist = np.linalg.norm(a - c, axis=-1)
 al = np.maximum(np.clip((dist - .11) / .06, 0, 1), np.clip((sat - .12) / .12, 0, 1))
 al = np.maximum(al, np.clip((g_dom - .02) / .06, 0, 1))
+if os.environ.get('SENZA_OMBRA'):  # oggetti fotografati con ombra portata: il grigio neutro non troppo scuro è fondo (i buchi interni li riempie il passo dopo)
+    lum0 = a @ np.array([.2126, .7152, .0722], np.float32)
+    al = al * (1 - ((sat < .10) & (lum0 > .18)).astype(np.float32))
 # riempie i buchi interni: è fondo solo ciò che si raggiunge dai bordi
 from PIL import ImageDraw
 B = Image.fromarray(((al > .5) * 255).astype(np.uint8)).filter(ImageFilter.MedianFilter(5))
