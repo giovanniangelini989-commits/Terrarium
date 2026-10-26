@@ -13,9 +13,18 @@ im = Image.open(src).convert('RGB'); a = np.asarray(im).astype(np.float32) / 255
 mx, mn = a.max(-1), a.min(-1); sat = (mx - mn) / np.maximum(mx, 1e-4)
 g_dom = a[..., 1] - (a[..., 0] + a[..., 2]) / 2
 # fondo grigio = poca saturazione; foglia e rachide = verdi o bruni (saturazione più alta)
-al = np.clip((sat - .12) / .12, 0, 1)
+# distanza dal colore del fondo (stimato dagli angoli): funziona anche per foglie cerose e grigiastre
+c = np.concatenate([a[:20, :20].reshape(-1, 3), a[:20, -20:].reshape(-1, 3), a[-20:, :20].reshape(-1, 3), a[-20:, -20:].reshape(-1, 3)]).mean(0)
+dist = np.linalg.norm(a - c, axis=-1)
+al = np.maximum(np.clip((dist - .11) / .06, 0, 1), np.clip((sat - .12) / .12, 0, 1))
 al = np.maximum(al, np.clip((g_dom - .02) / .06, 0, 1))
-A = Image.fromarray((al * 255).astype(np.uint8)).filter(ImageFilter.MedianFilter(3)).filter(ImageFilter.GaussianBlur(.6))
+# riempie i buchi interni: è fondo solo ciò che si raggiunge dai bordi
+from PIL import ImageDraw
+B = Image.fromarray(((al > .5) * 255).astype(np.uint8)).filter(ImageFilter.MedianFilter(5))
+B = Image.fromarray(np.pad(np.asarray(B), 1)).copy(); ImageDraw.floodfill(B, (0, 0), 128)
+fondo = np.asarray(B)[1:-1, 1:-1] == 128
+al = np.where(fondo, al * (al > .5), 1.0)
+A = Image.fromarray((al * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(.6))
 rgba = im.copy(); rgba.putalpha(A)
 rgba = rgba.rotate(ang, resample=Image.BICUBIC, expand=True)  # rachide verticale, punta in alto
 bb = rgba.getchannel('A').point(lambda v: 255 if v > 20 else 0).getbbox(); rgba = rgba.crop(bb)
