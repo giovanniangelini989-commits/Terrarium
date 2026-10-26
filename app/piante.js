@@ -8,13 +8,13 @@
 window.__PIANTE=function(THREE,env){
   const {S,ptex,TX,rngS,clamp,SLOTS,A,FOTO}=env;
   // materiali fotografici (foto vere: muschio ripetibile 5 cm, fronda di felce scontornata); senza __MAT_FOTO restano i colori procedurali
-  const FM=FOTO?FOTO.mat('muschio'):null, FF=FOTO?FOTO.mat('foglia_felce'):null, FS=FOTO?FOTO.mat('foglia_succulenta'):null, FD=FOTO?FOTO.mat('drosera'):null, FU=FOTO?FOTO.mat('fungo'):null, FMS=FOTO?FOTO.mat('muschio_secco'):null, FOTOMATS=[], SECCOMATS=[]; let fotoLvl=0;
+  const FM=FOTO?FOTO.mat('muschio'):null, FF=FOTO?FOTO.mat('foglia_felce'):null, FS=FOTO?FOTO.mat('foglia_succulenta'):null, FD=FOTO?FOTO.mat('drosera'):null, FU=FOTO?FOTO.mat('fungo'):null, FMS=FOTO?FOTO.mat('muschio_secco'):null, FXM=FOTO?FOTO.mat('funghi_magici'):null, FXC=FOTO?FOTO.mat('carnivora_magica'):null, FXL=FOTO?FOTO.mat('foglia_magica'):null, FXMU=FOTO?FOTO.mat('muschio_magico'):null, FXF=FOTO?FOTO.mat('felce_magica'):null, FXS=FOTO?FOTO.mat('succulenta_magica'):null, FRA=FOTO?FOTO.mat('rametto'):null, FCO=FOTO?FOTO.mat('corteccia_gelso'):null, FOTOMATS=[], SECCOMATS=[]; let fotoLvl=0;
   function fotoBind(mat,F,depth){ FOTOMATS.push({mat,F,depth}); F.when(()=>fotoApply(mat,F,depth)); }
   function fotoApply(mat,F,depth){ const M=F.maps(fotoLvl); if(!M) return; mat.map=M.map; mat.normalMap=M.normalMap||null; mat.roughnessMap=M.roughnessMap||null; if(mat.normalMap) mat.normalScale.set(1,1); mat.needsUpdate=true; if(depth){ depth.map=M.map; depth.needsUpdate=true; } }
   // muschio secco: seconda foto mescolata alla prima in base a uDry (vDry nel fragment)
   function seccoBind(mat){ if(!FMS) return; mat.userData.secco={value:null}; mat.userData.seccoOn={value:0}; SECCOMATS.push(mat); FMS.when(()=>seccoApply(mat)); }
   function seccoApply(mat){ const M=FMS.maps(fotoLvl); if(!M||!mat.userData.secco) return; mat.userData.secco.value=M.map; mat.userData.seccoOn.value=1; }
-  function level(l){ l=Math.max(0,Math.min(2,l|0)); if(l===fotoLvl) return; fotoLvl=l; FOTOMATS.forEach(b=>{ if(b.F.ready) fotoApply(b.mat,b.F,b.depth); }); if(FMS&&FMS.ready) SECCOMATS.forEach(seccoApply); } const V3=THREE.Vector3, Col=THREE.Color, M4=THREE.Matrix4;
+  function level(l){ l=Math.max(0,Math.min(2,l|0)); if(l===fotoLvl) return; fotoLvl=l; FOTOMATS.forEach(b=>{ if(b.F.ready) fotoApply(b.mat,b.F,b.depth); }); MAGICMATS.forEach(m=>{ if(m.userData.F&&m.userData.F.ready) magApply(m); }); if(FMS&&FMS.ready) SECCOMATS.forEach(seccoApply); } const V3=THREE.Vector3, Col=THREE.Color, M4=THREE.Matrix4;
   const Y=new V3(0,1,0);
   // ---------- stati visivi e mappe di crescita ----------
   // crescita = ore «buone» accumulate dal microclima (≈ 12–19 al giorno reale con vigore alto)
@@ -49,7 +49,7 @@ vec3 plantPos(Org o){ vec3 p=o.open<.5?mix(aP0,aP1,o.open*2.):mix(aP1,position,o
   return p; }
 `;
   const HEAD_INST=`uniform float uGrow,uTurgor,uDry,uRot,uWind,uTime; attribute float iGrow,iPhase; varying float vDry,vRot,vShade; varying vec3 vMW;\n`;
-  const FRAG_HEAD='uniform float uGloss,uTrans,uMut,uCharge,uTime; varying float vDry,vRot,vShade; varying vec3 vMW;\n';
+  const FRAG_HEAD='uniform float uGloss,uTrans,uMut,uCharge,uTime,uFung; varying float vDry,vRot,vShade; varying vec3 vMW;\n';
   const FRAG_COL=`#include <color_fragment>
 diffuseColor.rgb*=vShade;
 { float d=clamp(vDry,0.,1.); vec3 g=vec3(dot(diffuseColor.rgb,vec3(.3,.59,.11))); diffuseColor.rgb=mix(diffuseColor.rgb,mix(g,diffuseColor.rgb,.4)*vec3(1.3,1.08,.55)+vec3(.1,.07,0.),d); }
@@ -57,11 +57,16 @@ diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.32,.28,.2),clamp(vR
 { float nr=exp(-length(vMW.xz)*1.5); float l_=dot(diffuseColor.rgb,vec3(.3,.59,.11)); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.5,.4,.95)*(.25+l_*1.1),clamp(uMut*(.05+.2*nr),0.,.22)); }`;
   // mutazione: bagliore viola #A88BFF su bordi (fresnel) e venature, più forte vicino al sasso e con la carica; verde #7CF5C8 solo come riflesso freddo raro
   const FRAG_MUT=`#ifndef DEPTH_PACKING
-if(uMut>.004){ float dd=length(vMW.xz), nr=exp(-dd*1.7), fr=pow(1.-abs(dot(normalize(normal),normalize(vViewPosition))),3.2);
-  float vn=abs(sin(vMW.x*85.+sin(vMW.z*61.+vMW.y*40.)*2.4)*sin(vMW.z*73.-vMW.y*55.+sin(vMW.x*47.)*1.8)); float vein=1.-smoothstep(0.,.2,vn);
-  float lm=dot(diffuseColor.rgb,vec3(.3,.59,.11)); float st=uMut*(.3+.7*nr)*(.4+.6*uCharge)*(1.+.22*sin(uTime*2.1+dd*5.));
-  float cold=smoothstep(.82,.96,sin(vMW.x*17.+vMW.z*11.+vMW.y*23.)*.5+.5);
-  totalEmissiveRadiance+=(vec3(.659,.545,1.)*(fr*1.1+vein*(.22+.45*nr))*(.3+.5*lm)+vec3(.486,.961,.784)*fr*cold*.35)*st; }
+if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), nr=exp(-dd*1.7), fr=pow(1.-abs(dot(normalize(normal),normalize(vViewPosition))),2.4);
+  float vn=abs(sin(vMW.x*85.+sin(vMW.z*61.+vMW.y*40.)*2.4)*sin(vMW.z*73.-vMW.y*55.+sin(vMW.x*47.)*1.8)); float vein=1.-smoothstep(0.,.22,vn);
+  float lm=dot(diffuseColor.rgb,vec3(.3,.59,.11)); float st=um*(.45+.9*nr)*(.55+.7*uCharge)*(1.+.22*sin(uTime*2.1+dd*5.));
+  float cold=smoothstep(.7,.94,sin(vMW.x*17.+vMW.z*11.+vMW.y*23.)*.5+.5);
+  float irid=.5+.5*sin(vMW.y*9.+vMW.x*6.+dot(normalize(normal),vec3(1.,.4,.2))*3.+uTime*.4);
+  vec3 vio=vec3(.659,.545,1.), rosa=vec3(1.,.38,.82), azz=vec3(.35,.7,1.);
+  vec3 tint=mix(vio,mix(rosa,azz,irid),smoothstep(.45,1.,um)*.55);
+  vec3 em=tint*(fr*1.8+vein*(.5+1.1*nr))*(.35+.6*lm)+vec3(.486,.961,.784)*fr*cold*.3;
+  if(uFung>.5){ float up=smoothstep(-.1,.6,normalize(normal).y); em+=mix(vio,azz,irid*.6)*(.55+.9*fr+.5*up)*(.5+.8*nr); } /* fungo: cappello e lamelle luminosi */
+  totalEmissiveRadiance+=em*st*1.7; }
 #endif`;
   const FRAG_ROUGH='#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,roughnessFactor*.5,uGloss); roughnessFactor=mix(roughnessFactor,min(1.,roughnessFactor+.3),clamp(vDry,0.,1.));';
   // luce che passa attraverso la foglia (translucenza economica: luce principale da dietro)
@@ -78,7 +83,7 @@ if(uMut>.004){ float dd=length(vMW.xz), nr=exp(-dd*1.7), fr=pow(1.-abs(dot(norma
       if(!inst) sh.vertexShader=sh.vertexShader.replace('#include <beginnormal_vertex>','Org on_=org(); vec3 objectNormal=rotA(normal,aAxis,on_.bend);');
       sh.fragmentShader=sh.fragmentShader.replace('void main() {',FRAG_HEAD+'void main() {'); if(SC) sh.fragmentShader=sh.fragmentShader.replace('void main() {','uniform sampler2D mapSecco; uniform float uSeccoOn;\nvoid main() {').replace('vec4 sampledDiffuseColor = texture2D( map, vMapUv );','vec4 sampledDiffuseColor = texture2D(map,vMapUv); if(uSeccoOn>.5) sampledDiffuseColor=mix(sampledDiffuseColor,texture2D(mapSecco,vMapUv),smoothstep(.12,.65,vDry));'); sh.fragmentShader=sh.fragmentShader.replace('#include <color_fragment>',FRAG_COL).replace('#include <roughnessmap_fragment>',FRAG_ROUGH).replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n'+FRAG_MUT).replace('#include <lights_fragment_end>',FRAG_TRANS); };
     mat.customProgramCacheKey=()=>'pianta'+kind+(inst?'i':'o')+(mat.userData.secco?'s':'')+(mat.isMeshDepthMaterial?'d':'m'); return mat; }
-  function uniforms(){ return {uGrow:{value:0},uTurgor:{value:1},uDroop:{value:0},uDry:{value:0},uRot:{value:0},uDew:{value:0},uWind:{value:0},uTime:{value:0},uGloss:{value:0},uTrans:{value:0},uMut:{value:0},uCharge:{value:0}}; }
+  function uniforms(){ return {uGrow:{value:0},uTurgor:{value:1},uDroop:{value:0},uDry:{value:0},uRot:{value:0},uDew:{value:0},uWind:{value:0},uTime:{value:0},uGloss:{value:0},uTrans:{value:0},uMut:{value:0},uCharge:{value:0},uFung:{value:0}}; }
   function shadowed(mesh,U,kind,inst){ mesh.customDepthMaterial=patch(new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking}),U,kind,inst); mesh.castShadow=true; mesh.receiveShadow=true; return mesh; }
 
   // ---------- costruttore di geometria con attributi ----------
@@ -193,13 +198,33 @@ if(uMut>.004){ float dd=length(vMW.xz), nr=exp(-dd*1.7), fr=pow(1.-abs(dot(norma
 
   // ---------- creazione ----------
   const objs={};
-  function mk(id,slot,seed){ const g=new THREE.Group(), r=rngS(seed), [sx,sz]=SLOTS[slot%SLOTS.length]; g.position.set(sx,.1,sz); const U=uniforms(), meshes=[]; let emiss=null;
+  // ---------- mutazioni magiche: grappoli di foto vere (piani incrociati, alphaTest + depthWrite, nessun blending) con emissiveMap = la foto: il bloom li accende ----------
+  const MAGICMATS=[];
+  function magMat(F,mask){ const m=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.5,side:THREE.DoubleSide,alphaTest:.5,emissive:0xffffff,emissiveIntensity:0}); m.userData.F=F;
+    if(mask) m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{ vec3 e_=texture2D(emissiveMap,vEmissiveMapUv).rgb; float k_=smoothstep(.02,.18,max(e_.b-e_.g*.9,e_.r-e_.g*1.1)); totalEmissiveRadiance=emissive*e_*k_; }'); };
+    m.customProgramCacheKey=()=>mask?'magL':'magF'; const dm=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,alphaTest:.5}); m.userData.dm=dm;
+    if(F) F.when(()=>magApply(m)); MAGICMATS.push(m); return m; }
+  function magApply(m){ const F=m.userData.F, M=F&&F.maps(fotoLvl); if(!M) return; m.map=m.emissiveMap=M.map; m.normalMap=M.normalMap||null; m.needsUpdate=true; m.userData.dm.map=M.map; m.userData.dm.needsUpdate=true; }
+  function magCluster(F,w,n,spread,r,mask){ const grp=new THREE.Group(), m=magMat(F,mask); const geo=new THREE.PlaneGeometry(w,w); geo.translate(0,w/2,0);
+    for(let i=0;i<n;i++){ const a=r()*6.283, d=r()*spread, sc=.7+r()*.5; for(let k=0;k<2;k++){ const q=new THREE.Mesh(geo,m); q.customDepthMaterial=m.userData.dm; q.castShadow=true; q.position.set(Math.cos(a)*d,.02,Math.sin(a)*d); q.rotation.y=a+k*Math.PI/2; q.scale.setScalar(sc); grp.add(q); } }
+    grp.visible=false; grp.userData.m=m; return grp; }
+  // rametto appoggiato sulla terra accanto al sasso (sempre presente): fusto curvo con corteccia + ritaglio di muschio e licheni su due piani incrociati
+  let ramG=null;
+  function rametto(){ if(ramG) return ramG; ramG=new THREE.Group(); const L=.9, pts=[]; for(let i=0;i<=8;i++){ const u=i/8; pts.push(new V3((u-.5)*L,.025+.035*Math.sin(u*Math.PI)+.01*Math.sin(u*9),.05*Math.sin(u*3.2))); }
+    const geo=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),24,.03,7), bark=new THREE.MeshStandardMaterial({color:0x6b5440,roughness:.9}); const mb=FCO&&FCO.when?FCO:null; if(mb) mb.when(()=>{ const M=mb.maps(fotoLvl); if(M){ bark.map=M.map; bark.color.set(0xffffff); bark.normalMap=M.normalMap||null; bark.needsUpdate=true; } });
+    const stick=new THREE.Mesh(geo,bark); stick.castShadow=true; ramG.add(stick);
+    if(FRA){ const m=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.85,side:THREE.DoubleSide,alphaTest:.5}), dm=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,alphaTest:.5}); FRA.when(()=>{ const M=FRA.maps(fotoLvl); if(M){ m.map=M.map; m.needsUpdate=true; dm.map=M.map; dm.needsUpdate=true; } });
+      for(let k=0;k<2;k++){ const q=new THREE.Mesh(new THREE.PlaneGeometry(L*1.05,L*1.05*512/1816),m); q.customDepthMaterial=dm; q.position.y=.07; q.rotation.x=k?Math.PI/2:0; if(k) q.position.y=.06; ramG.add(q); } }
+    ramG.position.set(.42,0,-.28); ramG.rotation.y=.5; return ramG; }
+  const id_=o=>o.id;
+  function mk(id,slot,seed){ const g=new THREE.Group(), r=rngS(seed), [sx,sz]=SLOTS[slot%SLOTS.length]; g.position.set(sx,.1,sz); const U=uniforms(), meshes=[]; let emiss=null; U.uFung.value=id==='fungo'?1:0;
     if(id==='muschio') meshes.push(...buildMuschio(g,r,U));
     else { const kind=KIND[id]||KIND.felce, built=(id==='felce'?buildFelce:id==='succulenta'?buildSucculenta:id==='carnivora'?buildCarnivora:buildFungo)(r);
       const fotoF=id==='felce'?FF:id==='succulenta'?FS:id==='carnivora'?FD:id==='fungo'?FU:null, leaf=patch(new THREE.MeshStandardMaterial(Object.assign({vertexColors:true,color:0xffffff,roughness:id==='fungo'?.75:id==='succulenta'?.5:.62,side:THREE.DoubleSide},fotoF?{alphaTest:.5,roughness:.55}:{})),U,kind,false); if(fotoF) U.uTrans.value=id==='felce'||id==='carnivora'?.6:.25;
       const mats=built.groups.map(k=>k==='0'?leaf:patch(new THREE.MeshPhysicalMaterial({vertexColors:true,color:0xffffff,roughness:.05,clearcoat:1,clearcoatRoughness:.03,transparent:true,opacity:.7,specularIntensity:1,depthWrite:false}),U,kind,false));
       const mesh=new THREE.Mesh(built.geo,mats.length===1?mats[0]:mats); shadowed(mesh,U,kind,false); if(fotoF){ mesh.customDepthMaterial.alphaTest=.5; fotoBind(leaf,fotoF,mesh.customDepthMaterial); } g.add(mesh); meshes.push(mesh); if(id==='fungo') emiss=leaf; }
-    const o={id,g,U,meshes,emiss,st:null,key:'',
+    const mag=[]; if(id==='fungo'&&FXM) mag.push(magCluster(FXM,.55,3,.25,r,false)); if(id==='carnivora'&&FXC) mag.push(magCluster(FXC,.6,2,.2,r,false)); if(id==='muschio'&&FXMU) mag.push(magCluster(FXMU,.4,4,.3,r,true)); if(id==='felce'&&FXF) mag.push(magCluster(FXF,.55,3,.25,r,true)); if((id==='felce'||id==='succulenta')&&FXL) mag.push(magCluster(FXL,.45,2,.22,r,true)); if(id==='succulenta'&&FXS){ const c=magCluster(FXS,.5,1,0,r,true), mm=c.userData.m; c.clear(); const q=new THREE.Mesh(new THREE.PlaneGeometry(.5,.5).rotateX(-Math.PI/2),mm); q.customDepthMaterial=mm.userData.dm; q.position.y=.12; c.add(q); mag.push(c); } mag.forEach(c=>g.add(c));
+    const o={id,g,U,meshes,emiss,st:null,key:'', mag,
       upd(){}, // compatibilità con il vecchio ciclo di v3d: tutto passa da tick()
       dispose(){ meshes.forEach(m=>{ m.geometry.dispose(); [].concat(m.material).forEach(x=>x.dispose()); if(m.customDepthMaterial) m.customDepthMaterial.dispose(); }); } };
     // densità: copie satellite (stessa geometria e materiali, ruotate e scalate) che compaiono con la maturità della specie
@@ -227,6 +252,7 @@ if(uMut>.004){ float dd=length(vMW.xz), nr=exp(-dd*1.7), fr=pow(1.-abs(dot(norma
       if(!s){ s=o.st=Object.assign({},T); }
       else { s.grow=ease(s.grow,T.grow,dt*.6); s.vig=ease(s.vig,T.vig,dt*.5); s.tur=ease(s.tur,T.tur,T.tur>s.tur?dt*.45:dt*.07); s.droop=ease(s.droop,T.droop,T.droop<s.droop?dt*.4:dt*.08); s.dry=ease(s.dry,T.dry,T.dry<s.dry?dt*.35:dt*.06); s.rot=ease(s.rot,T.rot,dt*.08); s.dew=ease(s.dew,T.dew,dt*.3); s.gloss=ease(s.gloss,T.gloss,dt*.4); s.wind=ease(s.wind,T.wind,dt*.5); s.mut=ease(s.mut,T.mut,dt*.5); s.E=ease(s.E,T.E,dt*.8); }
       const U=o.U; U.uGrow.value=s.grow; U.uTurgor.value=s.tur; U.uDroop.value=s.droop; U.uDry.value=s.dry; U.uRot.value=s.rot; U.uDew.value=s.dew; U.uGloss.value=s.gloss; U.uWind.value=s.wind; U.uTime.value=t; U.uMut.value=s.mut; U.uCharge.value=s.E;
+      if(o.mag) o.mag.forEach(c=>{ const need=id_(o)==='muschio'?.4:id_(o)==='succulenta'?.35:id_(o)==='fungo'?.15:id_(o)==='carnivora'?.25:.45, k=clamp((s.mut-need)/.25)*clamp(s.grow*1.2); c.visible=k>.02&&s.vig>.15; if(c.visible){ c.scale.setScalar(.35+.65*k); c.userData.m.emissiveIntensity=(1.4+1.8*s.E)*(1+.15*Math.sin(t*2.1+o.g.position.x*9)); } });
       if(o.sat){ o.sat.forEach(q=>{ q.visible=s.grow>=q.userData.at&&s.vig>.12; }); } }); }
   // QA e test: forza gli stati (force(null) toglie), settle() salta le transizioni
   function force(st){ forced=st; lastPull=-1; }
@@ -239,5 +265,5 @@ if(uMut>.004){ float dd=length(vMW.xz), nr=exp(-dd*1.7), fr=pow(1.-abs(dot(norma
     const n=g.attributes.position.count, z=new Float32Array(n*3); ['aP0','aP1','aSpine'].forEach(k=>{ if(!g.attributes[k]) g.setAttribute(k,g.attributes.position); }); if(!g.attributes.aPivot) g.setAttribute('aPivot',new THREE.BufferAttribute(z,3)); if(!g.attributes.aAxis){ const ax=new Float32Array(n*3); for(let i=0;i<n;i++) ax[i*3]=1; g.setAttribute('aAxis',new THREE.BufferAttribute(ax,3)); } if(!g.attributes.aPhase) g.setAttribute('aPhase',new THREE.BufferAttribute(new Float32Array(n),1)); if(!g.attributes.aType) g.setAttribute('aType',new THREE.BufferAttribute(new Float32Array(n),1));
     [].concat(mesh.material).forEach(m=>patch(m,U,kind||1,false)); shadowed(mesh,U,kind||1,false);
     return {U,apply(s){ U.uGrow.value=s.grow; U.uTurgor.value=s.tur; U.uDroop.value=s.droop; U.uDry.value=s.dry; U.uRot.value=s.rot; U.uDew.value=s.dew; U.uGloss.value=s.gloss; U.uWind.value=s.wind; const mi=mesh.morphTargetDictionary; if(mi&&mesh.morphTargetInfluences){ if('uncurl' in mi) mesh.morphTargetInfluences[mi.uncurl]=clamp(s.grow); if('trap_close' in mi) mesh.morphTargetInfluences[mi.trap_close]=s.trap||0; } }}; }
-  return {mk,tick,force,settle,state,target,GROW,ADATTA,objs,level};
+  return {mk,tick,force,settle,state,target,GROW,ADATTA,objs,level,rametto};
 };

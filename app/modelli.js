@@ -61,7 +61,7 @@ vec3 transformed=antP;`;
 const uni={uTime:{value:0},uDry:{value:0}};
 function patch(mat,depth){ mat.onBeforeCompile=sh=>{ sh.uniforms.uTime=uni.uTime; sh.uniforms.uDry=uni.uDry;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\n'+VHEAD).replace('#include <beginnormal_vertex>',VNORMAL).replace('#include <begin_vertex>',VBEGIN);
-    if(!depth) sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vEmit; uniform float uTime;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=vec3('+EMIT_COL.join(',')+')*vEmit*(1.1+.4*sin(uTime*3.+vEmit*7.));'); };
+    if(!depth) sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vEmit; uniform float uTime;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=vec3('+EMIT_COL.join(',')+')*vEmit*(2.6+.8*sin(uTime*3.+vEmit*7.))*vec3(1.,.8+.2*sin(uTime+vEmit*5.),1.);'); };
   mat.customProgramCacheKey=()=>depth?'antDepth':'antStd'; return mat; }
 const depthMat=patch(new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking}),true);
 // ---------- caricamento dei GLB incorporati ----------
