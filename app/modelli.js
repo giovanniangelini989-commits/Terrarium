@@ -14,7 +14,7 @@ const CAP=128;                 // il sim limita pop a 100 per specie
 const BUDGET=[64000,36000,20000]; // triangoli per le creature, per livello della guardia prestazioni
 const PX={close:64,swarm:30,lod1:11}; // soglie in pixel (altezza del corpo a schermo) per i livelli di dettaglio
 const CLOSE_MAX=6;
-const EMIT_COL=[0.486,0.961,0.784]; // #7CF5C8
+const EMIT_COL=[0.659,0.545,1.0]; // #A88BFF (viola del sasso: Giovanni, sei-scenari)
 // ---------- shader: posa procedurale per parte (brief v3 §5.1) ----------
 const VHEAD=`
 attribute vec4 aAnim; attribute vec3 aPivot; attribute float aEmit;
