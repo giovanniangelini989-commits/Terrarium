@@ -27,6 +27,8 @@ B = Image.fromarray(((al > .5) * 255).astype(np.uint8)).filter(ImageFilter.Media
 B = Image.fromarray(np.pad(np.asarray(B), 1)).copy(); ImageDraw.floodfill(B, (0, 0), 128)
 fondo = np.asarray(B)[1:-1, 1:-1] == 128
 al = np.where(fondo, al * (al > .5), 1.0)
+if os.environ.get('FONDO_CHIUSO'):  # fondo intrappolato tra steli (grappoli di funghi): vicino al colore del fondo è trasparente anche se chiuso
+    al = al * np.clip((dist - .05) / .05, 0, 1)
 A = Image.fromarray((al * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(.6))
 rgba = im.copy(); rgba.putalpha(A)
 rgba = rgba.rotate(ang, resample=Image.BICUBIC, expand=True)  # rachide verticale, punta in alto
