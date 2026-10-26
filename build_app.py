@@ -25,10 +25,10 @@ glb+='window.__GLB_APERTURA='+json.dumps(GLB_AP,separators=(',',':'))+';'
 MATF={}
 for mid in sorted(os.listdir('assets/materiali')) if os.path.isdir('assets/materiali') else []:
     d='assets/materiali/'+mid
-    if not os.path.exists(d+'/colore.webp'): continue
+    if not any(os.path.exists(d+'/'+k+'.webp') for k in ('colore','maschera','panorama')): continue
     # file a parte sullo stesso sito (DECISIONI §5): il gioco resta leggero e il telefono li tiene in cache
     os.makedirs('dist/materiali/'+mid, exist_ok=True); MATF[mid]={}
-    for k in ('colore','normale','ruvidezza','altezza','maschera'):
+    for k in ('colore','normale','ruvidezza','altezza','maschera','panorama'):
         if os.path.exists(d+'/'+k+'.webp'):
             shutil.copyfile(d+'/'+k+'.webp','dist/materiali/'+mid+'/'+k+'.webp'); MATF[mid][k]='materiali/'+mid+'/'+k+'.webp'
 glb+='window.__MAT_FOTO='+json.dumps(MATF,separators=(',',':'))+';'

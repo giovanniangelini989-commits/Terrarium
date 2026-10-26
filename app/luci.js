@@ -38,7 +38,7 @@ window.__LUCI=function(THREE,o){
     if(envCache[t]) return envCache[t];
     const W=256,H=128, D=new Float32Array(W*H*4), L=LOOK[t];
     const win=t==='notte'?null:new V3(...(t==='sera'?[1,.32,.55]:[1,.62,.92])).normalize();
-    const lamp=new V3(-.55,.62,.55).normalize(), ph=photo;
+    const lamp=new V3(-.55,.62,.55).normalize(), ph=PANO[t==='notte'?'notte':'giorno']||photo;
     const tint=t==='sera'?[1.08,.86,.68]:t==='notte'?[.5,.42,.36]:[.92,.97,1.06], pk=t==='notte'?.03:t==='sera'?.4:.55;
     for(let y=0;y<H;y++){ const v=(y+.5)/H, el=(v-.5)*Math.PI, cy=Math.sin(el), ce=Math.cos(el);
       for(let x=0;x<W;x++){ const u=(x+.5)/W, az=(u-.5)*2*Math.PI, dx=Math.cos(az)*ce, dz=Math.sin(az)*ce; let r,g,b;
@@ -56,6 +56,8 @@ window.__LUCI=function(THREE,o){
   }
   const HDRI=window.__TEX&&(window.__TEX.hdri_stanza||window.__TEX.bg_day);
   if(HDRI){ const im=new Image(); im.onload=()=>{ try{ const w=192,h=96, c=document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d'); g.drawImage(im,0,0,w,h); const d=g.getImageData(0,0,w,h).data, f=new Float32Array(w*h*4); for(let i=0;i<d.length;i++) f[i]=srgb2lin(d[i]/255); photo={w,h,d:f}; Object.keys(envCache).forEach(k=>{ envCache[k].dispose(); delete envCache[k]; }); applyEnv(); }catch(e){} }; im.src=HDRI; }
+  // panorami veri della stanza (giorno/notte) dai materiali fotografici: letti a bassa risoluzione e filtrati PMREM, niente texture grandi in GPU
+  const PANO={}; (function(){ const MF=window.__MAT_FOTO; if(!MF) return; [['giorno','stanza_giorno'],['notte','stanza_notte']].forEach(([k,id])=>{ const u=MF[id]&&MF[id].panorama; if(!u) return; const im=new Image(); im.onload=()=>{ try{ const w=192,h=96, c=document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d',{willReadFrequently:true}); g.drawImage(im,0,0,w,h); const d=g.getImageData(0,0,w,h).data, f=new Float32Array(w*h*4); for(let i=0;i<d.length;i++) f[i]=srgb2lin(d[i]/255); PANO[k]={w,h,d:f}; Object.keys(envCache).forEach(q=>{ envCache[q].dispose(); delete envCache[q]; }); applyEnv(); }catch(e){} }; im.src=u; }); })();
   function applyEnv(){ scene.environment=envFor(curT).texture; }
 
   // ---------- luci ----------

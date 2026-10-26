@@ -16,7 +16,8 @@ function build(THREE){
   const LU=window.__LUCI(THREE,{scene,renderer,camera});
   // ---------- tavolo ----------
   (function(){ const c=document.createElement('canvas'); c.width=c.height=512; const g=c.getContext('2d'); g.fillStyle='#7a5230'; g.fillRect(0,0,512,512); const r=rngS(7); for(let i=0;i<90;i++){ g.strokeStyle='rgba('+(40+r()*40|0)+','+(20+r()*20|0)+',10,'+(.12+r()*.2)+')'; g.lineWidth=1+r()*3; g.beginPath(); const y=r()*512; g.moveTo(0,y); g.bezierCurveTo(170,y+r()*14-7,340,y+r()*14-7,512,y+r()*10-5); g.stroke(); } const tx=new THREE.CanvasTexture(c); tx.colorSpace=THREE.SRGBColorSpace; tx.wrapS=tx.wrapT=THREE.RepeatWrapping; tx.repeat.set(3,3);
-    const wtx=ptex('wood_col',3); const table=new THREE.Mesh(new THREE.CylinderGeometry(3.6,3.6,.2,72),new THREE.MeshStandardMaterial(wtx?{map:wtx,color:0xc29a72,roughness:.5}:{map:tx,roughness:.82})); table.position.y=-.1; table.receiveShadow=true; scene.add(table); })();
+    const wtx=ptex('wood_col',3); const table=new THREE.Mesh(new THREE.CylinderGeometry(3.6,3.6,.2,72),new THREE.MeshStandardMaterial(wtx?{map:wtx,color:0xc29a72,roughness:.5}:{map:tx,roughness:.82})); table.position.y=-.1; table.receiveShadow=true; scene.add(table);
+    scene.userData.table=table; })();
   // ---------- vaso ----------
   const jar=new THREE.Group(); scene.add(jar);
   const prof=[[0,0],[.70,0],[.88,.05],[.97,.18],[1,.4],[1,1.9],[.96,2.08],[.82,2.18],[.78,2.24],[.78,2.34]].map(p=>new THREE.Vector2(p[0],p[1]));
@@ -29,17 +30,17 @@ function build(THREE){
   const SOIL0=.2, GH=.19, AMP=.032, DISC_REP=1.9; // DISC_REP: tessere da 10 cm sul disco Ø 19 cm
   // ---------- materiali fotografici (foto vere di Giovanni: assets/materiali/<id>, incorporate da build_app.py in window.__MAT_FOTO) ----------
   // FOTO_SCALA: lato della foto in unità (1 unità = 10 cm); null = immagine singola non ripetibile (fronda scontornata).
-  const MF=window.__MAT_FOTO||null, FOTO_SCALA={terriccio:1,ghiaia:.6,muschio:.5,muffa:.6,foglia_felce:null}, FOTOS={};
-  function fotoMat(id){ if(FOTOS[id]!==undefined) return FOTOS[id]; const src=MF&&MF[id]; if(!src||!src.colore) return FOTOS[id]=null;
+  const MF=window.__MAT_FOTO||null, FOTO_SCALA={terriccio:1,ghiaia:.6,muschio:.5,muffa:.6,muschio_secco:.5,legno:3,coperchio:null,vetro_sporco:null,foglia_felce:null,foglia_succulenta:null,fungo:null,drosera:null}, FOTOS={};
+  function fotoMat(id){ if(FOTOS[id]!==undefined) return FOTOS[id]; const src=MF&&MF[id]; if(!src||!(src.colore||src.maschera)) return FOTOS[id]=null;
     const scala=FOTO_SCALA[id]===undefined?1:FOTO_SCALA[id], F={id,scala,ready:false,img:{},H:null,N:0,cache:{},q:[]}, keys=Object.keys(src); let left=keys.length;
-    const done=()=>{ F.ready=!!F.img.colore; const q=F.q; F.q=[]; if(F.ready) q.forEach(cb=>{ try{ cb(F); }catch(e){} }); };
+    const done=()=>{ F.ready=!!(F.img.colore||F.img.maschera); const q=F.q; F.q=[]; if(F.ready) q.forEach(cb=>{ try{ cb(F); }catch(e){} }); };
     keys.forEach(k=>{ const im=new Image(); im.onload=()=>{ F.img[k]=im; if(k==='altezza'){ const n=im.naturalWidth, c=document.createElement('canvas'); c.width=c.height=n; const g=c.getContext('2d'); g.drawImage(im,0,0); const d=g.getImageData(0,0,n,n).data, H=new Float32Array(n*n); for(let i=0;i<n*n;i++) H[i]=d[i*4]/255; F.H=H; F.N=n; } if(--left===0) done(); }; im.onerror=()=>{ if(--left===0) done(); }; im.src=src[k]; });
     F.when=cb=>{ if(F.ready) cb(F); else F.q.push(cb); };
     F.height=(u,v)=>{ if(!F.H) return .2; const n=F.N, x=Math.floor(((u%1)+1)%1*n), y=Math.floor(((1-v)%1+1)%1*n); return F.H[Math.min(n-1,y)*n+Math.min(n-1,x)]; };
     const half=im=>{ const c=document.createElement('canvas'); c.width=Math.max(1,im.naturalWidth>>1); c.height=Math.max(1,im.naturalHeight>>1); c.getContext('2d').drawImage(im,0,0,c.width,c.height); return c; };
     const mk=(im,srgb,small)=>{ const t=new THREE.Texture(small?half(im):im); t.wrapS=t.wrapT=scala==null?THREE.ClampToEdgeWrapping:THREE.RepeatWrapping; if(srgb) t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4; t.needsUpdate=true; return t; };
     // mappe per livello della guardia: 0 tutto · 1 colore+normale a metà risoluzione · 2 solo colore (metà)
-    F.maps=l=>{ if(!F.ready) return null; l=Math.max(0,Math.min(2,l|0)); if(F.cache[l]) return F.cache[l]; const I=F.img, o={map:mk(I.colore,true,l>0)}; if(l<2&&I.normale) o.normalMap=mk(I.normale,false,l>0); if(l<1&&I.ruvidezza) o.roughnessMap=mk(I.ruvidezza,false,false); if(I.maschera) o.mask=mk(I.maschera,false,l>0); return F.cache[l]=o; };
+    F.maps=l=>{ if(!F.ready) return null; l=Math.max(0,Math.min(2,l|0)); if(F.cache[l]) return F.cache[l]; const I=F.img, o={}; if(I.colore) o.map=mk(I.colore,true,l>0); if(l<2&&I.normale) o.normalMap=mk(I.normale,false,l>0); if(l<1&&I.ruvidezza) o.roughnessMap=mk(I.ruvidezza,false,false); if(I.maschera) o.mask=mk(I.maschera,false,l>0); return F.cache[l]=o; };
     return FOTOS[id]=F; }
   // rompe la ripetizione visibile: seconda lettura della stessa texture ruotata (34,6°) e scalata ×1,37, mescolata con un rumore a bassa frequenza
   const FOTO_GLSL=`float ftHash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
@@ -53,6 +54,10 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
       .replace('vec4 texelRoughness = texture2D( roughnessMap, vRoughnessMapUv );','vec4 texelRoughness = mix(texture2D(roughnessMap,vRoughnessMapUv),texture2D(roughnessMap,ftUv2(vRoughnessMapUv)),ftMix(vRoughnessMapUv));'); return sh; }
   const antiTile=m=>{ m.onBeforeCompile=sh=>fotoShader(sh); m.customProgramCacheKey=()=>'foto'; return m; };
   const FOTO={mat:fotoMat,shader:fotoShader,antiTile,SCALA:FOTO_SCALA};
+  // legno fotografico sulla scrivania
+    const FW=fotoMat('legno'), table=scene.userData.table; if(FW&&table) FW.when(F=>{ const M=F.maps(1); if(!M) return; const rp=7.2/F.scale; [M.map,M.normalMap,M.roughnessMap].forEach(t=>{ if(t) t.repeat.set(rp,rp); }); const m=table.material; m.map=M.map; m.normalMap=M.normalMap||null; m.roughnessMap=M.roughnessMap||null; m.color.set(0xffffff); m.roughness=.62; m.needsUpdate=true; });
+  // coperchio fotografico (foto intera mappata sul disco del tappo)
+  { const FC=fotoMat('coperchio'); if(FC) FC.when(F=>{ const M=F.maps(1); if(!M) return; const m=cork.material; m.map=M.map; m.normalMap=M.normalMap||null; m.roughnessMap=M.roughnessMap||null; m.color.set(0xffffff); m.roughness=.7; m.needsUpdate=true; }); }
   const FT=fotoMat('terriccio'), FG=fotoMat('ghiaia'); // terriccio e ghiaia fotografici; senza __MAT_FOTO resta il terreno procedurale
   const TG=window.__TERRENO?{terra:FT?null:window.__TERRENO(THREE,{kind:'terra',seed:17}),ghiaia:FG?null:window.__TERRENO(THREE,{kind:'ghiaia',seed:29})}:null, TMAPS={};
   const terraMaps=l=>{ l=Math.max(0,Math.min(2,l|0)); if(TMAPS[l]) return TMAPS[l]; const p=Math.min(l,1), t=FT&&FT.ready?FT.maps(l):TG&&TG.terra?TG.terra.maps(p?.5:1):null, g=FG&&FG.ready?FG.maps(l):TG&&TG.ghiaia?TG.ghiaia.maps(p?.5:1):null; if(!t&&!g) return null; const o={terra:t,ghiaia:g}; if((!FT||FT.ready)&&(!FG||FG.ready)) TMAPS[l]=o; return o; };
@@ -106,15 +111,16 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
   const molds=[]; { const r=rngS(13); for(let i=0;i<14;i++){ const a=r()*6.283, m=new THREE.Mesh(new THREE.CircleGeometry(.05+r()*.05,10),new THREE.MeshBasicMaterial({color:0x6a2f8f,transparent:true,opacity:.55,depthWrite:false})); m.position.set(Math.cos(a)*.975,.25+r()*.8,Math.sin(a)*.975); m.lookAt(0,m.position.y,0); m.visible=false; m.renderOrder=4; jar.add(m); molds.push(m); } }
 
   // ---------- vetro vivo: condensa da pulire col dito, gocce che scendono, muffa sul vetro e sulla terra ----------
+  const FDI=fotoMat('vetro_sporco');
   const glassFX=(function(){ window.__glass=null;
     const FW=512, FH=192, FD=new Uint8Array(FW*FH*4); for(let i=0;i<FW*FH;i++){ FD[i*4]=255; FD[i*4+3]=255; }
     const tex=new THREE.DataTexture(FD,FW,FH,THREE.RGBAFormat); tex.wrapS=THREE.RepeatWrapping; tex.wrapT=THREE.ClampToEdgeWrapping; tex.magFilter=tex.minFilter=THREE.LinearFilter; tex.needsUpdate=true;
     const DR=[]; for(let i=0;i<8;i++) DR.push(new THREE.Vector4(0,0,1,0));
-    const U={uMask:{value:tex},uDens:{value:0},uZ:{value:new THREE.Vector4(1,1,1,1)},uNight:{value:0},uTex:{value:new THREE.Vector2(1/FW,1/FH)},uDrops:{value:DR},uSize:{value:new THREE.Vector2(FW,FH)}};
+    const U={uMask:{value:tex},uDens:{value:0},uZ:{value:new THREE.Vector4(1,1,1,1)},uNight:{value:0},uTex:{value:new THREE.Vector2(1/FW,1/FH)},uDrops:{value:DR},uSize:{value:new THREE.Vector2(FW,FH)},uDirt:{value:null},uDirtK:{value:0}};
     const mat=new THREE.ShaderMaterial({uniforms:U,transparent:true,depthWrite:false,side:THREE.DoubleSide,
       vertexShader:'varying vec2 vUv; varying vec3 vN; varying vec3 vV; void main(){ vec3 p=position; vUv=vec2(atan(p.z,p.x)/6.2831853+.5, p.y/2.34); vec4 mv=modelViewMatrix*vec4(p,1.); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }',
       fragmentShader:[
-      'uniform sampler2D uMask; uniform float uDens,uNight; uniform vec4 uZ; uniform vec2 uTex,uSize; uniform vec4 uDrops[8]; varying vec2 vUv; varying vec3 vN; varying vec3 vV;',
+      'uniform sampler2D uMask; uniform float uDens,uNight; uniform vec4 uZ; uniform vec2 uTex,uSize; uniform vec4 uDrops[8]; uniform sampler2D uDirt; uniform float uDirtK; varying vec2 vUv; varying vec3 vN; varying vec3 vV;',
       'vec2 h2(vec2 p){ p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))); return fract(sin(p)*43758.5453); }',
       'float n2(vec2 p){ vec2 i=floor(p),f=fract(p); f=f*f*(3.-2.*f); float a=h2(i).x,b=h2(i+vec2(1.,0.)).x,c=h2(i+vec2(0.,1.)).x,d=h2(i+vec2(1.,1.)).x; return mix(mix(a,b,f.x),mix(c,d,f.x),f.y); }',
       'void main(){',
@@ -134,6 +140,7 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
       ' float lens=drop*(1.-clamp(length(dv),0.,1.)); float af=fog*.7*(1.-drop*.55) + rim*.18 + big*(.06+.3*bigrim) + edge*.12 + lens*.1;',
       ' af*= (.78+.5*fr);',
       ' vec3 cf=mix(fogC*(1.-.22*rim-.3*bigrim),vec3(1.),lens*.35);',
+      ' float dirt=uDirtK>0.?texture2D(uDirt,vUv*vec2(3.,1.2)).r*uDirtK:0.; cf=mix(cf,vec3(.5,.47,.4)*(1.-.5*uNight),clamp(dirt*.8,0.,1.)); af=clamp(af+dirt*.42*(1.-af),0.,1.);',
       ' float spec=hlm*.85+hl; cf=mix(cf,vec3(1.),clamp(spec,0.,1.)); af=clamp(af+spec*.6,0.,1.);',
       ' float fib=n2(vUv*vec2(900.,340.))*.6+n2(vUv*vec2(2600.,980.))*.4;',
       ' float am=smoothstep(.06,.5,mo)*(.45+.55*fib);',
@@ -156,6 +163,12 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
       const p=new THREE.Mesh(new THREE.PlaneGeometry(1,1),m); p.rotation.x=-Math.PI/2; p.rotation.z=r()*6.283; p.position.set(Math.cos(a)*d,0,Math.sin(a)*d); p.visible=false; p.renderOrder=3; jar.add(p);
       const f=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshStandardMaterial({map:CT[0],transparent:true,depthWrite:false,opacity:.3,roughness:1})); f.rotation.copy(p.rotation); f.rotation.z+=1.3; f.visible=false; f.renderOrder=3; jar.add(f);
       soilCol.push({p,f,th:r()*.75,size:.07+r()*.09,cur:0}); } }
+    // colonie fotografiche: ritagli della foto di muffa (colore) con la sua maschera, sfumati ai bordi; sostituiscono le colonie disegnate
+    { const FMU=fotoMat('muffa'); if(FMU) FMU.when(F=>{ if(!F.img.maschera) return; try{ const R=rngS(91), tx=[]; for(let k=0;k<3;k++){ const c=document.createElement('canvas'); c.width=c.height=256; const g=c.getContext('2d'), sx=R()*560, sy=R()*560, cw=420;
+        g.drawImage(F.img.colore,sx,sy,cw,cw,0,0,256,256); const col=g.getImageData(0,0,256,256); g.clearRect(0,0,256,256); g.drawImage(F.img.maschera,sx,sy,cw,cw,0,0,256,256); const mk=g.getImageData(0,0,256,256).data;
+        for(let y=0;y<256;y++) for(let x=0;x<256;x++){ const i=(y*256+x)*4, d=Math.hypot(x-127.5,y-127.5)/128, fall=Math.max(0,Math.min(1,(1-d)/.45)); col.data[i+3]=Math.min(255,mk[i]*1.15*fall*fall*(3-2*fall)); }
+        g.putImageData(col,0,0); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; tx.push(t); }
+      soilCol.forEach((c,i)=>{ c.p.material.map=tx[i%3]; c.p.material.needsUpdate=true; c.f.material.map=tx[(i+1)%3]; c.f.material.needsUpdate=true; c.size*=1.6; }); }catch(e){} }); }
     // macchie di muffa sul vetro (canale G), strofinabili
     const spots=[]; { const r=rngS(55); for(let i=0;i<9;i++) spots.push({u:r(),dv:.012+r()*.14,R:5+r()*7,th:r()*.7,s:1,p1:r()*6.28,p2:r()*6.28,p3:r()*6.28}); }
     let L=0, LT=0, LF=0, soilV=.05, acc=0, moldAcc=0, drops=[], wiping=null, wipedArea=0, scrubbed=0, cleared=0;
@@ -181,6 +194,7 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
       if(m){ U.uDens.value+=(1-U.uDens.value)*Math.min(1,dt*.4); const kz=Math.min(1,dt*.4), c=m.condensa; Z.set(Z.x+(clamp(c.tappo)-Z.x)*kz,Z.y+(clamp(c.alto)-Z.y)*kz,Z.z+(clamp(c.medio)-Z.z)*kz,Z.w+(clamp(c.basso)-Z.w)*kz); }
       else { U.uDens.value+=((clamp((n.um-.55)/.33))-U.uDens.value)*Math.min(1,dt*1.5); const kz=Math.min(1,dt*.6); Z.set(Z.x+(1-Z.x)*kz,Z.y+(1-Z.y)*kz,Z.z+(1-Z.z)*kz,Z.w+(1-Z.w)*kz); }
       U.uNight.value+=((S.night?1:0)-U.uNight.value)*Math.min(1,dt*2);
+      if(FDI&&FDI.ready){ if(!U.uDirt.value){ const M=FDI.maps(1); if(M&&M.mask){ M.mask.wrapS=M.mask.wrapT=THREE.RepeatWrapping; U.uDirt.value=M.mask; } } U.uDirtK.value+=((U.uDirt.value?clamp((.9-n.pul)/.75):0)-U.uDirtK.value)*Math.min(1,dt*.6); }
       soilV=(S.soilTop||.2)/2.34; L+=((m?clamp(m.muffa.vetro):clamp((.62-n.pul)/.5))-L)*Math.min(1,dt*(m?.3:.8)); LT+=((m?clamp(m.muffa.terra):L)-LT)*Math.min(1,dt*.3); LF+=((m?clamp(m.muffa.foglie):0)-LF)*Math.min(1,dt*.3);
       const dens=U.uDens.value*Math.max(Z.x,Z.y,Z.z,Z.w); acc+=dt; let dirty=false;
       if(acc>.1){ const inc=Math.max(1,Math.round(255*(.012+.05*dens)*acc)); for(let i=0;i<FW*FH;i++){ const k=i*4; if(FD[k]<255) FD[k]=Math.min(255,FD[k]+inc); } acc=0; dirty=true; }
