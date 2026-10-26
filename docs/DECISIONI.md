@@ -19,6 +19,9 @@ Meteorite ferroso-roccioso con crosta di fusione scura, regmaglipti (incavi come
 ## 5. Modelli hero e musica: file separati sullo stesso sito
 Il gioco resta un solo file HTML con dentro i modelli `swarm` e `close`. I modelli `hero` (fino a 2,6 MB) e la musica stanno in file separati sullo stesso sito GitHub Pages e si caricano solo quando servono (finali, macro). Non è un altro sito, quindi la regola «niente fetch verso altri siti» resta valida. La copia offline per iPhone usa i modelli `close` e una sola traccia musicale.
 
+## 5b. Materiali fotografici: file a parte
+Le texture fotografiche (`assets/materiali/`) si pubblicano come file `.webp` accanto al gioco (`materiali/<id>/…`), non dentro l'HTML: il gioco resta sotto i 4 MB e il telefono le tiene in cache. In locale (file://) e senza rete resta il terreno procedurale.
+
 ## 6. Niente pubblicità né acquisti
 Promessa del gioco. È la lamentela più frequente nei dieci concorrenti studiati.
 

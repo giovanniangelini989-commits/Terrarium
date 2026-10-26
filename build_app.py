@@ -2,7 +2,7 @@ sim=open('sim.js').read(); css=open('app/app.css').read()
 a1=open('app/microclima.js').read()+'\n'+open('app/app1.js').read(); a2=open('app/app2.js').read(); a3=open('app/fx.js').read()+'\n'+open('app/carte.js').read()+'\n'+open('app/app3.js').read()+'\n'+open('app/scenari.js').read()
 st=open('app/story.js').read()+'\n'+open('app/notti.js').read(); au=open('app/audio.js').read(); fl=open('app/apertura.js').read()+'\n'+open('app/film.js').read(); v3=open('app/modelli.js').read()+'\n'+open('app/piante.js').read()+'\n'+open('app/v3d.js').read(); km=open('app/kimi.js').read()+'\n'+open('app/materials.js').read()+'\n'+open('app/luci.js').read()+'\n'+open('app/tex.js').read()
 # Modelli di Kimi incorporati (tier swarm e close + LOD derivati in vendor/lod): il gioco resta un solo file HTML
-import base64, json, os
+import base64, json, os, shutil
 def _b64(path): return base64.b64encode(open(path,'rb').read()).decode('ascii')
 GLB={}
 for sp in sorted(os.listdir('assets/kimi')):
@@ -26,7 +26,11 @@ MATF={}
 for mid in sorted(os.listdir('assets/materiali')) if os.path.isdir('assets/materiali') else []:
     d='assets/materiali/'+mid
     if not os.path.exists(d+'/colore.webp'): continue
-    MATF[mid]={k:'data:image/webp;base64,'+_b64(d+'/'+k+'.webp') for k in ('colore','normale','ruvidezza','altezza') if os.path.exists(d+'/'+k+'.webp')}
+    # file a parte sullo stesso sito (DECISIONI §5): il gioco resta leggero e il telefono li tiene in cache
+    os.makedirs('dist/materiali/'+mid, exist_ok=True); MATF[mid]={}
+    for k in ('colore','normale','ruvidezza','altezza','maschera'):
+        if os.path.exists(d+'/'+k+'.webp'):
+            shutil.copyfile(d+'/'+k+'.webp','dist/materiali/'+mid+'/'+k+'.webp'); MATF[mid][k]='materiali/'+mid+'/'+k+'.webp'
 glb+='window.__MAT_FOTO='+json.dumps(MATF,separators=(',',':'))+';'
 print('materiali fotografici:',{k:sorted(v) for k,v in MATF.items()})
 print('scenografia apertura:',sorted(GLB_AP))
