@@ -14,7 +14,7 @@ with sync_playwright() as p:
     pg.on('pageerror',lambda e:errs.append('ERR '+str(e)[:200])); pg.on('console',lambda m: errs.append('CON '+m.text[:160]) if m.type=='error' else None)
     pg.goto('file://'+__import__('os').path.abspath('dist')+'/terrario-gioco.html'); pg.wait_for_timeout(1900)
     pg.evaluate("document.getElementById('film')&&document.getElementById('film').remove(); __app.newGame('T',{luce:1,acqua:1,meteorite:1,piante:['muschio','felce'],insetti:['formiche','coleotteri'],oggetti:['statuina']}); __app.G.settings.tempo='giorno'; __ui.mode='game'; __ui.render()"); pg.wait_for_timeout(500)
-    def menu3d(): pg.click('[data-a=menu]'); pg.wait_for_timeout(150); pg.click('[data-a=menu-go][data-g=v3d]')
+    def menu3d(): pg.evaluate("__app.G.settings.v3d=true; __app.persist(); __vase.set3d(true).then(()=>__ui.render())")  # solo 3D: il menu non ha più il pulsante
     t('parte in 2D e il menu propone la vista 3D',not pg.evaluate("__vase.is3d"))
     menu3d(); pg.wait_for_function("__vase.is3d",timeout=20000); pg.wait_for_timeout(1500)
     t('toccando «3D» si carica Three.js e compare la vista 3D',pg.evaluate("__vase.is3d") and pg.locator('#vb canvas.v3d').count()==1 ); vbshot(path=f'screenshots/{tag}_3d_giorno.png')
@@ -29,8 +29,7 @@ with sync_playwright() as p:
     t('lo zoom cinematografico mostra la ciotola 3D',pg.locator('#cine .cstage canvas.v3d').count()==1); pg.screenshot(path=f'screenshots/{tag}_3d_cinema.png'); pg.wait_for_selector('#cine',state='detached',timeout=30000); pg.wait_for_timeout(900); pg.evaluate("window.__fast=true")
     t('finito lo zoom la vista 3D torna nella home',pg.locator('#cine').count()==0 and pg.locator('#vb canvas.v3d').count()==1)
     pg.evaluate(f"__vase.bubble('{gid}','✨')"); pg.wait_for_timeout(500); vbshot(path=f'screenshots/{tag}_3d_bolla.png')
-    menu3d(); pg.wait_for_timeout(600); t('si può tornare al 2D',not pg.evaluate("__vase.is3d") and pg.locator('#vb canvas.v3d').count()==0 and pg.locator('#vb canvas').count()==1)
-    menu3d(); pg.wait_for_function("__vase.is3d",timeout=20000); pg.wait_for_timeout(600); t('e ripassare al 3D',pg.locator('#vb canvas.v3d').count()==1)
+    pg.click('[data-a=menu]'); pg.wait_for_timeout(200); t('il menu non offre più la vista 2D',pg.locator('[data-g=v3d]').count()==0 and 'vista 2D' not in pg.inner_text('body')); pg.keyboard.press('Escape'); pg.evaluate("document.querySelectorAll('[data-a=sx]').forEach(b=>b.click())"); pg.wait_for_timeout(300)
     pg.evaluate("window.__tried3=0"); pg.reload(); pg.wait_for_timeout(3500); t('dopo il ricaricamento il 3D si riattiva da solo',pg.evaluate("__vase.is3d") and pg.locator('#vb canvas.v3d').count()==1)
     pg.evaluate("(()=>{ const A=__app; A.G.dev.offset+=3; A.checkNewDay(); A.popups.length=0; while(A.sim.pending.length){ const p=A.sim.pending[0]; A.resolveDecision(p.id,'proteggi'); } __ui.render(); })()"); pg.wait_for_timeout(1200); t('il 3D regge i giorni che passano',pg.evaluate("__vase.is3d")); vbshot(path=f'screenshots/{tag}_3d_dopo.png')
     print('overflow orizzontale:',pg.evaluate('document.documentElement.scrollWidth>innerWidth+1'))
