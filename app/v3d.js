@@ -16,7 +16,8 @@ function build(THREE){
   const LU=window.__LUCI(THREE,{scene,renderer,camera});
   // ---------- tavolo ----------
   (function(){ const c=document.createElement('canvas'); c.width=c.height=512; const g=c.getContext('2d'); g.fillStyle='#7a5230'; g.fillRect(0,0,512,512); const r=rngS(7); for(let i=0;i<90;i++){ g.strokeStyle='rgba('+(40+r()*40|0)+','+(20+r()*20|0)+',10,'+(.12+r()*.2)+')'; g.lineWidth=1+r()*3; g.beginPath(); const y=r()*512; g.moveTo(0,y); g.bezierCurveTo(170,y+r()*14-7,340,y+r()*14-7,512,y+r()*10-5); g.stroke(); } const tx=new THREE.CanvasTexture(c); tx.colorSpace=THREE.SRGBColorSpace; tx.wrapS=tx.wrapT=THREE.RepeatWrapping; tx.repeat.set(3,3);
-    const wtx=ptex('wood_col',3); const table=new THREE.Mesh(new THREE.CylinderGeometry(3.6,3.6,.2,72),new THREE.MeshStandardMaterial(wtx?{map:wtx,color:0xc29a72,roughness:.5}:{map:tx,roughness:.82})); table.position.y=-.1; table.receiveShadow=true; scene.add(table); })();
+    const wtx=ptex('wood_col',3); const table=new THREE.Mesh(new THREE.CylinderGeometry(3.6,3.6,.2,72),new THREE.MeshStandardMaterial(wtx?{map:wtx,color:0xc29a72,roughness:.5}:{map:tx,roughness:.82})); table.position.y=-.1; table.receiveShadow=true; scene.add(table);
+    scene.userData.table=table; })();
   // ---------- vaso ----------
   const jar=new THREE.Group(); scene.add(jar);
   const prof=[[0,0],[.70,0],[.88,.05],[.97,.18],[1,.4],[1,1.9],[.96,2.08],[.82,2.18],[.78,2.24],[.78,2.34]].map(p=>new THREE.Vector2(p[0],p[1]));
@@ -29,7 +30,7 @@ function build(THREE){
   const SOIL0=.2, GH=.19, AMP=.032, DISC_REP=1.9; // DISC_REP: tessere da 10 cm sul disco Ø 19 cm
   // ---------- materiali fotografici (foto vere di Giovanni: assets/materiali/<id>, incorporate da build_app.py in window.__MAT_FOTO) ----------
   // FOTO_SCALA: lato della foto in unità (1 unità = 10 cm); null = immagine singola non ripetibile (fronda scontornata).
-  const MF=window.__MAT_FOTO||null, FOTO_SCALA={terriccio:1,ghiaia:.6,muschio:.5,muffa:.6,foglia_felce:null}, FOTOS={};
+  const MF=window.__MAT_FOTO||null, FOTO_SCALA={terriccio:1,ghiaia:.6,muschio:.5,muffa:.6,muschio_secco:.5,legno:3,foglia_felce:null,foglia_succulenta:null,fungo:null,drosera:null}, FOTOS={};
   function fotoMat(id){ if(FOTOS[id]!==undefined) return FOTOS[id]; const src=MF&&MF[id]; if(!src||!src.colore) return FOTOS[id]=null;
     const scala=FOTO_SCALA[id]===undefined?1:FOTO_SCALA[id], F={id,scala,ready:false,img:{},H:null,N:0,cache:{},q:[]}, keys=Object.keys(src); let left=keys.length;
     const done=()=>{ F.ready=!!F.img.colore; const q=F.q; F.q=[]; if(F.ready) q.forEach(cb=>{ try{ cb(F); }catch(e){} }); };
@@ -53,6 +54,8 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
       .replace('vec4 texelRoughness = texture2D( roughnessMap, vRoughnessMapUv );','vec4 texelRoughness = mix(texture2D(roughnessMap,vRoughnessMapUv),texture2D(roughnessMap,ftUv2(vRoughnessMapUv)),ftMix(vRoughnessMapUv));'); return sh; }
   const antiTile=m=>{ m.onBeforeCompile=sh=>fotoShader(sh); m.customProgramCacheKey=()=>'foto'; return m; };
   const FOTO={mat:fotoMat,shader:fotoShader,antiTile,SCALA:FOTO_SCALA};
+  // legno fotografico sulla scrivania
+    const FW=fotoMat('legno'), table=scene.userData.table; if(FW&&table) FW.when(F=>{ const M=F.maps(1); if(!M) return; const rp=7.2/F.scale; [M.map,M.normalMap,M.roughnessMap].forEach(t=>{ if(t) t.repeat.set(rp,rp); }); const m=table.material; m.map=M.map; m.normalMap=M.normalMap||null; m.roughnessMap=M.roughnessMap||null; m.color.set(0xffffff); m.roughness=.62; m.needsUpdate=true; });
   const FT=fotoMat('terriccio'), FG=fotoMat('ghiaia'); // terriccio e ghiaia fotografici; senza __MAT_FOTO resta il terreno procedurale
   const TG=window.__TERRENO?{terra:FT?null:window.__TERRENO(THREE,{kind:'terra',seed:17}),ghiaia:FG?null:window.__TERRENO(THREE,{kind:'ghiaia',seed:29})}:null, TMAPS={};
   const terraMaps=l=>{ l=Math.max(0,Math.min(2,l|0)); if(TMAPS[l]) return TMAPS[l]; const p=Math.min(l,1), t=FT&&FT.ready?FT.maps(l):TG&&TG.terra?TG.terra.maps(p?.5:1):null, g=FG&&FG.ready?FG.maps(l):TG&&TG.ghiaia?TG.ghiaia.maps(p?.5:1):null; if(!t&&!g) return null; const o={terra:t,ghiaia:g}; if((!FT||FT.ready)&&(!FG||FG.ready)) TMAPS[l]=o; return o; };
@@ -156,6 +159,12 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
       const p=new THREE.Mesh(new THREE.PlaneGeometry(1,1),m); p.rotation.x=-Math.PI/2; p.rotation.z=r()*6.283; p.position.set(Math.cos(a)*d,0,Math.sin(a)*d); p.visible=false; p.renderOrder=3; jar.add(p);
       const f=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshStandardMaterial({map:CT[0],transparent:true,depthWrite:false,opacity:.3,roughness:1})); f.rotation.copy(p.rotation); f.rotation.z+=1.3; f.visible=false; f.renderOrder=3; jar.add(f);
       soilCol.push({p,f,th:r()*.75,size:.07+r()*.09,cur:0}); } }
+    // colonie fotografiche: ritagli della foto di muffa (colore) con la sua maschera, sfumati ai bordi; sostituiscono le colonie disegnate
+    { const FMU=fotoMat('muffa'); if(FMU) FMU.when(F=>{ if(!F.img.maschera) return; try{ const R=rngS(91), tx=[]; for(let k=0;k<3;k++){ const c=document.createElement('canvas'); c.width=c.height=256; const g=c.getContext('2d'), sx=R()*560, sy=R()*560, cw=420;
+        g.drawImage(F.img.colore,sx,sy,cw,cw,0,0,256,256); const col=g.getImageData(0,0,256,256); g.clearRect(0,0,256,256); g.drawImage(F.img.maschera,sx,sy,cw,cw,0,0,256,256); const mk=g.getImageData(0,0,256,256).data;
+        for(let y=0;y<256;y++) for(let x=0;x<256;x++){ const i=(y*256+x)*4, d=Math.hypot(x-127.5,y-127.5)/128, fall=Math.max(0,Math.min(1,(1-d)/.45)); col.data[i+3]=Math.min(255,mk[i]*1.15*fall*fall*(3-2*fall)); }
+        g.putImageData(col,0,0); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; tx.push(t); }
+      soilCol.forEach((c,i)=>{ c.p.material.map=tx[i%3]; c.p.material.needsUpdate=true; c.f.material.map=tx[(i+1)%3]; c.f.material.needsUpdate=true; c.size*=1.6; }); }catch(e){} }); }
     // macchie di muffa sul vetro (canale G), strofinabili
     const spots=[]; { const r=rngS(55); for(let i=0;i<9;i++) spots.push({u:r(),dv:.012+r()*.14,R:5+r()*7,th:r()*.7,s:1,p1:r()*6.28,p2:r()*6.28,p3:r()*6.28}); }
     let L=0, LT=0, LF=0, soilV=.05, acc=0, moldAcc=0, drops=[], wiping=null, wipedArea=0, scrubbed=0, cleared=0;
