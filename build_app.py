@@ -20,6 +20,15 @@ glb='window.__GLB='+json.dumps(GLB,separators=(',',':'))+';'
 APERTURA_SLOTS=['meteorite','barattolo','scrivania','finestra','lampada','quaderno','gelso','giardino','mano']
 GLB_AP={i:{'close':_b64('assets/kimi/'+i+'/close.glb')} for i in APERTURA_SLOTS if os.path.exists('assets/kimi/'+i+'/close.glb') and not (GLB.get(i) or {}).get('close')}  # già in __GLB: apertura.js li legge da lì
 glb+='window.__GLB_APERTURA='+json.dumps(GLB_AP,separators=(',',':'))+';'
+# Materiali fotografici (assets/materiali/<id>/{colore,normale,ruvidezza,altezza}.webp, da tools/materiale_da_foto.py):
+# entrano da soli come data URL WebP in window.__MAT_FOTO = {id:{colore,normale,ruvidezza,altezza}}; sorgente.png resta fuori.
+MATF={}
+for mid in sorted(os.listdir('assets/materiali')) if os.path.isdir('assets/materiali') else []:
+    d='assets/materiali/'+mid
+    if not os.path.exists(d+'/colore.webp'): continue
+    MATF[mid]={k:'data:image/webp;base64,'+_b64(d+'/'+k+'.webp') for k in ('colore','normale','ruvidezza','altezza') if os.path.exists(d+'/'+k+'.webp')}
+glb+='window.__MAT_FOTO='+json.dumps(MATF,separators=(',',':'))+';'
+print('materiali fotografici:',{k:sorted(v) for k,v in MATF.items()})
 print('scenografia apertura:',sorted(GLB_AP))
 print('modelli incorporati:',{k:sorted(v) for k,v in GLB.items()},'base64',len(glb),'byte')
 html=f'''<!doctype html>

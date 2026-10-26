@@ -27,14 +27,42 @@ function build(THREE){
   // ---------- terreno: strati visibili dal vetro (ghiaia di drenaggio, rete, terriccio) con PBR generato in codice (app/materials.js → __TERRENO) ----------
   // Scala: 1 unità = 10 cm. Ghiaia 0 → GH (1,9 cm), rete a SOIL0, terriccio da SOIL0 a S.soilTop, disco in rilievo sopra (grani e sassolini veri, ±3 mm).
   const SOIL0=.2, GH=.19, AMP=.032, DISC_REP=1.9; // DISC_REP: tessere da 10 cm sul disco Ø 19 cm
-  const TG=window.__TERRENO?{terra:window.__TERRENO(THREE,{kind:'terra',seed:17}),ghiaia:window.__TERRENO(THREE,{kind:'ghiaia',seed:29})}:null, TMAPS={};
-  const terraMaps=l=>{ if(!TG) return null; l=l?1:0; return TMAPS[l]||(TMAPS[l]={terra:TG.terra.maps(l?.5:1),ghiaia:TG.ghiaia.maps(l?.5:1)}); };
-  const soilMat=new THREE.MeshPhysicalMaterial(TG?{color:0xffffff,roughness:1,metalness:0,clearcoat:0,clearcoatRoughness:.45}:TX?{map:ptex('Ground054_col',1.4),normalMap:ptex('Ground054_nor',1.4,false),color:0x7d6450,roughness:.95}:{color:0x6b4a30,roughness:.96});
+  // ---------- materiali fotografici (foto vere di Giovanni: assets/materiali/<id>, incorporate da build_app.py in window.__MAT_FOTO) ----------
+  // FOTO_SCALA: lato della foto in unità (1 unità = 10 cm); null = immagine singola non ripetibile (fronda scontornata).
+  const MF=window.__MAT_FOTO||null, FOTO_SCALA={terriccio:1,ghiaia:.6,muschio:.5,muffa:.6,foglia_felce:null}, FOTOS={};
+  function fotoMat(id){ if(FOTOS[id]!==undefined) return FOTOS[id]; const src=MF&&MF[id]; if(!src||!src.colore) return FOTOS[id]=null;
+    const scala=FOTO_SCALA[id]===undefined?1:FOTO_SCALA[id], F={id,scala,ready:false,img:{},H:null,N:0,cache:{},q:[]}, keys=Object.keys(src); let left=keys.length;
+    const done=()=>{ F.ready=!!F.img.colore; const q=F.q; F.q=[]; if(F.ready) q.forEach(cb=>{ try{ cb(F); }catch(e){} }); };
+    keys.forEach(k=>{ const im=new Image(); im.onload=()=>{ F.img[k]=im; if(k==='altezza'){ const n=im.naturalWidth, c=document.createElement('canvas'); c.width=c.height=n; const g=c.getContext('2d'); g.drawImage(im,0,0); const d=g.getImageData(0,0,n,n).data, H=new Float32Array(n*n); for(let i=0;i<n*n;i++) H[i]=d[i*4]/255; F.H=H; F.N=n; } if(--left===0) done(); }; im.onerror=()=>{ if(--left===0) done(); }; im.src=src[k]; });
+    F.when=cb=>{ if(F.ready) cb(F); else F.q.push(cb); };
+    F.height=(u,v)=>{ if(!F.H) return .2; const n=F.N, x=Math.floor(((u%1)+1)%1*n), y=Math.floor(((1-v)%1+1)%1*n); return F.H[Math.min(n-1,y)*n+Math.min(n-1,x)]; };
+    const half=im=>{ const c=document.createElement('canvas'); c.width=Math.max(1,im.naturalWidth>>1); c.height=Math.max(1,im.naturalHeight>>1); c.getContext('2d').drawImage(im,0,0,c.width,c.height); return c; };
+    const mk=(im,srgb,small)=>{ const t=new THREE.Texture(small?half(im):im); t.wrapS=t.wrapT=scala==null?THREE.ClampToEdgeWrapping:THREE.RepeatWrapping; if(srgb) t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4; t.needsUpdate=true; return t; };
+    // mappe per livello della guardia: 0 tutto · 1 colore+normale a metà risoluzione · 2 solo colore (metà)
+    F.maps=l=>{ if(!F.ready) return null; l=Math.max(0,Math.min(2,l|0)); if(F.cache[l]) return F.cache[l]; const I=F.img, o={map:mk(I.colore,true,l>0)}; if(l<2&&I.normale) o.normalMap=mk(I.normale,false,l>0); if(l<1&&I.ruvidezza) o.roughnessMap=mk(I.ruvidezza,false,false); if(I.maschera) o.mask=mk(I.maschera,false,l>0); return F.cache[l]=o; };
+    return FOTOS[id]=F; }
+  // rompe la ripetizione visibile: seconda lettura della stessa texture ruotata (34,6°) e scalata ×1,37, mescolata con un rumore a bassa frequenza
+  const FOTO_GLSL=`float ftHash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+float ftNoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(ftHash(i),ftHash(i+vec2(1.,0.)),f.x),mix(ftHash(i+vec2(0.,1.)),ftHash(i+vec2(1.,1.)),f.x),f.y); }
+vec2 ftUv2(vec2 uv){ return vec2(.8229*uv.x-.5682*uv.y,.5682*uv.x+.8229*uv.y)*1.37+vec2(.31,.57); }
+float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
+`;
+  function fotoShader(sh){ sh.fragmentShader=sh.fragmentShader.replace('void main() {',FOTO_GLSL+'void main() {')
+      .replace('vec4 sampledDiffuseColor = texture2D( map, vMapUv );','vec4 sampledDiffuseColor = mix(texture2D(map,vMapUv),texture2D(map,ftUv2(vMapUv)),ftMix(vMapUv));')
+      .replace('vec3 mapN = texture2D( normalMap, vNormalMapUv ).xyz * 2.0 - 1.0;','vec3 mapN; { vec3 n1=texture2D(normalMap,vNormalMapUv).xyz*2.-1., n2=texture2D(normalMap,ftUv2(vNormalMapUv)).xyz*2.-1.; n2.xy=vec2(.8229*n2.x+.5682*n2.y,-.5682*n2.x+.8229*n2.y); mapN=normalize(mix(n1,n2,ftMix(vNormalMapUv))); }')
+      .replace('vec4 texelRoughness = texture2D( roughnessMap, vRoughnessMapUv );','vec4 texelRoughness = mix(texture2D(roughnessMap,vRoughnessMapUv),texture2D(roughnessMap,ftUv2(vRoughnessMapUv)),ftMix(vRoughnessMapUv));'); return sh; }
+  const antiTile=m=>{ m.onBeforeCompile=sh=>fotoShader(sh); m.customProgramCacheKey=()=>'foto'; return m; };
+  const FOTO={mat:fotoMat,shader:fotoShader,antiTile,SCALA:FOTO_SCALA};
+  const FT=fotoMat('terriccio'), FG=fotoMat('ghiaia'); // terriccio e ghiaia fotografici; senza __MAT_FOTO resta il terreno procedurale
+  const TG=window.__TERRENO?{terra:FT?null:window.__TERRENO(THREE,{kind:'terra',seed:17}),ghiaia:FG?null:window.__TERRENO(THREE,{kind:'ghiaia',seed:29})}:null, TMAPS={};
+  const terraMaps=l=>{ l=Math.max(0,Math.min(2,l|0)); if(TMAPS[l]) return TMAPS[l]; const p=Math.min(l,1), t=FT&&FT.ready?FT.maps(l):TG&&TG.terra?TG.terra.maps(p?.5:1):null, g=FG&&FG.ready?FG.maps(l):TG&&TG.ghiaia?TG.ghiaia.maps(p?.5:1):null; if(!t&&!g) return null; const o={terra:t,ghiaia:g}; if((!FT||FT.ready)&&(!FG||FG.ready)) TMAPS[l]=o; return o; };
+  const soilMat=new THREE.MeshPhysicalMaterial(TG||FT?{color:0xffffff,roughness:1,metalness:0,clearcoat:0,clearcoatRoughness:.45}:TX?{map:ptex('Ground054_col',1.4),normalMap:ptex('Ground054_nor',1.4,false),color:0x7d6450,roughness:.95}:{color:0x6b4a30,roughness:.96});
   const sideMat=soilMat.clone(); sideMat.vertexColors=true; // parete del terriccio vista dal vetro: più scura verso il basso (colori dei vertici)
-  const gravMat=new THREE.MeshStandardMaterial(TG?{color:0xffffff,roughness:1}:TX?{map:ptex('Gravel023_col',2),normalMap:ptex('Gravel023_nor',2,false),color:0x9a968f,roughness:.92}:{color:0x8a8a86,roughness:.95});
+  const gravMat=new THREE.MeshStandardMaterial(TG||FG?{color:0xffffff,roughness:1}:TX?{map:ptex('Gravel023_col',2),normalMap:ptex('Gravel023_nor',2,false),color:0x9a968f,roughness:.92}:{color:0x8a8a86,roughness:.95});
+  if(FT){ antiTile(soilMat); antiTile(sideMat); } if(FG) antiTile(gravMat);
   // ghiaia: profilo che segue il fondo del vaso
   const gravel=new THREE.Mesh(new THREE.LatheGeometry([[0,0],[.72,0],[.86,.05],[.94,.15],[.95,GH],[0,GH]].map(p=>new THREE.Vector2(p[0],p[1])),64),gravMat); gravel.receiveShadow=true; jar.add(gravel);
-  const pebbles=(function(){ const geo=new THREE.IcosahedronGeometry(1,0), mat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.72,flatShading:true}), n=40, im=new THREE.InstancedMesh(geo,mat,n), r=rngS(11), m=new THREE.Matrix4(), q=new THREE.Quaternion(), PC=[0x968e82,0x76706a,0xa09482,0x5c5650,0xb4aa98,0x86785f]; for(let i=0;i<n;i++){ const a=r()*6.283, d=Math.sqrt(r())*.88, s=.018+r()*.03; m.compose(new V3(Math.cos(a)*d,GH-s*.3,Math.sin(a)*d),q.setFromEuler(new THREE.Euler(r()*3,r()*3,r()*3)),new V3(s,s*.7,s*(.8+r()*.4))); im.setMatrixAt(i,m); im.setColorAt(i,new Col(PC[(r()*PC.length)|0])); } im.receiveShadow=true; jar.add(im); return im; })();
+  const pebbles=(function(){ const geo=new THREE.IcosahedronGeometry(1,0), mat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.72,flatShading:true}), n=40, im=new THREE.InstancedMesh(geo,mat,n), r=rngS(11), m=new THREE.Matrix4(), q=new THREE.Quaternion(), PC=FG?[0xf2eee6,0xd8d2c8,0xfaf6ee,0xc8c2b8,0xe8e0d2,0xd0c8b8]:[0x968e82,0x76706a,0xa09482,0x5c5650,0xb4aa98,0x86785f]; if(FG) FG.when(F=>{ mat.map=F.maps(0).map; mat.needsUpdate=true; }); for(let i=0;i<n;i++){ const a=r()*6.283, d=Math.sqrt(r())*.88, s=.018+r()*.03; m.compose(new V3(Math.cos(a)*d,GH-s*.3,Math.sin(a)*d),q.setFromEuler(new THREE.Euler(r()*3,r()*3,r()*3)),new V3(s,s*.7,s*(.8+r()*.4))); im.setMatrixAt(i,m); im.setColorAt(i,new Col(PC[(r()*PC.length)|0])); } im.receiveShadow=true; jar.add(im); return im; })();
   // rete tra ghiaia e terriccio
   const net=(function(){ const c=document.createElement('canvas'); c.width=256; c.height=16; const g=c.getContext('2d'); g.fillStyle='#262624'; g.fillRect(0,0,256,16); g.strokeStyle='rgba(128,124,112,.75)'; g.lineWidth=1; for(let x=0;x<256;x+=4){ g.beginPath(); g.moveTo(x,0); g.lineTo(x+2,16); g.stroke(); } g.strokeStyle='rgba(96,92,84,.6)'; for(let y=1;y<16;y+=4){ g.beginPath(); g.moveTo(0,y); g.lineTo(256,y); g.stroke(); } const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=THREE.RepeatWrapping; t.repeat.set(24,1); const m=new THREE.Mesh(new THREE.CylinderGeometry(.957,.957,.012,64,1,true),new THREE.MeshStandardMaterial({map:t,roughness:.9})); m.position.y=SOIL0; jar.add(m); return m; })();
   // terriccio: parete aperta (il disco in rilievo chiude sopra)
@@ -42,7 +70,7 @@ function build(THREE){
   const disc=(function(){ const RR=22, RS=64, pos=[], uv=[], idx=[]; for(let i=0;i<=RR;i++){ const rad=i/RR*.95, segs=i===0?1:RS; for(let j=0;j<segs;j++){ const a=j/RS*6.2831853; pos.push(Math.cos(a)*rad,0,Math.sin(a)*rad); uv.push(Math.cos(a)*rad/1.9+.5,Math.sin(a)*rad/1.9+.5); } }
     const base=i=>i===0?0:1+(i-1)*RS; for(let j=0;j<RS;j++) idx.push(0,base(1)+(j+1)%RS,base(1)+j); for(let i=1;i<RR;i++) for(let j=0;j<RS;j++){ const a=base(i)+j, b=base(i)+(j+1)%RS, c=base(i+1)+j, d=base(i+1)+(j+1)%RS; idx.push(a,d,c,a,b,d); }
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.userData.base=pos.slice(); const m=new THREE.Mesh(g,soilMat); m.receiveShadow=true; m.visible=false; jar.add(m); return m; })();
-  function discRelief(on){ const g=disc.geometry, p=g.attributes.position, b=g.userData.base, uv=g.attributes.uv; for(let i=0;i<p.count;i++){ const h=on&&TG?TG.terra.height(uv.getX(i)*DISC_REP,uv.getY(i)*DISC_REP):.2; p.setY(i,b[i*3+1]+.003+AMP*h); } p.needsUpdate=true; g.computeVertexNormals(); }
+  const terraH=FT?FT.height:TG&&TG.terra?TG.terra.height:null; function discRelief(on){ const g=disc.geometry, p=g.attributes.position, b=g.userData.base, uv=g.attributes.uv; for(let i=0;i<p.count;i++){ const h=on&&terraH?terraH(uv.getX(i)*DISC_REP/(FT?FT.scala:1),uv.getY(i)*DISC_REP/(FT?FT.scala:1)):.2; p.setY(i,b[i*3+1]+.003+AMP*h); } p.needsUpdate=true; g.computeVertexNormals(); }
   discRelief(true);
   // linea d'acqua nella ghiaia (drenaggio pieno o ristagno): banda lucida tagliata al livello + menisco riflettente
   const waterPlane=new THREE.Plane(new V3(0,-1,0),0); renderer.localClippingEnabled=true;
@@ -51,10 +79,11 @@ function build(THREE){
   const water=new THREE.Mesh(new THREE.LatheGeometry([[.725,0],[.865,.05],[.945,.15],[.955,GH+.004]].map(p=>new THREE.Vector2(p[0],p[1])),64),waterMat); water.visible=false; water.renderOrder=2; jar.add(water);
   const waterTop=new THREE.Mesh(new THREE.RingGeometry(.78,.955,64),new THREE.MeshPhysicalMaterial({color:0x7a8a8c,transparent:true,opacity:.5,roughness:.03,metalness:0,envMapIntensity:1.6,depthWrite:false,side:THREE.DoubleSide})); waterTop.rotation.x=-Math.PI/2; waterTop.visible=false; waterTop.renderOrder=2; jar.add(waterTop);
   let terrainLvl=-1;
-  function terrainLevel(l){ l=Math.max(0,Math.min(2,l|0)); if(l===terrainLvl) return; terrainLvl=l; const M=terraMaps(Math.min(l,1)); if(!M) return; const full=l<2;
-    const set=(m,src,rep)=>{ const cl=t=>{ const c=t.clone(); c.repeat.set(rep[0],rep[1]); c.needsUpdate=true; return c; }; m.map=cl(src.map); if(full){ m.normalMap=cl(src.normalMap); m.roughnessMap=cl(src.orm); m.aoMap=m.roughnessMap; m.normalScale.set(1,1); } else { m.normalMap=m.roughnessMap=m.aoMap=null; } m.needsUpdate=true; };
-    set(soilMat,M.terra,[DISC_REP,DISC_REP]); set(sideMat,M.terra,[6,.3]); set(gravMat,M.ghiaia,[5.8,.25]); discRelief(full); pebbles.visible=full; }
-  terrainLevel(0);
+  const ST=FT?FT.scala:1, SG=FG?FG.scala:1; // scala reale: tessere da 10 cm (terriccio) e 6 cm (ghiaia); parete 2π·0,95 ≈ 60 cm, profilo della ghiaia ≈ 20 cm
+  function terrainLevel(l,force){ l=Math.max(0,Math.min(2,l|0)); if(l===terrainLvl&&!force) return; terrainLvl=l; const M=terraMaps(l); if(!M) return; const full=l<2;
+    const set=(m,src,rep)=>{ if(!src) return; const cl=t=>{ if(!t) return null; const c=t.clone(); c.repeat.set(rep[0],rep[1]); c.needsUpdate=true; return c; }; m.map=cl(src.map); m.normalMap=cl(src.normalMap); m.roughnessMap=cl(src.roughnessMap||src.orm); m.aoMap=src.orm?m.roughnessMap:null; if(m.normalMap) m.normalScale.set(1,1); m.needsUpdate=true; };
+    set(soilMat,M.terra,[DISC_REP/ST,DISC_REP/ST]); set(sideMat,M.terra,[6/ST,.3/ST]); set(gravMat,M.ghiaia,[5.97/SG,1.99/SG]); discRelief(full); pebbles.visible=full; }
+  terrainLevel(0); if(FT) FT.when(()=>terrainLevel(terrainLvl,true)); if(FG) FG.when(()=>terrainLevel(terrainLvl,true));
   const crackTex=(function(){ const c=document.createElement('canvas'); c.width=c.height=256; const g=c.getContext('2d'); g.strokeStyle='rgba(20,12,8,.85)'; g.lineWidth=2; const r=rngS(3); for(let i=0;i<14;i++){ let x=128,y=128,a=r()*6.283; g.beginPath(); g.moveTo(x,y); for(let k=0;k<7;k++){ a+=r()*1.2-.6; x+=Math.cos(a)*(14+r()*14); y+=Math.sin(a)*(14+r()*14); g.lineTo(x,y); } g.stroke(); } const t=new THREE.CanvasTexture(c); return t; })();
   const cracks=new THREE.Mesh(new THREE.CircleGeometry(.93,48),new THREE.MeshBasicMaterial({map:crackTex,transparent:true,opacity:0,depthWrite:false})); cracks.rotation.x=-Math.PI/2; cracks.visible=false; jar.add(cracks);
   // meteorite
@@ -174,7 +203,7 @@ function build(THREE){
   // ---------- piante ----------
   const SLOTS=[[-.4,-.4],[.42,-.35],[.1,-.62],[-.1,.58],[.58,.3]]; const plantObjs={};
   // piante vive (app/piante.js): crescita, turgore e vento dal microclima; se manca, resta mkPlant qui sotto
-  const PL=(function(){ try{ return window.__PIANTE?window.__PIANTE(THREE,{S,ptex,TX,rngS,clamp,SLOTS,A}):null; }catch(e){ console.warn('piante vive non caricate',e&&e.message); return null; } })();
+  const PL=(function(){ try{ return window.__PIANTE?window.__PIANTE(THREE,{S,ptex,TX,rngS,clamp,SLOTS,A,FOTO}):null; }catch(e){ console.warn('piante vive non caricate',e&&e.message); return null; } })();
   const lc=(base,dry)=>new Col(base).lerp(new Col(0x8d7440),clamp(dry*.95));
   function mkPlant(id,slot,seed){ const g=new THREE.Group(), r=rngS(seed), [sx,sz]=SLOTS[slot%SLOTS.length]; g.position.set(sx,.1,sz); const mats=[]; let upd=()=>{};
     if(id==='muschio'){ const MB=TX?0xb7d39c:0x3e8e68, SB=TX?0x6f9a52:0x5aa070;
@@ -286,20 +315,20 @@ function build(THREE){
     if(m&&m.acqua){ wet=clamp(m.acqua.terriccio*.85+m.acqua.superficie*.45); wl=clamp(Math.max(m.acqua.drenaggio,m.acqua.ristagno*.9)); rist=clamp(m.acqua.ristagno); } else wet=clamp((S.n.um-.2)/.7);
     const k=Math.min(1,dt*.35); S.wet+=(wet-S.wet)*k; S.wl+=(wl-S.wl)*Math.min(1,dt*.25); S.rist+=(rist-S.rist)*k;
     const w=S.wet; // secco: chiaro e opaco · bagnato: scuro e lucido (la mappa resta la stessa: cambia la tinta, la roughness e un velo di clearcoat)
-    soilMat.color.setRGB(1.16-.66*w,1.04-.6*w,.88-.5*w).lerp(CPOOR2,S.poor*.5); soilMat.roughness=1-.5*w; soilMat.clearcoat=.5*w; sideMat.color.copy(soilMat.color).multiplyScalar(.9); sideMat.roughness=soilMat.roughness; sideMat.clearcoat=soilMat.clearcoat*.6;
+    if(FT) soilMat.color.setRGB(1.06-.62*w,1.02-.62*w,.98-.6*w).lerp(CPOOR2,S.poor*.5); else soilMat.color.setRGB(1.16-.66*w,1.04-.6*w,.88-.5*w).lerp(CPOOR2,S.poor*.5); soilMat.roughness=1-.5*w; soilMat.clearcoat=.5*w; sideMat.color.copy(soilMat.color).multiplyScalar(.9); sideMat.roughness=soilMat.roughness; sideMat.clearcoat=soilMat.clearcoat*.6;
     const show=S.wl>.1; water.visible=waterTop.visible=show; if(show){ const wy=S.wl*GH; waterPlane.constant=wy; waterTop.position.y=wy; waterMat.color.copy(CWATER).lerp(CMURK,S.rist); waterTop.material.color.copy(CWTOP).lerp(CMURK,S.rist*.7); waterMat.opacity=.55+.3*S.rist; waterTop.material.opacity=.45+.25*S.rist; }
-    gravMat.color.setScalar(1.3-.45*S.wl); // ghiaia chiara sopra la linea d'acqua, più scura se sommersa
+    if(FG){ gravMat.color.setScalar(1.04-.5*S.wl); gravMat.roughness=1-.45*S.wl; } else gravMat.color.setScalar(1.3-.45*S.wl); // ghiaia chiara sopra la linea d'acqua, più scura se sommersa
     // muschio (C6): secco bruno-grigio opaco → bagnato verde saturo lucido; solo con il microclima (altrimenti decide upd(v,dry))
     const mo=plantObjs.muschio; if(!PL&&m&&mo&&mo.mats&&mo.mats[0]){ /* con le piante vive (app/piante.js) il muschio lo colora piante.js */ const vig=m.piante&&m.piante.muschio?clamp(m.piante.muschio.vigore):1, sup=clamp(m.acqua.superficie*1.3+m.acqua.terriccio*.3); const g=clamp(vig*.5+sup*.6); S.moss+=(g-S.moss)*Math.min(1,dt*.5); mo.mats[0].color.copy(MOSSDRY).lerp(MOSSWET,S.moss); mo.mats[0].roughness=1-.4*S.moss; if(mo.mats[1]) mo.mats[1].color.copy(MOSSDRYS).lerp(MOSSWETS,S.moss); } }
   // ---------- ciclo ----------
   let raf=0, running=false, lastT=0, lastDraw=0, ema=33, slowN=0, level=0, calm=0;
-  function perfGuard(raw){ if(window.__fast||window.__noguard) return; ema=ema*.93+Math.min(raw,400)*.07; calm++; if(calm<45) return; if(ema>85){ slowN++; if(slowN>=30){ slowN=0; calm=0; if(level===0){ level=1; renderer.setPixelRatio(1); LU.level(1); try{ terrainLevel(1); }catch(e){} fit(); if(window.__ui&&window.__app) window.__app.toast('Il 3D va a scatti: abbasso la risoluzione.'); } else if(level===1){ level=2; LU.level(2); try{ terrainLevel(2); }catch(e){} } else { if(window.__vase) window.__vase.set3d(false).then(()=>{ if(window.__app) window.__app.toast('Il telefono fatica con il 3D: passo alla vista 2D.'); if(window.__app&&window.__app.G){ window.__app.G.settings.v3d=false; window.__app.persist(); } if(window.__ui) window.__ui.render(); }); } } } else slowN=Math.max(0,slowN-1); }
+  function perfGuard(raw){ if(window.__fast||window.__noguard) return; ema=ema*.93+Math.min(raw,400)*.07; calm++; if(calm<45) return; if(ema>85){ slowN++; if(slowN>=30){ slowN=0; calm=0; if(level===0){ level=1; renderer.setPixelRatio(1); LU.level(1); try{ terrainLevel(1); if(PL&&PL.level) PL.level(1); }catch(e){} fit(); if(window.__ui&&window.__app) window.__app.toast('Il 3D va a scatti: abbasso la risoluzione.'); } else if(level===1){ level=2; LU.level(2); try{ terrainLevel(2); if(PL&&PL.level) PL.level(2); }catch(e){} } else { if(window.__vase) window.__vase.set3d(false).then(()=>{ if(window.__app) window.__app.toast('Il telefono fatica con il 3D: passo alla vista 2D.'); if(window.__app&&window.__app.G){ window.__app.G.settings.v3d=false; window.__app.persist(); } if(window.__ui) window.__ui.render(); }); } } } else slowN=Math.max(0,slowN-1); }
   function frame(ms){ raf=requestAnimationFrame(frame); const t00=performance.now(); if(document.hidden||!canvas.isConnected) return; if(ms-lastDraw<30) return; const raw=(ms-lastT)||33; const dt=Math.min(.1,raw/1000||.016); try{ glassFX.tick(dt); }catch(e){} lastT=ms; lastDraw=ms; S.t+=dt; const t=S.t; perfGuard(raw);
     if(t-lastView>.25){ lastView=t; const v=A.sim.view(); S.v=v; try{ S.m=A.micro?A.micro():null; }catch(e){ S.m=null; } syncStructure(v); const n=v.needs; S.n=n; S.dry=clamp((.5-n.um)/.45); S.poor=clamp((.45-n.ter)/.4); const nt=!!(window.__vase&&window.__vase.isNight&&window.__vase.isNight()); if(nt!==S.night) setNight(nt); if(S.lastE-v.E>30) S.flash=1; S.lastE=v.E; S.E=v.E; }
     const v=S.v; if(!v) return;
     // terra
     const ter=S.n.ter, thick=ter>.04?.05+.34*clamp(ter):0; S.soilGoal=SOIL0+thick; S.soilTop+=(S.soilGoal-S.soilTop)*Math.min(1,dt*3);
-    if(thick>0){ soil.visible=disc.visible=true; const h=S.soilTop-SOIL0; soil.scale.y=Math.max(.01,h+AMP*.8); soil.position.y=SOIL0+soil.scale.y/2; disc.position.y=S.soilTop; if(sideMat.map&&Math.abs(sideMat.map.repeat.y-h)>.003) [sideMat.map,sideMat.normalMap,sideMat.roughnessMap].forEach(tx=>{ if(tx) tx.repeat.set(6,Math.max(.05,h)); }); } else soil.visible=disc.visible=false;
+    if(thick>0){ soil.visible=disc.visible=true; const h=S.soilTop-SOIL0; soil.scale.y=Math.max(.01,h+AMP*.8); soil.position.y=SOIL0+soil.scale.y/2; disc.position.y=S.soilTop; if(sideMat.map&&Math.abs(sideMat.map.repeat.y*ST-h)>.003) [sideMat.map,sideMat.normalMap,sideMat.roughnessMap].forEach(tx=>{ if(tx) tx.repeat.set(6/ST,Math.max(.05,h)/ST); }); } else soil.visible=disc.visible=false;
     terrainTick(dt);
     cracks.visible=S.dry>.3&&thick>0; cracks.position.y=S.soilTop+AMP+.006; cracks.material.opacity=clamp((S.dry-.3)*1.4);
     // meteorite
