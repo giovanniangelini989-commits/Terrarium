@@ -16,29 +16,24 @@ Leggi prima `docs/STORIA.md` (cosa è stato deciso e perché), `docs/DECISIONI.m
 6. Si lavora in rami/worktree separati per agente; `main` è sempre giocabile.
 
 ## Lo studio
-| Ruolo da studio | Agente | Modello |
+| Ruolo | Agente | Modello |
 |---|---|---|
 | Creative director | **Giovanni** | — |
-| Producer | orchestratore (sessione principale) | Opus |
-| Showrunner (metodo serie TV) | showrunner | Opus |
-| Narrative director | storia | Opus |
-| Direttore artistico | direttore-artistico | Opus |
-| Direttore della fotografia | luci | Opus |
-| Technical artist 3D | tre-d (modelli generati da Kimi) | Opus |
-| Modellatore 3D (Magnific / Higgsfield, al posto di Kimi) | modellatore | Opus |
-| Game e systems designer | motore | Sonnet |
-| UI/UX designer | interfaccia | Sonnet |
-| Regista delle cinematiche | finali | Sonnet |
-| Designer di carte collezionabili | carte | Opus |
-| Ecologo e fisico del microclima | ecologo | Opus |
-| Sound designer (integrazione audio) | suono | Sonnet |
-| Compositore (musica con Magnific) | musicista | Sonnet |
-| Playtest e user research | giocatore | Sonnet |
-| Ricerca di mercato | ricerca | Sonnet |
-| Lancio e App Store | lancio | Sonnet |
-| QA | qa | Haiku |
+| Producer | orchestratore (sessione principale) | — |
+| Showrunner, direttore artistico | showrunner, direttore-artistico | Sonnet |
+| Storia, finali, carte | storia, finali, carte | Sonnet |
+| 3D, luci, modelli | tre-d, luci, modellatore | Sonnet |
+| Motore, interfaccia, ecologo, giocatore | motore, interfaccia, ecologo, giocatore | Sonnet |
+| Suono, musica, ricerca, lancio, QA | suono, musicista, ricerca, lancio, qa | Haiku |
 
-Ogni agente lavora solo quando serve: l'orchestratore li attiva al momento giusto, non tutti insieme.
+Opus solo se Giovanni lo chiede per un compito preciso. Fable non si usa.
+
+## Risparmio (regole vincolanti, decise da Giovanni il 26 ottobre 2026)
+- **Un agente alla volta**, al massimo due se lavorano su file diversi e il compito è urgente.
+- **Prove leggere**: ogni agente lancia `build_app.py`, `node equiv.js` e UNA corsa di `python3 e2e.py`. Niente `e2e_3d.py` né `app/bots.js` in locale (lenti qui): li fa GitHub Actions. I bot solo se l'agente cambia regole di gioco, e con `SOLO='<profilo>'`.
+- **Massimo 3 schermate** per consegna, guardate una volta.
+- **Brief corti** e report di massimo 10 righe.
+- L'orchestratore non apre immagini se non servono a decidere, e non rilancia test già verdi.
 
 ## Ciclo di perfezionamento continuo
 1. **giocatore** gioca con le quattro persone e scrive dove si annoia, si confonde o si frustra.
@@ -50,7 +45,7 @@ Ogni agente lavora solo quando serve: l'orchestratore li attiva al momento giust
 L'orchestratore agisce senza chiedere conferma; chiede a Giovanni solo le scelte creative.
 
 ## Modelli e risparmio token
-- Ogni agente ha il suo modello nel file in `.claude/agents/` (vedi «Lo studio»). Per la prima costruzione dei finali si può passare a Opus.
+- Ogni agente ha il suo modello nel file in `.claude/agents/` (vedi «Lo studio»).
 - **Mai leggere** `app/tex.js` (1 MB di texture), `dist/` (gioco già costruito) né tutta la cartella `screenshots/`.
 - `app3.js`, `v3d.js`, `sim.js` hanno righe lunghissime: prima Grep, poi si legge solo il pezzo che serve.
 - Ogni agente lancia solo i test della sua parte; la suite completa con il browser gira su GitHub Actions.
