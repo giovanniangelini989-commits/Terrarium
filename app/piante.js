@@ -49,7 +49,7 @@ vec3 plantPos(Org o){ vec3 p=o.open<.5?mix(aP0,aP1,o.open*2.):mix(aP1,position,o
   return p; }
 `;
   const HEAD_INST=`uniform float uGrow,uTurgor,uDry,uRot,uWind,uTime; attribute float iGrow,iPhase; varying float vDry,vRot,vShade; varying vec3 vMW;\n`;
-  const FRAG_HEAD='uniform float uGloss,uTrans,uMut,uCharge,uTime; varying float vDry,vRot,vShade; varying vec3 vMW;\n';
+  const FRAG_HEAD='uniform float uGloss,uTrans,uMut,uCharge,uTime,uFung; varying float vDry,vRot,vShade; varying vec3 vMW;\n';
   const FRAG_COL=`#include <color_fragment>
 diffuseColor.rgb*=vShade;
 { float d=clamp(vDry,0.,1.); vec3 g=vec3(dot(diffuseColor.rgb,vec3(.3,.59,.11))); diffuseColor.rgb=mix(diffuseColor.rgb,mix(g,diffuseColor.rgb,.4)*vec3(1.3,1.08,.55)+vec3(.1,.07,0.),d); }
@@ -57,11 +57,16 @@ diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.32,.28,.2),clamp(vR
 { float nr=exp(-length(vMW.xz)*1.5); float l_=dot(diffuseColor.rgb,vec3(.3,.59,.11)); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.5,.4,.95)*(.25+l_*1.1),clamp(uMut*(.05+.2*nr),0.,.22)); }`;
   // mutazione: bagliore viola #A88BFF su bordi (fresnel) e venature, più forte vicino al sasso e con la carica; verde #7CF5C8 solo come riflesso freddo raro
   const FRAG_MUT=`#ifndef DEPTH_PACKING
-if(uMut>.004){ float dd=length(vMW.xz), nr=exp(-dd*1.7), fr=pow(1.-abs(dot(normalize(normal),normalize(vViewPosition))),3.2);
-  float vn=abs(sin(vMW.x*85.+sin(vMW.z*61.+vMW.y*40.)*2.4)*sin(vMW.z*73.-vMW.y*55.+sin(vMW.x*47.)*1.8)); float vein=1.-smoothstep(0.,.2,vn);
-  float lm=dot(diffuseColor.rgb,vec3(.3,.59,.11)); float st=uMut*(.3+.7*nr)*(.4+.6*uCharge)*(1.+.22*sin(uTime*2.1+dd*5.));
-  float cold=smoothstep(.82,.96,sin(vMW.x*17.+vMW.z*11.+vMW.y*23.)*.5+.5);
-  totalEmissiveRadiance+=(vec3(.659,.545,1.)*(fr*1.1+vein*(.22+.45*nr))*(.3+.5*lm)+vec3(.486,.961,.784)*fr*cold*.35)*st; }
+if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), nr=exp(-dd*1.7), fr=pow(1.-abs(dot(normalize(normal),normalize(vViewPosition))),2.4);
+  float vn=abs(sin(vMW.x*85.+sin(vMW.z*61.+vMW.y*40.)*2.4)*sin(vMW.z*73.-vMW.y*55.+sin(vMW.x*47.)*1.8)); float vein=1.-smoothstep(0.,.22,vn);
+  float lm=dot(diffuseColor.rgb,vec3(.3,.59,.11)); float st=um*(.45+.9*nr)*(.55+.7*uCharge)*(1.+.22*sin(uTime*2.1+dd*5.));
+  float cold=smoothstep(.7,.94,sin(vMW.x*17.+vMW.z*11.+vMW.y*23.)*.5+.5);
+  float irid=.5+.5*sin(vMW.y*9.+vMW.x*6.+dot(normalize(normal),vec3(1.,.4,.2))*3.+uTime*.4);
+  vec3 vio=vec3(.659,.545,1.), rosa=vec3(1.,.38,.82), azz=vec3(.35,.7,1.);
+  vec3 tint=mix(vio,mix(rosa,azz,irid),smoothstep(.45,1.,um)*.55);
+  vec3 em=tint*(fr*1.8+vein*(.5+1.1*nr))*(.35+.6*lm)+vec3(.486,.961,.784)*fr*cold*.3;
+  if(uFung>.5){ float up=smoothstep(-.1,.6,normalize(normal).y); em+=mix(vio,azz,irid*.6)*(.55+.9*fr+.5*up)*(.5+.8*nr); } /* fungo: cappello e lamelle luminosi */
+  totalEmissiveRadiance+=em*st*1.7; }
 #endif`;
   const FRAG_ROUGH='#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,roughnessFactor*.5,uGloss); roughnessFactor=mix(roughnessFactor,min(1.,roughnessFactor+.3),clamp(vDry,0.,1.));';
   // luce che passa attraverso la foglia (translucenza economica: luce principale da dietro)
@@ -78,7 +83,7 @@ if(uMut>.004){ float dd=length(vMW.xz), nr=exp(-dd*1.7), fr=pow(1.-abs(dot(norma
       if(!inst) sh.vertexShader=sh.vertexShader.replace('#include <beginnormal_vertex>','Org on_=org(); vec3 objectNormal=rotA(normal,aAxis,on_.bend);');
       sh.fragmentShader=sh.fragmentShader.replace('void main() {',FRAG_HEAD+'void main() {'); if(SC) sh.fragmentShader=sh.fragmentShader.replace('void main() {','uniform sampler2D mapSecco; uniform float uSeccoOn;\nvoid main() {').replace('vec4 sampledDiffuseColor = texture2D( map, vMapUv );','vec4 sampledDiffuseColor = texture2D(map,vMapUv); if(uSeccoOn>.5) sampledDiffuseColor=mix(sampledDiffuseColor,texture2D(mapSecco,vMapUv),smoothstep(.12,.65,vDry));'); sh.fragmentShader=sh.fragmentShader.replace('#include <color_fragment>',FRAG_COL).replace('#include <roughnessmap_fragment>',FRAG_ROUGH).replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n'+FRAG_MUT).replace('#include <lights_fragment_end>',FRAG_TRANS); };
     mat.customProgramCacheKey=()=>'pianta'+kind+(inst?'i':'o')+(mat.userData.secco?'s':'')+(mat.isMeshDepthMaterial?'d':'m'); return mat; }
-  function uniforms(){ return {uGrow:{value:0},uTurgor:{value:1},uDroop:{value:0},uDry:{value:0},uRot:{value:0},uDew:{value:0},uWind:{value:0},uTime:{value:0},uGloss:{value:0},uTrans:{value:0},uMut:{value:0},uCharge:{value:0}}; }
+  function uniforms(){ return {uGrow:{value:0},uTurgor:{value:1},uDroop:{value:0},uDry:{value:0},uRot:{value:0},uDew:{value:0},uWind:{value:0},uTime:{value:0},uGloss:{value:0},uTrans:{value:0},uMut:{value:0},uCharge:{value:0},uFung:{value:0}}; }
   function shadowed(mesh,U,kind,inst){ mesh.customDepthMaterial=patch(new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking}),U,kind,inst); mesh.castShadow=true; mesh.receiveShadow=true; return mesh; }
 
   // ---------- costruttore di geometria con attributi ----------
@@ -193,7 +198,7 @@ if(uMut>.004){ float dd=length(vMW.xz), nr=exp(-dd*1.7), fr=pow(1.-abs(dot(norma
 
   // ---------- creazione ----------
   const objs={};
-  function mk(id,slot,seed){ const g=new THREE.Group(), r=rngS(seed), [sx,sz]=SLOTS[slot%SLOTS.length]; g.position.set(sx,.1,sz); const U=uniforms(), meshes=[]; let emiss=null;
+  function mk(id,slot,seed){ const g=new THREE.Group(), r=rngS(seed), [sx,sz]=SLOTS[slot%SLOTS.length]; g.position.set(sx,.1,sz); const U=uniforms(), meshes=[]; let emiss=null; U.uFung.value=id==='fungo'?1:0;
     if(id==='muschio') meshes.push(...buildMuschio(g,r,U));
     else { const kind=KIND[id]||KIND.felce, built=(id==='felce'?buildFelce:id==='succulenta'?buildSucculenta:id==='carnivora'?buildCarnivora:buildFungo)(r);
       const fotoF=id==='felce'?FF:id==='succulenta'?FS:id==='carnivora'?FD:id==='fungo'?FU:null, leaf=patch(new THREE.MeshStandardMaterial(Object.assign({vertexColors:true,color:0xffffff,roughness:id==='fungo'?.75:id==='succulenta'?.5:.62,side:THREE.DoubleSide},fotoF?{alphaTest:.5,roughness:.55}:{})),U,kind,false); if(fotoF) U.uTrans.value=id==='felce'||id==='carnivora'?.6:.25;
