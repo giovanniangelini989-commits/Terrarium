@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Trasforma una foto (vista dall'alto, luce piatta) in un materiale ripetibile per Terrario.
-Uso: python3 tools/materiale_da_foto.py foto.png <id> [lato_px=1024] [rilievo=2.0]
+Uso: python3 tools/materiale_da_foto.py foto.png <id> [lato_px=1024] [rilievo=2.0] [raccordo=0.25]
 Scrive assets/materiali/<id>/{colore,normale,ruvidezza,altezza}.webp
 - colore: la foto resa ripetibile senza cuciture (fusione dei bordi con la copia spostata di mezzo lato)
 - altezza: dalla luminanza, sfocata leggermente (le parti chiare sono più in alto)
@@ -19,7 +19,9 @@ a = np.asarray(im).astype(np.float32) / 255
 # ripetibile: mescola l'immagine con se stessa spostata di N/2, con un peso che vale 1 al centro e 0 ai bordi
 sh = np.roll(np.roll(a, N//2, 0), N//2, 1)
 y, x = np.mgrid[0:N, 0:N] / (N - 1)
-w = (np.minimum(x, 1 - x) * 2) * (np.minimum(y, 1 - y) * 2); w = np.clip(w * 2.2, 0, 1)[..., None]
+B = float(sys.argv[5]) if len(sys.argv) > 5 else 0.25  # larghezza del raccordo ai bordi (frazione del lato): stretto per oggetti netti come i ciottoli
+sm = lambda t: t * t * (3 - 2 * t)
+w = (sm(np.clip(np.minimum(x, 1 - x) / B, 0, 1)) * sm(np.clip(np.minimum(y, 1 - y) / B, 0, 1)))[..., None]
 col = a * w + sh * (1 - w)
 lum = col @ np.array([.2126, .7152, .0722], np.float32)
 h = np.asarray(Image.fromarray((lum * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.2))).astype(np.float32) / 255
