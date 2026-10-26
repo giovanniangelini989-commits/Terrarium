@@ -30,3 +30,7 @@ Classificazione prevista 9+. La Categoria Bambini (1.3) imporrebbe vincoli che o
 
 ## 8. Musica: generata con Magnific
 La musica e gli effetti si generano con Magnific. L'agente **musicista** scrive i prompt e genera; l'agente **suono** integra nel gioco (volumi, cicli, eventi). Si fa dopo il giro di correzioni in corso.
+
+
+## Direzione: magico e luminoso (27 ottobre 2026)
+Giovanni sceglie che il gioco segua i sei scenari (`docs/riferimenti/sei-scenari.png`): materiali fotografici veri, ma vaso maturo luminoso con bloom viola, funghi e venature che brillano, riflessi rosa/azzurro ammessi nelle mutazioni. L'interfaccia resta a due colori.

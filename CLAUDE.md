@@ -54,9 +54,9 @@ L'orchestratore agisce senza chiedere conferma; chiede a Giovanni solo le scelte
 
 ## Direzione creativa (già decisa)
 - **Il giocatore è il bambino**: testi in seconda persona («Senti un graffio…») o prima persona nel quaderno. Mai «il bambino» come terzo personaggio.
-- **Miniatura ultra-realistica**: deve sembrare macrofotografia di un barattolo vero su una scrivania vera. Materiali dalla libreria (`app/materials.js`), mai colori piatti.
+- **Miniatura realistica e magica** (Giovanni, 27 ottobre 2026): materiali veri da macrofotografia (foto, mai colori piatti), ma il vaso maturo è **magico e luminoso** come `docs/riferimenti/sei-scenari.png`: bagliore viola che si espande (bloom), funghi e venature che brillano, condensa e luce calda della stanza.
 - **UI Tavola A «Vetro pieno»**: vaso a tutto schermo, pillole dei bisogni in alto a sinistra, notifiche in colonna a destra, cure come pulsanti rotondi con icone a linea, maniglia del quaderno. Minimalista e immersiva (riferimento: Sky).
-- **Due soli colori saturi**: viola del sasso `#A88BFF`, verde mutazioni `#7CF5C8`.
+- **Colori**: il viola del sasso `#A88BFF` domina la magia; verde mutazioni `#7CF5C8`; nelle mutazioni sono ammessi riflessi rosa e azzurro come nei sei scenari. L'interfaccia resta a due colori.
 - **Micro-interazioni**: 100–250 ms, si anima la scala non le dimensioni, ogni effetto torna a riposo. Tre livelli di risposta (piccolo: tocco pulsante · medio: arrivo, scelta · grande: finale, popolo fondato).
 
 ## Vincoli tecnici
