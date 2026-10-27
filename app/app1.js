@@ -277,10 +277,20 @@ window.__app={POWER,powerCards,usaSalto,riprendiSalto,donoPower,wipeGlass,treeDi
 const MC=window.__MICRO||(typeof require==='function'?(()=>{ try{ return require('./microclima.js'); }catch(e){ return null; } })():null); let micro=null;
 const POSIZ=['ombra','mezza','sole'];
 const stagione=()=>{ const m=new Date(nowMs()).getMonth(); return m===11||m<2?'inverno':(m>=5&&m<=7?'estate':'mezza'); };
-function microSync(){ const v=sim.view(), c=v.clima||{}; micro.act('imposta',{um:v.needs.um,muffa:1-v.needs.pul,tappo:c.aperto?'aperto':'chiuso',posizione:POSIZ[v.setup.luce]||'mezza',drenaggio:c.drenaggio||0,collemboli:c.collemboli||0,piante:v.plants.map(p=>p.id)}); return v; }
+function microSync(){ const v=sim.view(), c=v.clima||{}; micro.act('imposta',{um:v.needs.um,muffa:1-v.needs.pul,tappo:c.aperto?'aperto':'chiuso',posizione:POSIZ[v.setup.luce]||'mezza',drenaggio:c.drenaggio||0,collemboli:c.collemboli||0,piante:v.plants.map(p=>p.id),brucatori:brucatori(v)}); return v; }
+// Brucatori (modello §9): lumache e coleotteri vivi, popolazione/12 (la partenza) con tetto 2 per specie; /6 → entrambe alla partenza = 0,33 (equilibrio), una sola 0,17.
+function brucatori(v){ let n=0; for(const x of v.sp){ if(x.alive&&(x.id==='lumache'||x.id==='coleotteri')) n+=Math.min(2,x.pop/12); } return Math.min(1,n/6); }
 function microStep(){ if(!micro) return; try{ const v=microSync(), ofs=G.micro&&G.micro.ofs||0, pos=POSIZ[v.setup.luce]||'mezza', st=stagione(), lt=inLetargo();
     micro.step(6,t=>Object.assign(MC.ambienteDi(t+ofs,{stagione:st,posizione:pos}),{letargo:lt}));
-    if(lt&&v.clima&&v.clima.ristagno>.3) sim.setNeeds({rist:.3}); }catch(e){ console.error('microclima',e); } }   // letargo (DECISIONI §1): in assenza neanche il ristagno fa danni
+    if(lt&&v.clima&&v.clima.ristagno>.3) sim.setNeeds({rist:.3}); avvisiGiungla(); }catch(e){ console.error('microclima',e); } }   // letargo (DECISIONI §1): in assenza neanche il ristagno fa danni
+// Avvisi (al massimo uno al giorno del vaso ciascuno) e cura Pota. Il limite giornaliero è del microclima (pota.pronta); la pota non costa mani.
+function avvisiGiungla(){ if(!micro||inLetargo()) return; const m=micro.view(), u=G.ui, d=sim.d; const ombra=Math.max(0,...Object.values(m.piante||{}).map(p=>p.ombra||0));
+  if(ombra>.8&&u.avSoff!==d){ u.avSoff=d; toast('La felce ha coperto il muschio.'); }
+  else if(m.mangiatoUltimo>0&&u.avMang!==d){ u.avMang=d; toast('Le lumache hanno rosicchiato le foglie.'); } }
+function pota(){ if(!micro||!sim) return {ok:false,motivo:'vuoto',text:''}; regen(); micro.act('pota'); const m=micro.view(), u=m.pota&&m.pota.ultima||{ok:false,motivo:'vuoto'};
+  const nome=u.pianta&&(sim.view().plants.find(p=>p.id===u.pianta)||{}).nome||u.pianta;
+  const text=u.ok?'Tagli '+(u.pianta==='felce'?'la felce che copriva il muschio.':''+(nome?'la pianta più invadente ('+nome+').':'le foglie di troppo.')):u.motivo==='riposo'?'Le piante hanno bisogno di un giorno per riprendersi.':'Non c’è niente da tagliare.';
+  if(u.ok) persist(); return {ok:u.ok,motivo:u.motivo,pianta:u.pianta,tagliato:u.tagliato,text}; }
 function microInit(){ micro=null; if(!MC||!sim) return; try{ const v=sim.view(); micro=MC.create({piante:v.plants.map(p=>p.id),posizione:POSIZ[v.setup.luce]||'mezza'});
     if(G.micro&&G.micro.S) micro.load(G.micro); else G.micro={ofs:new Date(nowMs()).getHours()};   // salvataggi vecchi: il microclima nasce allineato al vaso
     microSync(); const st=sim.step; if(!sim.__micro){ sim.__micro=1; sim.step=function(){ const r=st.apply(sim,arguments); if(r&&!r.paused) microStep(); return r; }; } }catch(e){ console.error('microclima',e); micro=null; } }
@@ -295,5 +305,5 @@ const _reqCheck=reqCheck; reqCheck=function(kind){ const leth=G.real.leth||0; co
 function tappo(aperto){ if(!sim) return null; const c=sim.view().clima||{}; const a=aperto==null?c.tappo!=='aperto':!!aperto; sim.setTappo(a); if(micro) micro.act(a?'apri':'chiudi'); persist();
   return {tappo:a?'aperto':'chiuso',testo:a?'Hai tolto il tappo: entra aria, il vetro si schiarisce e la terra si asciuga.':'Hai chiuso il tappo: dentro l’acqua torna a girare, come pioggia.'}; }
 function microView(){ if(!micro||!sim) return null; const v=micro.view(); v.clima=sim.view().clima; return v; }
-Object.assign(window.__app,{persist,newGame,loadSave,doAct,wipeGlass,reqCheck,tappo,micro:microView});
+Object.assign(window.__app,{pota,persist,newGame,loadSave,doAct,wipeGlass,reqCheck,tappo,micro:microView});
 })();
