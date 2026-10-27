@@ -65,7 +65,7 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
   vec3 vio=vec3(.659,.545,1.), rosa=vec3(1.,.38,.82), azz=vec3(.35,.7,1.);
   vec3 tint=mix(vio,mix(rosa,azz,irid),smoothstep(.45,1.,um)*.55);
   vec3 em=tint*(fr*1.8+vein*(.5+1.1*nr))*(.35+.6*lm)+vec3(.486,.961,.784)*fr*cold*.3;
-  if(uFung>.5){ float up=smoothstep(-.1,.6,normalize(normal).y); em+=mix(vio,azz,irid*.6)*(.55+.9*fr+.5*up)*(.5+.8*nr); } /* fungo: cappello e lamelle luminosi */
+  if(uFung>.5){ float up=smoothstep(-.1,.6,normalize(normal).y); em+=mix(vio,vec3(.5,.45,1.),irid*.35)*vec3(.8,.55,1.)*(.3+.45*fr+.25*up)*(.45+.6*nr); } /* fungo: cappello e lamelle luminosi */
   totalEmissiveRadiance+=em*st*1.7; }
 #endif`;
   const FRAG_ROUGH='#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,roughnessFactor*.5,uGloss); roughnessFactor=mix(roughnessFactor,min(1.,roughnessFactor+.3),clamp(vDry,0.,1.));';

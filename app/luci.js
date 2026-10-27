@@ -114,13 +114,13 @@ window.__LUCI=function(THREE,o){
     ' gl_FragColor.rgb=gl_FragColor.rgb*v+g*uGrain*gl_FragColor.a; gl_FragColor.a=1.-v*(1.-gl_FragColor.a);',
     '}'].join('\n')});
   // ---------- bloom selettivo: estrae solo ciò che supera la soglia HDR (emissivo viola, riflessi forti), sfoca a 1/4 e 1/16 della risoluzione ----------
-  const BU={tSrc:{value:null},uDir:{value:new THREE.Vector2()},uThr:{value:1}};
+  const BU={tSrc:{value:null},uDir:{value:new THREE.Vector2()},uThr:{value:1},uDay:{value:0}};
   const bloomMat=new THREE.ShaderMaterial({uniforms:BU,depthTest:false,depthWrite:false,blending:THREE.NoBlending,
     vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }',
-    fragmentShader:['uniform sampler2D tSrc; uniform vec2 uDir; uniform float uThr; varying vec2 vUv;',
+    fragmentShader:['uniform sampler2D tSrc; uniform vec2 uDir; uniform float uThr,uDay; varying vec2 vUv;',
     'void main(){ vec3 c;',
     ' #ifdef EXTRACT',
-    ' c=vec3(0.); for(int i=0;i<4;i++){ vec2 o=(vec2(float(i&1),float(i/2))-.5)*uDir; vec3 s=texture2D(tSrc,vUv+o).rgb; float l=dot(s,vec3(.3,.59,.11)); float vi=clamp((s.b-s.g)*2.5/(l+.2),0.,1.); float k=smoothstep(uThr,uThr+.8,l*(1.+1.4*vi)); c+=min(s,vec3(8.))*k; } c*=.25;',
+    ' c=vec3(0.); for(int i=0;i<4;i++){ vec2 o=(vec2(float(i&1),float(i/2))-.5)*uDir; vec3 s=texture2D(tSrc,vUv+o).rgb; float l=dot(s,vec3(.3,.59,.11)); float vi=clamp((s.b-s.g)*2.5/(l+.2),0.,1.); float k=smoothstep(uThr,uThr+.8,l*(1.+1.4*vi))*mix(1.,smoothstep(.2,.55,vi),uDay); c+=min(s,vec3(8.))*k; } c*=.25;',
     ' #else',
     ' c=texture2D(tSrc,vUv).rgb*.227; for(int i=1;i<5;i++){ float fi=float(i); float w=i==1?.19:i==2?.12:i==3?.06:.025; c+=(texture2D(tSrc,vUv+uDir*fi).rgb+texture2D(tSrc,vUv-uDir*fi).rgb)*w; }',
     ' #endif',
@@ -130,7 +130,7 @@ window.__LUCI=function(THREE,o){
   function mkB(w,h){ return new THREE.WebGLRenderTarget(Math.max(2,w|0),Math.max(2,h|0),{type:THREE.HalfFloatType,depthBuffer:false}); }
   function ensureBloom(){ const w=Math.ceil(size.x/bDiv), h=Math.ceil(size.y/bDiv); if(bA0&&bA0.width===w&&bA0.height===h) return; [bA0,bB0,bA1,bB1].forEach(x=>x&&x.dispose()); bA0=mkB(w,h); bB0=mkB(w,h); bA1=mkB(w/4,h/4); bB1=mkB(w/4,h/4); }
   function bpass(m,src,dst,dx,dy){ quad.material=m; BU.tSrc.value=src.texture||src; BU.uDir.value.set(dx,dy); R0.call(renderer,quadScene,quadCam); }
-  function bloomRun(srcTex){ ensureBloom(); renderer.setRenderTarget(bA0); BU.uThr.value=1.25; bpass(bloomExt,srcTex,null,bDiv/size.x,bDiv/size.y);
+  function bloomRun(srcTex){ ensureBloom(); renderer.setRenderTarget(bA0); BU.uThr.value=1.25+1.0*BU.uDay.value; bpass(bloomExt,srcTex,null,bDiv/size.x,bDiv/size.y);
     renderer.setRenderTarget(bB0); bpass(bloomMat,bA0,null,1.5/bA0.width,0); renderer.setRenderTarget(bA0); bpass(bloomMat,bB0,null,0,1.5/bA0.height);
     renderer.setRenderTarget(bA1); bpass(bloomMat,bA0,null,1.2/bA1.width,0); renderer.setRenderTarget(bB1); bpass(bloomMat,bA1,null,2.2/bB1.width,0); renderer.setRenderTarget(bA1); bpass(bloomMat,bB1,null,0,2.2/bA1.height);
     quad.material=dofMat; U.tB0.value=bA0.texture; U.tB1.value=bA1.texture; U.uBloom.value=bloomK; }
@@ -169,7 +169,7 @@ window.__LUCI=function(THREE,o){
     hemi.color.set(L.hemi[0]); hemi.groundColor.set(L.hemi[1]); hemi.intensity=L.hemi[2];
     if(L.key){ key.visible=true; key.color.set(L.key[0]); key.intensity=L.key[1]; key.position.set(...L.key[2]); } else key.visible=false;
     fill.color.set(L.fill[0]); fill.intensity=L.fill[1]; bounce.color.set(L.bounce[0]); bounce.intensity=L.bounce[1];
-    bloomK=curT==='notte'?1.3:curT==='sera'?1.0:.8; lamp.visible=!!L.lamp; lamp.castShadow=night; lamp.intensity=26*L.lamp; key.shadow.intensity=L.sh; lamp.shadow.intensity=L.sh;
+    bloomK=curT==='notte'?1.3:curT==='sera'?1.0:.5; BU.uDay.value=curT==='giorno'?1:0; lamp.visible=!!L.lamp; lamp.castShadow=night; lamp.intensity=26*L.lamp; key.shadow.intensity=L.sh; lamp.shadow.intensity=L.sh;
     shWide.material.opacity=night?.7:1; shTight.material.opacity=1;
     applyLevel(); }
   function applyLevel(){ const sm=lv===0?1024:512; [key,lamp].forEach(l=>{ if(l.shadow.mapSize.x!==sm){ l.shadow.mapSize.set(sm,sm); if(l.shadow.map){ l.shadow.map.dispose(); l.shadow.map=null; } } l.shadow.radius=lv===0?4:2; });
