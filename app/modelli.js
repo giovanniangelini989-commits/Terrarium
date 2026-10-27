@@ -11,9 +11,9 @@ const {critG,S,KLEN,camera,viewH,level,anchorOf,kimiGeo,fallbackGeo,SIZE}=env;
 const V3=THREE.Vector3, Col=THREE.Color, clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x)), rnd=(a,b)=>a+Math.random()*(b-a);
 const LOADER_URL='https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/loaders/GLTFLoader.js';
 const CAP=128;                 // il sim limita pop a 100 per specie
-const BUDGET=[64000,36000,20000]; // triangoli per le creature, per livello della guardia prestazioni
-const PX={close:64,swarm:30,lod1:11}; // soglie in pixel (altezza del corpo a schermo) per i livelli di dettaglio
-const CLOSE_MAX=6;
+const BUDGET=[48000,30000,18000]; // triangoli per le creature, per livello della guardia prestazioni
+const PX={close:100,swarm:30,lod1:11}; // soglie in pixel (altezza del corpo a schermo) per i livelli di dettaglio
+const CLOSE_MAX=2;
 const EMIT_COL=[0.659,0.545,1.0]; // #A88BFF (viola del sasso: Giovanni, sei-scenari)
 // ---------- shader: posa procedurale per parte (brief v3 §5.1) ----------
 const VHEAD=`
@@ -72,7 +72,7 @@ const tris=g=>g.index?g.index.count/3:g.attributes.position.count/3;
 const ready=(async()=>{ const ids=Object.keys(GLB); if(!ids.length) return; let GL; try{ GL=(await import(LOADER_URL)).GLTFLoader; }catch(e){ console.warn('GLTFLoader non disponibile',e&&e.message); return; }
   const loader=new GL(); const parse=buf=>new Promise((res,rej)=>loader.parse(buf,'',res,rej));
   for(const id of ids){ try{ const set=GLB[id], out={tiers:[]}; let swarmMat=null;
-      for(const tier of ['close','swarm','lod1','lod2']){ if(!set[tier]) continue; const m=takeMesh(await parse(b64buf(set[tier]))); let mat=m.material&&m.material.map?m.material:null; const anim=!!m.geometry.attributes.aAnim; if(!anim) out.object=true; if(mat){ mat.side=THREE.FrontSide; if(anim) patch(mat); if(tier==='swarm') swarmMat=mat; } out.tiers.push({name:tier,geo:m.geometry,mat,tris:tris(m.geometry),shadow:tier==='close'||tier==='swarm',px:PX[tier]||0}); }
+      for(const tier of ['close','swarm','lod1','lod2']){ if(!set[tier]) continue; const m=takeMesh(await parse(b64buf(set[tier]))); let mat=m.material&&m.material.map?m.material:null; const anim=!!m.geometry.attributes.aAnim; if(!anim) out.object=true; if(mat){ mat.side=THREE.FrontSide; if(anim) patch(mat); if(tier==='swarm') swarmMat=mat; } out.tiers.push({name:tier,geo:m.geometry,mat,tris:tris(m.geometry),shadow:false,px:PX[tier]||0}); }
       out.tiers.forEach(t=>{ if(!t.mat) t.mat=swarmMat||out.tiers.find(q=>q.mat).mat; }); if(!out.tiers.length) continue; models[id]=out; }catch(e){ console.warn('modello Kimi',id,e&&e.message); } }
   loaded=true; })();
 // ---------- istanze per specie ----------
@@ -81,7 +81,7 @@ function mkTier(t,shared){ const g=t.geo.clone(); g.setAttribute('iAnim',new THR
   const im=new THREE.InstancedMesh(g,t.mat,CAP); im.count=0; im.frustumCulled=false; im.castShadow=!!t.shadow; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); if(t.shadow&&t.anim) im.customDepthMaterial=depthMat; im.setColorAt(0,new Col(1,1,1)); critG.add(im); return {name:t.name,im,tris:t.tris,px:t.px,ia:g.attributes.iAnim,imu:g.attributes.iMut,anim:!!t.anim}; }
 function ensure(x){ let c=crt[x.id]; if(c&&(c.kind==='glb'||!models[x.id])) return c; const items=c?c.items:[]; if(c) drop(c);
   let tiers, kind; if(models[x.id]){ kind='glb'; tiers=models[x.id].tiers.map(t=>mkTier({...t,anim:true})); }
-  else { kind='pass1'; const geo=kimiGeo(x.id)||fallbackGeo(x.id), glossy=x.id==='coleotteri'; tiers=[mkTier({name:'pass1',geo,mat:new THREE.MeshStandardMaterial({vertexColors:true,roughness:glossy?.3:.72,metalness:glossy?.45:.05}),tris:tris(geo),shadow:true,px:0})]; tiers[0].final=!!geo.userData.final; }
+  else { kind='pass1'; const geo=kimiGeo(x.id)||fallbackGeo(x.id), glossy=x.id==='coleotteri', wing=x.id==='mosche'; if(!geo.userData.final){ geo.computeBoundingBox(); const ex=geo.boundingBox.max.x-geo.boundingBox.min.x, f=(KLEN[x.id]||.2)/Math.max(.1,ex); geo.scale(f,f,f); geo.userData.final=true; } /* scala reale: lunghezza = KLEN */ tiers=[mkTier({name:'pass1',geo,mat:new THREE.MeshStandardMaterial({vertexColors:true,roughness:glossy?.42:.88,metalness:glossy?.4:.02,transparent:wing,depthWrite:!wing}),tris:tris(geo),shadow:true,px:0})]; tiers[0].final=!!geo.userData.final; }
   return crt[x.id]={id:x.id,kind,tiers,items,x,tint:'',final:kind==='glb'||tiers[0].final,len:KLEN[x.id]||.2,dying:0}; }
 function drop(c){ c.tiers.forEach(t=>{ critG.remove(t.im); t.im.geometry.dispose(); if(c.kind==='pass1') t.im.material.dispose(); }); delete crt[c.id]; }
 function newItem(){ const a=Math.random()*6.283,d=Math.sqrt(Math.random())*.7; return {px:Math.cos(a)*d,pz:Math.sin(a)*d,tx:0,tz:0,nt:0,ph:Math.random()*6.28,gait:Math.random(),spd:0,st:0,tw:0,ang:Math.random()*6.283,carry:false,eat:0}; }
@@ -96,8 +96,8 @@ function move(dt,t,v,dry){ uni.uTime.value=t; uni.uDry.value=dry||0; const lv=Ma
   const H=viewH()||300, kpx=H/(2*Math.tan(camera.fov*Math.PI/360)); _c.copy(camera.position);
   Object.values(crt).forEach(c=>{ const x=c.x, id=c.id, fly=id==='mosche', soc=!!x.society&&!fly, an=soc?anchorOf(id):null, war=!c.dying&&v.wars.find(w=>w.includes(id)), wi=war?war.indexOf(id):0, sp=(fly?.55:.28)*(war?2:1), mut=x.mut||[], mutK=mut.length?Math.min(1.3,.7+.2*mut.length):0, glb=c.kind==='glb';
     const tint=(x.monster?'m':'')+(glb?'':mut.join(',')); if(tint!==c.tint){ c.tint=tint; const col=new Col(1,1,1); if(x.monster) col.multiply(new Col(1,.55,.55)); if(!glb){ if(mut.includes('radioattivo')) col.multiply(new Col(.7,1.2,.7)); if(mut.includes('bioluminescenza')) col.multiply(new Col(.7,1,1.25)); if(mut.includes('velenoso')) col.multiply(new Col(1.1,.7,1.25)); } c.tiers.forEach(tr=>{ for(let i=0;i<CAP;i++) tr.im.setColorAt(i,col); tr.im.instanceColor.needsUpdate=true; }); }
-    const sz=(c.final?(1+Math.min(.5,.12*Math.max(0,(x.size||1)-1))):SIZE(x))*(x.monster?1.7:1), vis=c.final?c.len*sz:sz;
-    c.items.forEach(it=>{ const dead=it.st===5;
+    const lim=glb?24:12; const sz=(c.final?(1+Math.min(.5,.12*Math.max(0,(x.size||1)-1))):SIZE(x))*(x.monster?1.7:1), vis=c.final?c.len*sz:sz;
+    c.items.forEach((it,ix)=>{ if(ix>=lim){ it.hid=1; return; } it.hid=0; const dead=it.st===5;
       if(!dead&&t>it.nt){ if(soc){ if(war){ it.tx=(wi?.1:-.1)+rnd(-.1,.1); it.tz=an[1]*.4+rnd(-.12,.12); } else { const edge=Math.random()<.15; it.tx=edge?rnd(-.8,.8):an[0]+rnd(-.28,.28); it.tz=edge?rnd(-.5,.5):an[1]+rnd(-.2,.2); it.carry=!edge&&Math.random()<.4; } } else { const a=Math.random()*6.283,d=Math.sqrt(Math.random())*.78; it.tx=Math.cos(a)*d; it.tz=Math.sin(a)*d; it.carry=false; } it.nt=t+1.5+Math.random()*3.5; it.eat=Math.random()<.3?1:0; }
       const dx=it.tx-it.px, dz=it.tz-it.pz, d=dead?0:Math.hypot(dx,dz)||1, mv=!dead&&d>.02, st0=dead?0:Math.min(d,sp*dt); if(mv){ it.px+=dx/d*st0; it.pz+=dz/d*st0; const rr=Math.hypot(it.px,it.pz); if(rr>.84){ it.px*=.84/rr; it.pz*=.84/rr; } const ta=Math.atan2(dz,dx); let da=ta-it.ang; while(da>Math.PI) da-=6.283; while(da<-Math.PI) da+=6.283; it.ang+=da*Math.min(1,dt*7); }
       // stato: 0 idle · 1 walk · 2 carry · 3 fight · 4 eat · 5 dead
@@ -113,7 +113,7 @@ function move(dt,t,v,dry){ uni.uTime.value=t; uni.uDry.value=dry||0; const lv=Ma
   if(cands.length){ cands.sort((a,b)=>b.pxs-a.pxs); let closeN=0; const maxTier=lv===0?0:lv===1?1:2; // indice del livello migliore ammesso (0 close)
     let minSum=0; cands.forEach(it=>{ minSum+=it.c.tiers[it.c.tiers.length-1].tris; });
     cands.forEach(it=>{ const T=it.c.tiers, last=T.length-1, minT=T[last].tris; minSum-=minT; let pick=last; for(let k=Math.min(maxTier,last);k<last;k++){ const tr=T[k]; if(it.pxs<tr.px) continue; if(tr.name==='close'&&closeN>=CLOSE_MAX) continue; if(tr.tris<=budget-minSum){ pick=k; break; } } if(T[pick].name==='close') closeN++; budget-=T[pick].tris; it.tier=pick; }); }
-  Object.values(crt).forEach(c=>{ c.items.forEach(it=>{ const tr=c.tiers[it.tier||0], i=tr.n++; _e.set(0,-it.ang,0); _q.setFromEuler(_e); _p.set(it.px,it.y,it.pz); _s.set(it.sz,it.sz,it.sz); _m.compose(_p,_q,_s); tr.im.setMatrixAt(i,_m); tr.ia.setXYZW(i,it.gait,it.spd,it.st,it.tw); tr.imu.setX(i,it.mut); });
+  Object.values(crt).forEach(c=>{ c.items.forEach(it=>{ if(it.hid) return; const tr=c.tiers[it.tier||0], i=tr.n++; _e.set(0,-it.ang,0); _q.setFromEuler(_e); _p.set(it.px,it.y,it.pz); _s.set(it.sz,it.sz,it.sz); _m.compose(_p,_q,_s); tr.im.setMatrixAt(i,_m); tr.ia.setXYZW(i,it.gait,it.spd,it.st,it.tw); tr.imu.setX(i,it.mut); });
     c.tiers.forEach(tr=>{ tr.im.count=tr.n; tr.im.instanceMatrix.needsUpdate=true; tr.ia.needsUpdate=true; tr.imu.needsUpdate=true; }); }); }
 // oggetti di Kimi (meteorite): una copia del tier close, materiale proprio (emissiva regolabile dal gioco)
 function object(id){ const m=models[id]; if(!m||!m.object) return null; const t=m.tiers.find(q=>q.name==='close')||m.tiers[0]; const mat=t.mat.clone(); const mesh=new THREE.Mesh(t.geo,mat); mesh.geometry.computeBoundingBox(); const o={mesh,mat,tris:t.tris,box:mesh.geometry.boundingBox}; objs[id]=o; return o; }
