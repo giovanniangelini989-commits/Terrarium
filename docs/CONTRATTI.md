@@ -127,3 +127,8 @@ Pesca di cura: curaDay() in reqCheck → ogni 7 giorni (reali, non di fila) in c
 
 ## Luci (`window.__LUCI`, in `app/luci.js`)
 `__LUCI(THREE, {scene, renderer, camera}) → {set(tempo), update(dt), level(n), dispose()}`. `tempo` ∈ `giorno, sera, notte`. `level(n)` riceve il livello della guardia prestazioni (0 pieno · 1 ridotto · 2 minimo) e spegne gli effetti costosi. Tutte le luci, il tone mapping, l'esposizione, le ombre e i post-effetti vivono qui, non in `v3d.js`.
+
+### Pota e brucatori (gioco, 27 ottobre 2026)
+- `__app.pota()` → `{ok, motivo, pianta, tagliato, text}`; limite giornaliero = `micro.pota.pronta`; non costa mani. Pulsante «Pota» (icona `IC.pota`) visibile solo con `copertura > 0,6` o `giungla > 0`.
+- Brucatori passati al microclima in `microSync`: `min(1, Σ min(2, pop/12) per lumache e coleotteri vivi / 6)` (due specie alla partenza = 0,33, equilibrio).
+- Avvisi una volta per giorno del vaso: `G.ui.avSoff` («La felce ha coperto il muschio.», `ombra > 0,8`) e `G.ui.avMang` («Le lumache hanno rosicchiato le foglie.», `mangiatoUltimo > 0`); mai in letargo.
