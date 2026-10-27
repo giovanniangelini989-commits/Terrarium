@@ -1553,7 +1553,7 @@ Object.assign(window.__app,{persist,newGame,loadSave,doAct,wipeGlass,reqCheck,ta
 const AU={ctx:null,master:null,beatG:null,padG:null,vol:.6,suoni:true,voce:true,E:20,night:false,timer:null,nextBeat:0,voice:null,ready:false};
 function C(){ return AU.ctx; }
 AU.configure=o=>{ if('vol' in o) AU.vol=o.vol; if('suoni' in o) AU.suoni=o.suoni; if('voce' in o) AU.voce=o.voce; if(AU.master) AU.master.gain.setTargetAtTime(AU.suoni?AU.vol:0,C().currentTime,.05); if(!AU.voce) AU.stopVoice(); };
-AU.unlockVoice=()=>{ if(AU.vu) return; AU.vu=1; try{ const Sy=window.speechSynthesis; if(Sy&&!window.__fast){ const u=new SpeechSynthesisUtterance(' '); u.volume=0; Sy.speak(u); } }catch(e){} };
+AU.unlockVoice=()=>{};
 AU.unlock=()=>{ try{ if(AU.ctx){ if(AU.ctx.state==='suspended') AU.ctx.resume(); return; } const X=window.AudioContext||window.webkitAudioContext; if(!X) return; AU.ctx=new X(); AU.master=AU.ctx.createGain(); AU.master.gain.value=AU.suoni?AU.vol:0; AU.master.connect(AU.ctx.destination);
   AU.beatG=AU.ctx.createGain(); AU.beatG.gain.value=.55; AU.beatG.connect(AU.master); AU.padG=AU.ctx.createGain(); AU.padG.gain.value=.0; AU.padG.connect(AU.master); pad(); AU.nextBeat=AU.ctx.currentTime+.3; AU.timer=setInterval(tick,110); AU.ready=true; }catch(e){} };
 function pad(){ const c=C(); [[110,'sine',.5],[164.81,'sine',.35],[220.5,'triangle',.18]].forEach(([f,t,g],i)=>{ const o=c.createOscillator(), l=c.createOscillator(), lg=c.createGain(), og=c.createGain(); o.type=t; o.frequency.value=f*(1+i*.002); l.frequency.value=.07+.03*i; lg.gain.value=g*.4; og.gain.value=g; l.connect(lg); lg.connect(og.gain); o.connect(og); og.connect(AU.padG); o.start(); l.start(); }); AU.padG.gain.setTargetAtTime(.07,c.currentTime,3); }
@@ -1577,7 +1577,7 @@ AU.sfx=name=>{ const c=C(); if(!c||!AU.suoni) return; const t=c.currentTime+.02;
    case 'pagina': note(988,t,.9,.07); note(1480,t+.1,.9,.05); break;
   } };
 AU.setState=(E,night)=>{ AU.E=E; AU.night=night; };
-AU.say=(txt,rate)=>{ if(!AU.voce||!AU.suoni) return; try{ const S=window.speechSynthesis; if(!S||window.__fast) return; S.cancel(); const u=new SpeechSynthesisUtterance(txt); u.lang='it-IT'; u.rate=rate||.92; u.pitch=.98; u.volume=Math.min(1,AU.vol+.2); const vs=S.getVoices(); const v=AU.voice||vs.find(x=>/it[-_]IT/i.test(x.lang)&&/alice|federica|luca|elsa|google/i.test(x.name))||vs.find(x=>/^it/i.test(x.lang)); if(v){ AU.voice=v; u.voice=v; } S.speak(u); }catch(e){} };
+AU.say=()=>{}; // voce narrante tolta (Giovanni, 27 ottobre 2026): la storia si legge, non si ascolta
 AU.stopVoice=()=>{ try{ window.speechSynthesis&&window.speechSynthesis.cancel(); }catch(e){} };
 ['pointerdown','touchend','click'].forEach(ev=>document.addEventListener(ev,()=>{ AU.unlock(); AU.unlockVoice(); },{passive:true}));
 document.addEventListener('visibilitychange',()=>{ const c=C(); if(!c) return; if(document.hidden) c.suspend&&c.suspend(); else c.resume&&c.resume(); });
@@ -2641,6 +2641,7 @@ window.__LUCI=function(THREE,o){
   const shTight=blob([[0,.55],[.78,.5],[.9,.32],[1,0]],2.25,.005); // contatto stretto sotto il fondo
 
   // ---------- profondità di campo (passaggio unico, spegnibile) ----------
+  const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1); // Safari iOS: niente MSAA sul bersaglio con profondità (terra nera allo zoom)
   const size=new THREE.Vector2(); let rt=null;
   const quadCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1), quadScene=new THREE.Scene();
   const U={tCol:{value:null},tDep:{value:null},uRes:{value:new THREE.Vector2(1,1)},uNear:{value:.1},uFar:{value:60},uFocus:{value:5},uAp:{value:1.6},uMax:{value:8},uTime:{value:0},uVig:{value:.32},uGrain:{value:.018},uCA:{value:1.2},uInvVP:{value:new THREE.Matrix4()},uPrevVP:{value:new THREE.Matrix4()},uMB:{value:0},tB0:{value:null},tB1:{value:null},uBloom:{value:0}};
@@ -2660,7 +2661,7 @@ window.__LUCI=function(THREE,o){
     '   float z=lz(vUv+off), c=coc(z); float w=z>=z0-.05?1.:clamp(c/max(c0,1e-3),0.,1.);',
     '   acc+=texture2D(tCol,vUv+off)*w; wsum+=w; }',
     ' }',
-    ' gl_FragColor=acc/wsum;',
+    ' gl_FragColor=acc/wsum; if(any(isnan(gl_FragColor))||any(isinf(gl_FragColor))) gl_FragColor=texture2D(tCol,vUv);',  // le GPU Apple disegnano NaN come nero
     ' if(uMB>0.){',   // sfocatura di movimento della camera: riproietta il punto con la camera del fotogramma prima
     '  vec4 wp=uInvVP*vec4(vUv*2.-1.,texture2D(tDep,vUv).x*2.-1.,1.); wp/=wp.w; vec4 pp=uPrevVP*wp; vec2 vel=(vUv-(pp.xy/pp.w*.5+.5))*uMB;',
     '  float lp=length(vel*uRes); if(lp>1.5&&lp<uRes.y*.25){ vel*=min(1.,uRes.y*.035/lp); vec4 mb=vec4(0.);',
@@ -2668,6 +2669,7 @@ window.__LUCI=function(THREE,o){
     '   gl_FragColor=mix(gl_FragColor,mb/8.,clamp((lp-1.5)/3.,0.,1.)); }',
     ' }',
     ' if(uBloom>0.){ vec3 bl=(texture2D(tB0,vUv).rgb*.7+texture2D(tB1,vUv).rgb*1.1)*uBloom; gl_FragColor.rgb+=bl; gl_FragColor.a=min(1.,gl_FragColor.a+max(bl.r,max(bl.g,bl.b))); }',
+    ' if(any(isnan(gl_FragColor))) gl_FragColor=vec4(0.,0.,0.,0.);',
     ' #include <tonemapping_fragment>',
     ' #include <colorspace_fragment>',
     ' float v=1.-uVig*smoothstep(.25,.95,length(dc*vec2(uRes.x/uRes.y,1.))*1.25);',            // vignettatura (scurisce anche la foto di fondo, alfa premoltiplicato)
@@ -2698,7 +2700,7 @@ window.__LUCI=function(THREE,o){
   const quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),dofMat); quad.frustumCulled=false; quadScene.add(quad);
   function ensureRT(){ renderer.getDrawingBufferSize(size); if(rt&&rt.width===size.x&&rt.height===size.y) return;
     if(rt) rt.dispose(); const dt=new THREE.DepthTexture(size.x,size.y); dt.type=THREE.UnsignedIntType;
-    rt=new THREE.WebGLRenderTarget(size.x,size.y,{type:THREE.HalfFloatType,samples:lv===0?4:2,depthTexture:dt}); U.uRes.value.set(size.x,size.y); }
+    rt=new THREE.WebGLRenderTarget(size.x,size.y,{type:THREE.HalfFloatType,samples:IOS?0:(lv===0?4:2),depthTexture:dt}); U.uRes.value.set(size.x,size.y); }
   // Gli ShaderMaterial senza colorspace_fragment (vetro, condensa) scrivono colori già «da schermo»: nel render target
   // lineare li riportiamo in lineare, alfa compreso (define LUCI_LIN): la fusione in lineare renderebbe il vetro lattiginoso.
   const linMats=new Set();
@@ -3957,7 +3959,7 @@ function codexHTML(){ const G=A.G; let h='';
   else { const found=Object.keys(G.libro).length; h+='<p class="muted" style="margin:0 0 8px">'+found+' / 15 finali. Un finale chiude il capitolo, non il vaso.</p>'+['Quiete','Mostri','Società','Conflitti'].map(f=>'<div class="card"><div class="kicker" style="margin-bottom:4px">'+f+'</div>'+Object.entries(T.FINALI).filter(([k,v])=>v.fam===f).map(([k,v])=>{ const lb=G.libro[k]; return lb?'<div class="fcard"><span class="em" style="font-size:30px">'+v.icon+'</span><div><b>'+v.nome+'</b><span class="muted"> · '+lb.n+'×</span><div class="m muted">'+v.txt+'</div><div class="muted" style="margin-top:4px">'+T.LUCE[lb.setup.luce].nome+' · '+lb.setup.insetti.map(i=>T.SPECIE[i].icon).join('')+' · '+(lb.setup.oggetti.map(i=>T.OGGETTI[i].icon).join('')||'nessun oggetto')+'</div></div></div>':'<div class="fcard"><span class="em sil" style="font-size:30px">'+v.icon+'</span><div><b>???</b><div class="m muted">Indizio: '+v.hint+'</div></div></div>'; }).join('')+'</div>').join(''); }
   return h; }
 function impHTML(){ const G=A.G,s=G.settings; const tg=(k,t,sm,on)=>'<div class="tg"><div><b>'+t+'</b>'+(sm?'<small>'+sm+'</small>':'')+'</div><button class="sw" role="switch" aria-checked="'+on+'" data-a="set" data-k="'+k+'" aria-label="'+t+'"></button></div>';
-  return '<div class="kicker">Impostazioni</div><h1 class="title" style="margin:2px 0 10px">'+esc(G.name)+'</h1><div class="card"><div class="kicker">Audio</div>'+tg('audio.suoni','Suoni','Il battito del meteorite e i segnali della storia',s.audio.suoni)+tg('audio.voce','Voce narrante','La storia ti parla ad alta voce (voce del telefono)',s.audio.voce)+'<div class="seg" style="margin:8px 0 0">'+[['.3','Basso'],['.6','Medio'],['1','Alto']].map(o=>'<button data-a="vol" data-v="'+o[0]+'" aria-pressed="'+(String(s.audio.vol)===o[0])+'">'+o[1]+'</button>').join('')+'</div></div>'
+  return '<div class="kicker">Impostazioni</div><h1 class="title" style="margin:2px 0 10px">'+esc(G.name)+'</h1><div class="card"><div class="kicker">Audio</div>'+tg('audio.suoni','Suoni','Il battito del meteorite e i segnali della storia',s.audio.suoni)+'<div class="seg" style="margin:8px 0 0">'+[['.3','Basso'],['.6','Medio'],['1','Alto']].map(o=>'<button data-a="vol" data-v="'+o[0]+'" aria-pressed="'+(String(s.audio.vol)===o[0])+'">'+o[1]+'</button>').join('')+'</div></div>'
    +'<div class="card"><div class="kicker">Notifiche</div><p class="muted">Nell’app per iPhone riceverai un avviso quando trovi qualcosa o quando Biscotto combina guai. Una al giorno, mai di notte.</p></div>'
    +'<div class="card"><div class="kicker">Modalità calma</div>'+tg('calma.pausa','Pausa dolce','Un invito a fermarsi dopo un’ora',s.calma.pausa)+tg('calma.soft','Colori più morbidi','Meno contrasto e luce',s.calma.soft)+'</div>'
    +'<div class="card"><div class="kicker">Il vaso</div><div class="seg" style="margin:8px 0 0"><button data-a="tempo" data-t="auto" aria-pressed="'+(s.tempo==='auto')+'">Auto</button><button data-a="tempo" data-t="giorno" aria-pressed="'+(s.tempo==='giorno')+'">Giorno</button><button data-a="tempo" data-t="notte" aria-pressed="'+(s.tempo==='notte')+'">Notte</button></div><div class="stack" style="margin-top:10px"><button class="btn s sm" data-a="film-replay">Rivedi il video iniziale</button></div></div>'

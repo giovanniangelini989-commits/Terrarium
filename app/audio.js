@@ -3,7 +3,7 @@
 const AU={ctx:null,master:null,beatG:null,padG:null,vol:.6,suoni:true,voce:true,E:20,night:false,timer:null,nextBeat:0,voice:null,ready:false};
 function C(){ return AU.ctx; }
 AU.configure=o=>{ if('vol' in o) AU.vol=o.vol; if('suoni' in o) AU.suoni=o.suoni; if('voce' in o) AU.voce=o.voce; if(AU.master) AU.master.gain.setTargetAtTime(AU.suoni?AU.vol:0,C().currentTime,.05); if(!AU.voce) AU.stopVoice(); };
-AU.unlockVoice=()=>{ if(AU.vu) return; AU.vu=1; try{ const Sy=window.speechSynthesis; if(Sy&&!window.__fast){ const u=new SpeechSynthesisUtterance(' '); u.volume=0; Sy.speak(u); } }catch(e){} };
+AU.unlockVoice=()=>{};
 AU.unlock=()=>{ try{ if(AU.ctx){ if(AU.ctx.state==='suspended') AU.ctx.resume(); return; } const X=window.AudioContext||window.webkitAudioContext; if(!X) return; AU.ctx=new X(); AU.master=AU.ctx.createGain(); AU.master.gain.value=AU.suoni?AU.vol:0; AU.master.connect(AU.ctx.destination);
   AU.beatG=AU.ctx.createGain(); AU.beatG.gain.value=.55; AU.beatG.connect(AU.master); AU.padG=AU.ctx.createGain(); AU.padG.gain.value=.0; AU.padG.connect(AU.master); pad(); AU.nextBeat=AU.ctx.currentTime+.3; AU.timer=setInterval(tick,110); AU.ready=true; }catch(e){} };
 function pad(){ const c=C(); [[110,'sine',.5],[164.81,'sine',.35],[220.5,'triangle',.18]].forEach(([f,t,g],i)=>{ const o=c.createOscillator(), l=c.createOscillator(), lg=c.createGain(), og=c.createGain(); o.type=t; o.frequency.value=f*(1+i*.002); l.frequency.value=.07+.03*i; lg.gain.value=g*.4; og.gain.value=g; l.connect(lg); lg.connect(og.gain); o.connect(og); og.connect(AU.padG); o.start(); l.start(); }); AU.padG.gain.setTargetAtTime(.07,c.currentTime,3); }
@@ -27,7 +27,7 @@ AU.sfx=name=>{ const c=C(); if(!c||!AU.suoni) return; const t=c.currentTime+.02;
    case 'pagina': note(988,t,.9,.07); note(1480,t+.1,.9,.05); break;
   } };
 AU.setState=(E,night)=>{ AU.E=E; AU.night=night; };
-AU.say=(txt,rate)=>{ if(!AU.voce||!AU.suoni) return; try{ const S=window.speechSynthesis; if(!S||window.__fast) return; S.cancel(); const u=new SpeechSynthesisUtterance(txt); u.lang='it-IT'; u.rate=rate||.92; u.pitch=.98; u.volume=Math.min(1,AU.vol+.2); const vs=S.getVoices(); const v=AU.voice||vs.find(x=>/it[-_]IT/i.test(x.lang)&&/alice|federica|luca|elsa|google/i.test(x.name))||vs.find(x=>/^it/i.test(x.lang)); if(v){ AU.voice=v; u.voice=v; } S.speak(u); }catch(e){} };
+AU.say=()=>{}; // voce narrante tolta (Giovanni, 27 ottobre 2026): la storia si legge, non si ascolta
 AU.stopVoice=()=>{ try{ window.speechSynthesis&&window.speechSynthesis.cancel(); }catch(e){} };
 ['pointerdown','touchend','click'].forEach(ev=>document.addEventListener(ev,()=>{ AU.unlock(); AU.unlockVoice(); },{passive:true}));
 document.addEventListener('visibilitychange',()=>{ const c=C(); if(!c) return; if(document.hidden) c.suspend&&c.suspend(); else c.resume&&c.resume(); });
