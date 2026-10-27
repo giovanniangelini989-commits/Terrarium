@@ -32,6 +32,12 @@ const PIANTE={
   fungo:     {lux:[0,0.3,3],   rh:[.85,1],  acqua:[.5,1],    T:[10,18,26], nota:'buio umido e materia morta; fruttifica in pochi giorni'},
   carnivora: {lux:[4,8,20],    rh:[.6,.9],  acqua:[.6,1],    T:[18,25,32], nota:'molta luce, torba sempre bagnata'}
 };
+// ---------- biomassa, spazio, brucatori (docs/ecologia/modello.md §9) ----------
+// r: crescita logistica per ora a condizioni ottime (la copertura totale limita tutte: 1-cop); alt: altezza relativa (chi è più alto ombreggia chi è più basso);
+// pal: appetibilità per lumache e coleotteri; b0: copertura iniziale
+const BIO={ muschio:{r:.2,alt:.1,pal:.3,b0:.15}, felce:{r:.4,alt:1,pal:1,b0:.08}, succulenta:{r:.1,alt:.5,pal:.6,b0:.06}, fungo:{r:.2,alt:.25,pal:.2,b0:.04}, carnivora:{r:.15,alt:.55,pal:.3,b0:.06} };
+const GIUNGLA_DA=.7, GIUNGLA_PIENA=1.0, SOFFOCO=.8, BIO_MIN=.02, POTA_ORE=6, POTA_TAGLIO=.4, POTA_MAX=.3, BRUCA_G=.08;
+const nuovaPianta=(p,v)=>({vigore:v,crescita:0,biomassa:BIO[p].b0,ombra:0});
 // finestra di benessere: 1 in una fascia larga attorno all'ottimo, scende a 0 ai limiti
 function finestra(x,lo,opt,hi){ if(x<=lo||x>=hi) return 0; return x<opt?clamp((x-lo)/((opt-lo)*.6)):clamp((hi-x)/((hi-opt)*.6)); }
 function banda(x,lo,hi){ const m=(hi-lo)*.25; if(x<lo-m||x>hi+m) return 0; if(x<lo) return (x-(lo-m))/m; if(x>hi) return ((hi+m)-x)/m; return 1; }
@@ -61,15 +67,18 @@ function create(st0){ st0=st0||{};
     detrito:st0.detrito!=null?st0.detrito:.3, sporcoVetro:st0.sporcoVetro||.1, collemboli:st0.collemboli||0,
     muffa:{terra:st0.muffa||0, vetro:0, foglie:0}, marciume:0,
     piante:{}, lux:0, luxMed:{ombra:.15,mezza:1.2,sole:3.5}[st0.posizione||'mezza'], dli:0, rh:.9, e:0, letargo:false, log:[],
+    brucatori:clamp(st0.brucatori||0), mangiato:0, mangiatoUltimo:0, potaFino:-99, potato:0, ultimaPota:null, copertura:0,
     apertoFino:0,              // ogni cura apre il barattolo per CURA_ORE ore (si versa, si pulisce): è lì che l'acqua esce
     Tmax:st0.T!=null?st0.T:22, Tstanza:st0.T!=null?st0.T:22, Tsum:0, Tn:0
   };
-  (st0.piante||['muschio']).forEach(p=>{ if(PIANTE[p]) S.piante[p]={vigore:.7,crescita:0}; });
+  (st0.piante||['muschio']).forEach(p=>{ if(PIANTE[p]) S.piante[p]=nuovaPianta(p,.7); });
   S.acqua.aria=absHum(eSat(S.T.aria)*.9,S.T.aria)*JAR.aria_m3;
 
   const CURA_ORE=6;                                                          // un giorno del vaso (6 h reali): il tappo resta aperto dopo una cura
   function aperto(){ return S.tappo==='aperto'||S.t<S.apertoFino; }
-  function ventilazione(){ return aperto()?.07:.0005; }                     // g/(h·hPa) di scambio con la stanza (taratura in modello.md)
+  function copertura(){ let c=0; Object.keys(S.piante).forEach(p=>{ c+=S.piante[p].biomassa; }); return c; }
+  function giungla(){ return clamp((copertura()-GIUNGLA_DA)/(GIUNGLA_PIENA-GIUNGLA_DA)); }
+  function ventilazione(){ return (aperto()?.07:.0005)*(1-.4*giungla()); }   // fogliame fitto = aria ferma                     // g/(h·hPa) di scambio con la stanza (taratura in modello.md)
 
   function sub(dt,A){
     // --- temperatura: la stanza trascina il barattolo (τ≈1 h); il sole lo scalda da dentro (serra, +8 °C a pieno sole, stima)
@@ -83,7 +92,7 @@ function create(st0){ st0=st0||{};
     const wet=Math.max(wetS, wetT*.6);
     const gS=(.05+.1*A.sole)*wet, eS=eSat(S.T.suolo);                       // superficie bagnata → aria
     const gX=ventilazione(), eX=eSat(A.T)*A.rh;                              // scambio con la stanza
-    let traspira=0; Object.keys(S.piante).forEach(p=>{ traspira+=.01*S.piante[p].vigore*(.3+A.lux/10); });
+    let traspira=0; Object.keys(S.piante).forEach(p=>{ traspira+=.01*S.piante[p].vigore*(.3+A.lux/10)*(.5+2.5*S.piante[p].biomassa); });
     const gP=traspira*wetT;                                                  // traspirazione delle piante (dal terriccio)
     // il vetro scambia vapore solo se condensa (più freddo del punto di rugiada) o se ha già un velo da far evaporare
     const num0=gS*eS+gX*eX+gP*eSat(S.T.aria), den0=gS+gX+gP; let e=num0/den0; const gZ={};
@@ -116,10 +125,10 @@ function create(st0){ st0=st0||{};
     const fT=clamp(1-Math.abs(S.T.aria-25)/20);
     const rhTerra=Math.max(S.rh, wetS>.5?.98:0), rhVetro=Math.max(S.rh, S.film.basso>.3?.98:0), rhFoglie=S.rh;
     const stressP=Object.keys(S.piante).length?1-Object.keys(S.piante).reduce((a,p)=>a+S.piante[p].vigore,0)/Object.keys(S.piante).length:0;
-    const aria=ap?1:0, uv=A.sole;
-    const zone={terra:[rhTerra,.4+.6*S.detrito,0], vetro:[rhVetro,.25+.75*S.sporcoVetro,uv], foglie:[rhFoglie,.2+.8*stressP,uv*.5]};
+    const aria=ap?1:0, uv=A.sole, gj=giungla();
+    const zone={terra:[rhTerra,.4+.6*S.detrito,0], vetro:[rhVetro,.25+.75*S.sporcoVetro,uv], foglie:[rhFoglie,Math.min(1,.2+.8*stressP+.4*gj),uv*.5]};
     Object.keys(zone).forEach(z=>{ const [rh,sub,luce]=zone[z]; const fRH=clamp((rh-.8)/.17);
-      const cresce=.02*fRH*fT*sub*(1-.3*aria);
+      const cresce=.02*fRH*fT*sub*(1-.3*aria)*(1+.6*gj);
       const muore=.004+.02*aria*(1-fRH)+.035*S.collemboli+.01*luce;
       S.muffa[z]=clamp(S.muffa[z]+(cresce*(1-S.muffa[z])-muore*S.muffa[z])*dt); });
     // collemboli: stanno in quasi ogni terriccio e arrivano da soli dove c'è muffa e umido (da 0 a 0,1 in ~8 giorni reali); poi crescono col cibo, calano se secco
@@ -127,21 +136,32 @@ function create(st0){ st0=st0||{};
     if(S.collemboli<.1&&S.muffa.terra>.5&&S.rh>.8) S.collemboli=clamp(S.collemboli+.0004*dt);
     if(S.collemboli>0) S.collemboli=clamp(S.collemboli+(.004*cibo*(S.rh>.7?1:0)-.003*(S.rh<.6?1:0))*dt,0,1);
     // --- piante
+    const cop=copertura(); S.copertura=cop;
+    Object.keys(S.piante).forEach(p=>{ const q=S.piante[p]; let sh=0; Object.keys(S.piante).forEach(o=>{ if(BIO[o].alt>BIO[p].alt) sh+=S.piante[o].biomassa; });
+      q.ombra=clamp(1.4*Math.max(0,sh-.1)+2*Math.max(0,cop-SOFFOCO)); });                    // chi sta sotto una chioma fitta vede poca luce; sopra 0,8 di copertura ombreggia anche la più alta
     Object.keys(S.piante).forEach(p=>{ const P=PIANTE[p], q=S.piante[p];
-      const lm=S.luxMed*2.2;                                                  // media giornaliera → equivalente di picco (giorno ≈ 11 h su 24 con profilo a seno)
+      const lm=S.luxMed*2.2*(1-.7*q.ombra);                                                  // media giornaliera → equivalente di picco (giorno ≈ 11 h su 24 con profilo a seno)
       const fL=P.lux[1]>0?finestra(lm,P.lux[0]*.5,P.lux[1],P.lux[2]):(lm<P.lux[2]?1:0);
       const fR=banda(S.rh,P.rh[0],P.rh[1]), fW=banda(wetT,P.acqua[0],P.acqua[1]), fTp=finestra(S.T.aria,P.T[0],P.T[1],P.T[2]);
       let bene=Math.min(fL,fR,fW,fTp);
       if(p==='fungo') bene*=.3+.7*S.detrito;
       if(p==='succulenta'&&(S.rh>.8||S.marciume>.3)) bene=0;
-      let dv=(bene-q.vigore)/48; if(S.marciume>.5) dv-=.01; if(S.muffa.foglie>.6) dv-=.004;
-      q.vigore=clamp(q.vigore+dv*dt); q.crescita+=Math.max(0,bene)*q.vigore*dt*(A.lux>0?1:.2); });
+      let dv=(bene-q.vigore)/48; if(S.marciume>.5) dv-=.01; if(S.muffa.foglie>.6) dv-=.004; if(p!=='fungo') dv-=.01*q.ombra;
+      q.vigore=clamp(q.vigore+dv*dt); q.crescita+=Math.max(0,bene)*q.vigore*dt*(A.lux>0?1:.2);
+      if(!S.letargo){ const gr=BIO[p].r*Math.max(0,bene)*q.vigore*q.biomassa*Math.max(0,1-cop)*(A.lux>0?1:.2);
+        const perso=q.biomassa*(.004*(1-q.vigore)+.02*q.ombra*q.ombra)*(p==='fungo'?.5:1);   // foglie ingiallite e secche
+        q.biomassa=Math.max(BIO_MIN,q.biomassa+(gr-perso)*dt); S.detrito=clamp(S.detrito+perso*.6*dt); } });
+    // --- brucatori: lumache e coleotteri mangiano foglie e germogli (risposta satura: poca pianta = poco morso); ripartono per appetibilità×biomassa; le radici ricacciano (BIO_MIN)
+    if(!S.letargo&&S.brucatori>0&&cop>BIO_MIN*1.5){ const w={}; let wt=0; Object.keys(S.piante).forEach(p=>{ w[p]=BIO[p].pal*S.piante[p].biomassa; wt+=w[p]; });
+      let x_tot=0; const eat=Math.min(cop-BIO_MIN,BRUCA_G*S.brucatori*cop/(cop+.5)*dt);
+      if(wt>0) Object.keys(w).forEach(p=>{ const q=S.piante[p], x=Math.min(q.biomassa-BIO_MIN,eat*w[p]/wt); if(x>0){ q.biomassa-=x; S.mangiatoUltimo+=x; x_tot+=x; S.detrito=clamp(S.detrito+x*.15); } });   // 15 % torna come feci
+      S.mangiato+=x_tot; }
     // --- letargo (docs/DECISIONI.md §1): il vaso dorme, i valori scendono fino a una soglia e lì si fermano
     if(S.letargo){ S.acqua.terriccio=Math.max(S.acqua.terriccio,JAR.cap.terriccio*.3); S.acqua.superficie=Math.max(S.acqua.superficie,JAR.cap.superficie*.2);
       Object.keys(S.muffa).forEach(z=>{ S.muffa[z]=Math.min(S.muffa[z],.5); }); Object.keys(S.piante).forEach(p=>{ S.piante[p].vigore=Math.max(S.piante[p].vigore,.4); }); }
     S.t+=dt; }
 
-  function step(ore,amb){ ore=ore||1; let left=ore; S.Tmax=S.T.aria; S.Tsum=0; S.Tn=0; while(left>1e-9){ const dt=Math.min(.25,left); const A=typeof amb==='function'?amb(S.t):(amb||ambienteDi(S.t,{posizione:S.posizione}));
+  function step(ore,amb){ ore=ore||1; let left=ore; S.mangiatoUltimo=0; S.Tmax=S.T.aria; S.Tsum=0; S.Tn=0; while(left>1e-9){ const dt=Math.min(.25,left); const A=typeof amb==='function'?amb(S.t):(amb||ambienteDi(S.t,{posizione:S.posizione}));
       if(A.Tfinestra==null) A.Tfinestra=A.T; S.letargo=!!A.letargo; sub(dt,A); left-=dt; } if(S.Tn>0) S.Tstanza=S.Tsum/S.Tn; return view(); }
 
   function act(a,arg){ a=a||{}; if(typeof a==='string') a={tipo:a,v:arg}; const t=a.tipo;
@@ -152,35 +172,47 @@ function create(st0){ st0=st0||{};
     else if(t==='nutri'){ S.detrito=clamp(S.detrito+(a.v!=null?a.v:.15)); S.log.push([S.t,'nutri']); }   // materia organica: cibo per il suolo, ma anche per la muffa
     else if(t==='pulisci'){ const z=a.zona; if(!z||z==='vetro'){ S.muffa.vetro*=.1; S.sporcoVetro*=.2; JAR.zone.forEach(k=>{ S.film[k]*=.2; }); } if(!z||z==='terra'){ S.muffa.terra*=.4; S.detrito*=.7; } if(z==='foglie'){ S.muffa.foglie*=.2; } S.log.push([S.t,'pulisci',z||'tutto']); }
     else if(t==='asciuga'){ const q=clamp(a.v!=null?a.v:.5), zz=a.zona?[a.zona]:JAR.zone; zz.forEach(z=>{ S.film[z]*=(1-q); }); S.acqua.superficie=Math.max(0,S.acqua.superficie-JAR.filmCap*q*.2*zz.length); }
+    else if(t==='brucatori'){ S.brucatori=clamp(a.v!=null?a.v:0); }
+    else if(t==='pota'){ S.apertoFino=Math.max(S.apertoFino,S.t+CURA_ORE); const ps=Object.keys(S.piante);   // per tagliare si toglie il tappo
+      if(S.t<S.potaFino){ S.ultimaPota={ok:false,motivo:'riposo',pianta:null,tagliato:0}; }
+      else if(!ps.length){ S.ultimaPota={ok:false,motivo:'vuoto',pianta:null,tagliato:0}; }
+      else { const id=a.zona&&S.piante[a.zona]?a.zona:ps.reduce((m,p)=>(S.piante[p].biomassa*(.5+BIO[p].alt)>S.piante[m].biomassa*(.5+BIO[m].alt)?p:m),ps[0]);   // la più invadente: biomassa pesata per altezza
+        const q=S.piante[id], cut=Math.min(POTA_MAX,Math.max(0,q.biomassa-BIO_MIN)*POTA_TAGLIO); q.biomassa-=cut; q.vigore=clamp(q.vigore-.05); S.detrito=clamp(S.detrito+cut*.3);
+        S.potaFino=S.t+POTA_ORE; S.potato+=cut; S.ultimaPota={ok:true,motivo:'',pianta:id,tagliato:Math.round(cut*100)/100}; S.log.push([S.t,'pota',id]); } }
     else if(t==='apri'){ S.tappo='aperto'; } else if(t==='chiudi'){ S.tappo='chiuso'; }
     else if(t==='sposta'){ S.posizione=a.v||'mezza'; }
     else if(t==='collemboli'){ S.collemboli=clamp(S.collemboli+(a.v!=null?a.v:.4)); }
-    else if(t==='pianta'){ if(PIANTE[a.v]&&!S.piante[a.v]) S.piante[a.v]={vigore:.6,crescita:0}; }
+    else if(t==='pianta'){ if(PIANTE[a.v]&&!S.piante[a.v]) S.piante[a.v]=nuovaPianta(a.v,.6); }
     else if(t==='togli'){ delete S.piante[a.v]; }
     else if(t==='imposta'){ const o=a.v||{};                                    // allineamento ai bisogni del motore (setNeeds, letargo, carte, notti): valori assoluti
       if(o.um!=null){ const u=clamp(o.um); S.acqua.terriccio=u*JAR.cap.terriccio; S.acqua.superficie=u*JAR.cap.superficie*.6; if(u<.9) S.acqua.drenaggio=Math.min(S.acqua.drenaggio,JAR.cap.drenaggio*.9); }
       if(o.muffa!=null){ const m=clamp(o.muffa); S.muffa.terra=m; S.muffa.vetro=Math.min(S.muffa.vetro,m); S.muffa.foglie=Math.min(S.muffa.foglie,m); }
-      if(o.tappo) S.tappo=o.tappo; if(o.posizione) S.posizione=o.posizione;
+      if(o.brucatori!=null) S.brucatori=clamp(o.brucatori); if(o.tappo) S.tappo=o.tappo; if(o.posizione) S.posizione=o.posizione;
       if(o.drenaggio!=null) S.acqua.drenaggio=clamp(o.drenaggio)*JAR.cap.drenaggio; if(o.collemboli!=null) S.collemboli=clamp(o.collemboli);
-      if(o.piante){ o.piante.forEach(p=>{ if(PIANTE[p]&&!S.piante[p]) S.piante[p]={vigore:.6,crescita:0}; }); Object.keys(S.piante).forEach(p=>{ if(!o.piante.includes(p)) delete S.piante[p]; }); } }
+      if(o.piante){ o.piante.forEach(p=>{ if(PIANTE[p]&&!S.piante[p]) S.piante[p]=nuovaPianta(p,.6); }); Object.keys(S.piante).forEach(p=>{ if(!o.piante.includes(p)) delete S.piante[p]; }); } }
     return view(); }
 
   function view(){ const r=x=>Math.round(x*100)/100; const cond={}; JAR.zone.forEach(z=>{ cond[z]=r(clamp(S.film[z]/JAR.filmCap)); });
     const rischio={}; Object.keys(S.muffa).forEach(z=>{ rischio[z]=r(S.muffa[z]); });
-    const piante={}; Object.keys(S.piante).forEach(p=>{ piante[p]={vigore:r(S.piante[p].vigore),crescita:r(S.piante[p].crescita)}; });
+    const piante={}; Object.keys(S.piante).forEach(p=>{ piante[p]={vigore:r(S.piante[p].vigore),crescita:r(S.piante[p].crescita),biomassa:r(S.piante[p].biomassa),ombra:r(S.piante[p].ombra)}; });
     return { t:S.t, tappo:S.tappo, aperto:aperto(), posizione:S.posizione,
       aria:{rh:r(S.rh), T:r(S.T.aria), rugiada:r(dewPoint(S.T.aria,Math.max(.01,S.rh))), Tmax:r(S.Tmax)}, stanza:{T:r(S.Tstanza)},
       T:{aria:r(S.T.aria), suolo:r(S.T.suolo), vetro:{tappo:r(S.T.vetro.tappo),alto:r(S.T.vetro.alto),medio:r(S.T.vetro.medio),basso:r(S.T.vetro.basso)}},
       acqua:{superficie:r(clamp(S.acqua.superficie/JAR.cap.superficie)), terriccio:r(clamp(S.acqua.terriccio/JAR.cap.terriccio)), drenaggio:r(clamp(S.acqua.drenaggio/JAR.cap.drenaggio)),
              ml:{superficie:r(S.acqua.superficie),terriccio:r(S.acqua.terriccio),drenaggio:r(S.acqua.drenaggio)}, ristagno:r(S.marciume)},
       condensa:cond, gocce:r(S.gocce), muffa:rischio, detrito:r(S.detrito), sporcoVetro:r(S.sporcoVetro), collemboli:r(S.collemboli),
-      luce:{lux:r(S.lux), dli:r(S.dli)}, piante, letargo:S.letargo }; }
+      luce:{lux:r(S.lux), dli:r(S.dli)}, piante, letargo:S.letargo,
+      copertura:r(copertura()), giungla:r(giungla()), soffocato:copertura()>=SOFFOCO,
+      brucatori:r(S.brucatori), mangiato:r(S.mangiato), mangiatoUltimo:r(S.mangiatoUltimo), potato:r(S.potato), pota:{pronta:S.t>=S.potaFino, attesa:r(Math.max(0,S.potaFino-S.t)), ultima:S.ultimaPota} }; }
 
   function save(){ return JSON.parse(JSON.stringify({v:1,S})); }
-  function load(o){ if(o&&o.S) Object.assign(S,JSON.parse(JSON.stringify(o.S))); return view(); }
+  function load(o){ if(o&&o.S){ Object.assign(S,JSON.parse(JSON.stringify(o.S)));
+      Object.keys(S.piante).forEach(p=>{ const q=S.piante[p]; if(q.biomassa==null) q.biomassa=BIO[p]?BIO[p].b0:.1; if(q.ombra==null) q.ombra=0; });   // salvataggi vecchi
+      if(S.potaFino==null) S.potaFino=-99; ['brucatori','mangiato','mangiatoUltimo','potato','copertura'].forEach(k=>{ if(S[k]==null) S[k]=0; }); }
+    return view(); }
   return {step,act,view,save,load,_S:S}; }
 
-const API={create,ambienteDi,eSat,dewPoint,absHum,PIANTE,JAR};
+const API={create,ambienteDi,eSat,dewPoint,absHum,PIANTE,JAR,BIO};
 if(typeof module!=='undefined'&&module.exports) module.exports=API;
 if(typeof window!=='undefined') window.__MICRO=API;
 })();
