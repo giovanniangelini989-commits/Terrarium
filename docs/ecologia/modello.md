@@ -134,3 +134,36 @@ Due livelli, perché il motore deve restare equivalente allo storico (`equiv.js`
 - Un `sim.step()` riuscito = `micro.step(6)` con ambiente `ambienteDi(ora, stagione del mese, posizione)`; l'ora parte dall'ora reale della prima partita (`ofs`).
 - **Letargo coerente** (DECISIONI §1): in assenza il microclima ha `letargo:true` e il ristagno del motore non supera 0,3. Corretto un difetto che c'era già: se una decisione fermava il recupero dei giorni di assenza, la cura che svegliava il vaso toglieva la protezione ai giorni ancora da recuperare (il vaso poteva spegnersi «per assenza»; era la causa del fallimento casuale di `gametest.js`).
 
+
+## 9. Giungla: biomassa, spazio, brucatori, pota (27 ottobre 2026)
+
+Approvato da Giovanni: le piante crescono a dismisura se nessuno le tiene a bada. Prima `crescita` era un contatore senza tetto.
+
+**Variabili.** Per pianta `biomassa` (copertura 0–1, minimo 0,02 perché le radici ricacciano) e `ombra` (0–1). Per il vaso `copertura = Σ biomassa`, `giungla = clamp((copertura − 0,7)/0,3)`, `soffocato = copertura ≥ 0,8`.
+
+**Equazioni (per ora, passo 0,25 h).**
+- Crescita logistica: `db = r·bene·vigore·b·(1 − copertura)`; di notte ×0,2. Lo spazio è comune: più piante, meno spazio per tutte (Lotka-Volterra con competizione uguale). `bene` è la finestra di benessere del §5.
+- `r` per ora: felce 0,4, muschio 0,2, fungo 0,2, carnivora 0,15, succulenta 0,1. Biomassa iniziale: muschio 0,15, felce 0,08, carnivora e succulenta 0,06, fungo 0,04.
+- Ombra: `ombra = 1,4·max(0, Σ b delle piante più alte − 0,1) + 2·max(0, copertura − 0,8)`. Altezze: felce 1, carnivora 0,55, succulenta 0,5, fungo 0,25, muschio 0,1. Sotto 0,1 di chioma non c'è ombra. Effetto: luce ×(1 − 0,7·ombra) nella finestra di luce, `vigore −0,01·ombra` all'ora (fungo escluso: vive al buio).
+- Senescenza: `perso = b·(0,004·(1 − vigore) + 0,02·ombra²)` all'ora (metà per i funghi): le foglie ingiallite cadono e diventano `detrito` (60 % del perso). Più detrito = più cibo per la muffa sulla terra.
+- Fogliame fitto: traspirazione ×(0,5 + 2,5·b) per pianta (più umidità e più condensa), ventilazione ×(1 − 0,4·giungla) (aria ferma), muffa sulle foglie e sulla terra ×(1 + 0,6·giungla), substrato della muffa sulle foglie +0,4·giungla.
+- Brucatori (lumache, coleotteri): `mangiato = 0,08·brucatori·cop/(cop + 0,5)` all'ora, ripartito per `appetibilità × biomassa` (felce 1, succulenta 0,6, muschio e carnivora 0,3, fungo 0,2); il 15 % torna come feci (detrito). Risposta satura: pochi morsi se c'è poca pianta, quindi i brucatori non estinguono mai del tutto la copertura.
+- Pota: taglia il 40 % della biomassa della pianta più invadente (peso: `b·(0,5 + altezza)`), max 0,3; vigore −0,05; 30 % del tagliato → detrito. Una al giorno del vaso (6 h), apre il tappo come ogni cura.
+- Letargo: biomassa congelata, niente brucatura.
+
+**Numeri (muschio + felce, mezz'ombra, tappo chiuso; 1 giorno del vaso = 6 h).**
+| Brucatori | Giungla dal giorno | Soffocato dal giorno | Copertura a 24 giorni |
+|---|---|---|---|
+| 0 | 6 | 8 | 0,87 (muschio morto all'ombra) |
+| 0,1 | 10 | 19 | 0,8 |
+| 0,25 | mai | mai | 0,43 (equilibrio 0,4–0,5) |
+| 1 | mai | mai | 0,04 (spelato) |
+Pota un giorno su due dal 5°: copertura 0,47–0,6 stabile.
+
+**Semplificazioni e perché.**
+1. **Il tempo è compresso**: una felce vera in terrario raddoppia in settimane; qui in ~3 giorni del vaso (18 h). Le `r` sono scelte perché il vaso soffochi in circa 8 giorni del vaso, in linea col ciclo di 7: è una scelta di gioco, non botanica.
+2. Una sola altezza per tipo e competizione solo per luce (ombra) e spazio; niente competizione per acqua/nutrienti (nel barattolo piccolo la luce è il fattore che soffoca davvero: etiolamento e foglie basse che ingialliscono sono il segno classico del terrario sovraffollato; nei terrari chiusi veri si pota ogni 2–4 settimane).
+3. `brucatori` è un indice unico: il motore lo ricava da lumache e coleotteri (proposta in CONTRATTI). Isopodi e collemboli mangiano detrito, non piante vive (già modellati come `collemboli`).
+4. La pota non conosce la «cura» del motore: il limite di una al giorno del vaso è del microclima, il costo in azioni lo decide il motore.
+
+**Cosa vede il giocatore.** La felce riempie il vaso e il muschio ingiallisce («è all'ombra della felce»); le foglie basse cadono, la terra sotto si copre di muffa, il vetro è sempre appannato («tante foglie respirano tanta acqua»). Le lumache spelano le foglie tenere; la forbice rimette ordine.
