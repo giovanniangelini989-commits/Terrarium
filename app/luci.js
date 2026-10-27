@@ -78,6 +78,7 @@ window.__LUCI=function(THREE,o){
   const shTight=blob([[0,.55],[.78,.5],[.9,.32],[1,0]],2.25,.005); // contatto stretto sotto il fondo
 
   // ---------- profondità di campo (passaggio unico, spegnibile) ----------
+  const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1); // Safari iOS: niente MSAA sul bersaglio con profondità (terra nera allo zoom)
   const size=new THREE.Vector2(); let rt=null;
   const quadCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1), quadScene=new THREE.Scene();
   const U={tCol:{value:null},tDep:{value:null},uRes:{value:new THREE.Vector2(1,1)},uNear:{value:.1},uFar:{value:60},uFocus:{value:5},uAp:{value:1.6},uMax:{value:8},uTime:{value:0},uVig:{value:.32},uGrain:{value:.018},uCA:{value:1.2},uInvVP:{value:new THREE.Matrix4()},uPrevVP:{value:new THREE.Matrix4()},uMB:{value:0},tB0:{value:null},tB1:{value:null},uBloom:{value:0}};
@@ -97,7 +98,7 @@ window.__LUCI=function(THREE,o){
     '   float z=lz(vUv+off), c=coc(z); float w=z>=z0-.05?1.:clamp(c/max(c0,1e-3),0.,1.);',
     '   acc+=texture2D(tCol,vUv+off)*w; wsum+=w; }',
     ' }',
-    ' gl_FragColor=acc/wsum;',
+    ' gl_FragColor=acc/wsum; if(any(isnan(gl_FragColor))||any(isinf(gl_FragColor))) gl_FragColor=texture2D(tCol,vUv);',  // le GPU Apple disegnano NaN come nero
     ' if(uMB>0.){',   // sfocatura di movimento della camera: riproietta il punto con la camera del fotogramma prima
     '  vec4 wp=uInvVP*vec4(vUv*2.-1.,texture2D(tDep,vUv).x*2.-1.,1.); wp/=wp.w; vec4 pp=uPrevVP*wp; vec2 vel=(vUv-(pp.xy/pp.w*.5+.5))*uMB;',
     '  float lp=length(vel*uRes); if(lp>1.5&&lp<uRes.y*.25){ vel*=min(1.,uRes.y*.035/lp); vec4 mb=vec4(0.);',
@@ -105,6 +106,7 @@ window.__LUCI=function(THREE,o){
     '   gl_FragColor=mix(gl_FragColor,mb/8.,clamp((lp-1.5)/3.,0.,1.)); }',
     ' }',
     ' if(uBloom>0.){ vec3 bl=(texture2D(tB0,vUv).rgb*.7+texture2D(tB1,vUv).rgb*1.1)*uBloom; gl_FragColor.rgb+=bl; gl_FragColor.a=min(1.,gl_FragColor.a+max(bl.r,max(bl.g,bl.b))); }',
+    ' if(any(isnan(gl_FragColor))) gl_FragColor=vec4(0.,0.,0.,0.);',
     ' #include <tonemapping_fragment>',
     ' #include <colorspace_fragment>',
     ' float v=1.-uVig*smoothstep(.25,.95,length(dc*vec2(uRes.x/uRes.y,1.))*1.25);',            // vignettatura (scurisce anche la foto di fondo, alfa premoltiplicato)
@@ -135,7 +137,7 @@ window.__LUCI=function(THREE,o){
   const quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),dofMat); quad.frustumCulled=false; quadScene.add(quad);
   function ensureRT(){ renderer.getDrawingBufferSize(size); if(rt&&rt.width===size.x&&rt.height===size.y) return;
     if(rt) rt.dispose(); const dt=new THREE.DepthTexture(size.x,size.y); dt.type=THREE.UnsignedIntType;
-    rt=new THREE.WebGLRenderTarget(size.x,size.y,{type:THREE.HalfFloatType,samples:lv===0?4:2,depthTexture:dt}); U.uRes.value.set(size.x,size.y); }
+    rt=new THREE.WebGLRenderTarget(size.x,size.y,{type:THREE.HalfFloatType,samples:IOS?0:(lv===0?4:2),depthTexture:dt}); U.uRes.value.set(size.x,size.y); }
   // Gli ShaderMaterial senza colorspace_fragment (vetro, condensa) scrivono colori già «da schermo»: nel render target
   // lineare li riportiamo in lineare, alfa compreso (define LUCI_LIN): la fusione in lineare renderebbe il vetro lattiginoso.
   const linMats=new Set();
