@@ -20,6 +20,7 @@ window.__PIANTE=function(THREE,env){
   // crescita = ore «buone» accumulate dal microclima (≈ 12–19 al giorno reale con vigore alto)
   const GROW={muschio:c=>Math.min(1.3,c/190), felce:c=>Math.min(1.25,c/260), succulenta:c=>Math.min(1.2,c/600), carnivora:c=>Math.min(1.2,c/300), fungo:c=>c/60};
   const GMIN={muschio:.2, felce:.14, succulenta:.14, carnivora:.12, fungo:0};
+  const BREF={muschio:.35,felce:.45,succulenta:.2,carnivora:.25,fungo:.15}, BALT={muschio:.6,felce:1.15,succulenta:.85,carnivora:.95,fungo:.8};
   const KIND={felce:1,succulenta:2,carnivora:3,fungo:4};
   const CURL_FUN=5, CURL_MUS=5, CURL_SPK=6;
 
@@ -49,8 +50,9 @@ vec3 plantPos(Org o){ vec3 p=o.open<.5?mix(aP0,aP1,o.open*2.):mix(aP1,position,o
   return p; }
 `;
   const HEAD_INST=`uniform float uGrow,uTurgor,uDry,uRot,uWind,uTime; attribute float iGrow,iPhase; varying float vDry,vRot,vShade; varying vec3 vMW;\n`;
-  const FRAG_HEAD='uniform float uGloss,uTrans,uMut,uCharge,uTime,uFung; varying float vDry,vRot,vShade; varying vec3 vMW;\n';
+  const FRAG_HEAD='uniform float uGloss,uTrans,uMut,uCharge,uTime,uFung,uBite; varying float vDry,vRot,vShade; varying vec3 vMW;\n';
   const FRAG_COL=`#include <color_fragment>
+if(uBite>.001){ vec3 bq_=vMW*15.; vec2 bc_=floor(bq_.xz+bq_.y*.7); float bh_=fract(sin(dot(bc_,vec2(12.9898,78.233)))*43758.5453); vec2 bo_=vec2(fract(bh_*7.3),fract(bh_*3.7))*.5+.25; float bd_=length(fract(bq_.xz+bq_.y*.7)-bo_); if(bh_<uBite*.55&&bd_<.2+.14*fract(bh_*11.)) discard; }
 diffuseColor.rgb*=vShade;
 { float d=clamp(vDry,0.,1.); vec3 g=vec3(dot(diffuseColor.rgb,vec3(.3,.59,.11))); diffuseColor.rgb=mix(diffuseColor.rgb,mix(g,diffuseColor.rgb,.4)*vec3(1.3,1.08,.55)+vec3(.1,.07,0.),d); }
 diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.32,.28,.2),clamp(vRot,0.,1.));
@@ -83,7 +85,7 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
       if(!inst) sh.vertexShader=sh.vertexShader.replace('#include <beginnormal_vertex>','Org on_=org(); vec3 objectNormal=rotA(normal,aAxis,on_.bend);');
       sh.fragmentShader=sh.fragmentShader.replace('void main() {',FRAG_HEAD+'void main() {'); if(SC) sh.fragmentShader=sh.fragmentShader.replace('void main() {','uniform sampler2D mapSecco; uniform float uSeccoOn;\nvoid main() {').replace('vec4 sampledDiffuseColor = texture2D( map, vMapUv );','vec4 sampledDiffuseColor = texture2D(map,vMapUv); if(uSeccoOn>.5) sampledDiffuseColor=mix(sampledDiffuseColor,texture2D(mapSecco,vMapUv),smoothstep(.12,.65,vDry));'); sh.fragmentShader=sh.fragmentShader.replace('#include <color_fragment>',FRAG_COL).replace('#include <roughnessmap_fragment>',FRAG_ROUGH).replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n'+FRAG_MUT).replace('#include <lights_fragment_end>',FRAG_TRANS); };
     mat.customProgramCacheKey=()=>'pianta'+kind+(inst?'i':'o')+(mat.userData.secco?'s':'')+(mat.isMeshDepthMaterial?'d':'m'); return mat; }
-  function uniforms(){ return {uGrow:{value:0},uTurgor:{value:1},uDroop:{value:0},uDry:{value:0},uRot:{value:0},uDew:{value:0},uWind:{value:0},uTime:{value:0},uGloss:{value:0},uTrans:{value:0},uMut:{value:0},uCharge:{value:0},uFung:{value:0}}; }
+  function uniforms(){ return {uGrow:{value:0},uTurgor:{value:1},uDroop:{value:0},uDry:{value:0},uRot:{value:0},uDew:{value:0},uWind:{value:0},uTime:{value:0},uGloss:{value:0},uTrans:{value:0},uMut:{value:0},uCharge:{value:0},uFung:{value:0},uBite:{value:0}}; }
   function shadowed(mesh,U,kind,inst){ mesh.customDepthMaterial=patch(new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking}),U,kind,inst); mesh.castShadow=true; mesh.receiveShadow=true; return mesh; }
 
   // ---------- costruttore di geometria con attributi ----------
@@ -216,6 +218,12 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     if(FRA){ const m=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.85,side:THREE.DoubleSide,alphaTest:.5}), dm=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,alphaTest:.5}); FRA.when(()=>{ const M=FRA.maps(fotoLvl); if(M){ m.map=M.map; m.needsUpdate=true; dm.map=M.map; dm.needsUpdate=true; } });
       for(let k=0;k<2;k++){ const q=new THREE.Mesh(new THREE.PlaneGeometry(L*1.05,L*1.05*512/1816),m); q.customDepthMaterial=dm; q.position.y=.07; q.rotation.x=k?Math.PI/2:0; if(k) q.position.y=.06; ramG.add(q); } }
     ramG.position.set(.42,0,-.28); ramG.rotation.y=.5; return ramG; }
+  // lettiera: foglie morte sulla terra (detrito + giungla), istanze di una foglia di felce scontornata ingiallita
+  let litG=null, litN=0;
+  function lettiera(){ if(litG) return litG; litG=new THREE.Group(); const N=48, mat=new THREE.MeshStandardMaterial({color:0x7a5426,roughness:.9,side:THREE.DoubleSide,alphaTest:.5}); if(FF) fotoBind(mat,FF,null); else mat.alphaTest=0;
+    const geo=new THREE.PlaneGeometry(.2,.2).rotateX(-Math.PI/2), im=new THREE.InstancedMesh(geo,mat,N), r=rngS(77), M=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), sc=new THREE.Vector3(), ps=new V3();
+    for(let i=0;i<N;i++){ let x,z,t=0; do{ const a=r()*6.283, d=Math.sqrt(r())*.82; x=Math.cos(a)*d; z=Math.sin(a)*d; t++; }while(t<20&&Math.hypot(x,z)<.2); e.set((r()-.5)*.35,r()*6.283,(r()-.5)*.35); q.setFromEuler(e); const k=.7+r()*.8; sc.set(k,1,k); ps.set(x,.015+r()*.03,z); M.compose(ps,q,sc); im.setMatrixAt(i,M); }
+    im.count=0; im.receiveShadow=true; litG.add(im); litG.userData.im=im; litG.userData.N=N; return litG; }
   const id_=o=>o.id;
   function mk(id,slot,seed){ const g=new THREE.Group(), r=rngS(seed), [sx,sz]=SLOTS[slot%SLOTS.length]; g.position.set(sx,.1,sz); const U=uniforms(), meshes=[]; let emiss=null; U.uFung.value=id==='fungo'?1:0;
     if(id==='muschio') meshes.push(...buildMuschio(g,r,U));
@@ -228,8 +236,8 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
       upd(){}, // compatibilità con il vecchio ciclo di v3d: tutto passa da tick()
       dispose(){ meshes.forEach(m=>{ m.geometry.dispose(); [].concat(m.material).forEach(x=>x.dispose()); if(m.customDepthMaterial) m.customDepthMaterial.dispose(); }); } };
     // densità: copie satellite (stessa geometria e materiali, ruotate e scalate) che compaiono con la maturità della specie
-    if(id!=='muschio'){ o.sat=[]; for(let k=0;k<2;k++){ let lx=.3,lz=.3; for(let t=0;t<30;t++){ const a=r()*6.283, d=.3+r()*.42, wx=Math.cos(a)*d, wz=Math.sin(a)*d; lx=wx-sx; lz=wz-sz; if(Math.hypot(wx,wz)>.28&&SLOTS.every(([ox,oz],j)=>j===slot%SLOTS.length||Math.hypot(wx-ox,wz-oz)>.16)) break; }
-        const ry=r()*6.283, sc=.78+r()*.4; meshes.slice().forEach(m=>{ const c=m.clone(); c.customDepthMaterial=m.customDepthMaterial; c.position.set(lx,0,lz); c.rotation.y=ry; c.scale.setScalar(sc); c.userData.at=.7+.4*k; c.visible=false; g.add(c); o.sat.push(c); }); } }
+    if(id!=='muschio'){ o.sat=[]; for(let k=0;k<4;k++){ let lx=.3,lz=.3; for(let t=0;t<30;t++){ const a=r()*6.283, d=.3+r()*.42, wx=Math.cos(a)*d, wz=Math.sin(a)*d; lx=wx-sx; lz=wz-sz; if(Math.hypot(wx,wz)>.28&&SLOTS.every(([ox,oz],j)=>j===slot%SLOTS.length||Math.hypot(wx-ox,wz-oz)>.16)) break; }
+        const ry=r()*6.283, sc=.78+r()*.4; meshes.slice().forEach(m=>{ const c=m.clone(); c.customDepthMaterial=m.customDepthMaterial; c.position.set(lx,0,lz); c.rotation.y=ry; c.scale.setScalar(sc); c.userData.at=.7+.4*k; c.userData.rel=.3+.22*k; c.userData.gj=k>=2; c.visible=false; g.add(c); o.sat.push(c); }); } }
     objs[id]=o; return o; }
 
   // ---------- stato dal microclima → bersagli visivi ----------
@@ -243,17 +251,24 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     const droop=Math.max(clamp((.55-vig)/.4),clamp((.5-tur)/.5)*.8), dry=clamp((.55-tur)/.45)*(1-clamp(rist-.3)*2);
     const rotC=id==='succulenta'?(rist>.3||rh>.8?1:0):clamp((rist-.3)/.5), rot=rotC*clamp((.85-vig)/.6);
     const dew=id==='carnivora'?clamp((rh-.6)/.3)*tur:0, gloss=clamp((vig-.65)/.25)*clamp(tur), wind=aperto?1:.12;
-    return {grow,vig,tur,droop,dry,rot,dew,gloss,wind,mut:clamp((v.R-.12)/.6),E:clamp((v.E||0)/100)}; }
+    // giungla (modello §9): biomassa → volume e numero di organi; ombra → giallo e afflosciamento; morsi
+    const mg=m&&m.piante?m:null, bio0=f.biomassa!=null?f.biomassa:q&&q.biomassa!=null?q.biomassa:null, rel=bio0==null?.5:clamp(bio0/(BREF[id]||.4)), ombra=f.ombra!=null?f.ombra:q&&q.ombra!=null?q.ombra:0;
+    const gg=forced&&forced.giungla!=null?forced.giungla:mg&&mg.giungla!=null?mg.giungla:0, sof=forced&&forced.soffocato!=null?forced.soffocato:mg?!!mg.soffocato:false;
+    const bite=f.bite!=null?f.bite:mg&&mg.mangiatoUltimo>0?clamp(mg.mangiatoUltimo*40+.25):0;
+    const growV=Math.min(1.35,grow*(.6+.55*rel)*(1+.12*gg)), volY=(.62+.62*rel+.2*gg)*(BALT[id]||1), volX=.72+.5*rel+.25*gg;
+    const sh=clamp(ombra*1.2), dryO=id==='muschio'&&(sof||ombra>.55)?clamp((ombra-.25)/.4):sh*.7;
+    return {grow:growV,vig,tur:tur*(1-.35*sh),droop:Math.max(droop,sh*.6),dry:Math.max(dry,dryO),rot,dew,gloss:gloss*(1-sh),wind,mut:clamp((v.R-.12)/.6),E:clamp((v.E||0)/100),volY,volX,rel,gg,bite,ombra}; }
   const ease=(a,b,k)=>a+(b-a)*Math.min(1,k);
   function tick(dt,t,v,plantObjs){
     if(t-lastPull>.5){ lastPull=t; try{ micro=A.micro?A.micro():null; }catch(e){ micro=null; } }
     Object.keys(objs).forEach(id=>{ if(!plantObjs[id]||plantObjs[id]!==objs[id]){ objs[id].dispose(); delete objs[id]; } });
+    if(litG){ const gg=forced&&forced.giungla!=null?forced.giungla:micro&&micro.giungla||0, de=forced&&forced.detrito!=null?forced.detrito:micro&&micro.detrito||0, want=Math.round(litG.userData.N*clamp(de*1.3+gg*.7)); litN=ease(litN,want,dt*3); litG.userData.im.count=Math.round(litN); }
     v.plants.forEach(p=>{ const o=objs[p.id]; if(!o) return; o.g.position.y=S.soilTop; const T=target(p.id,p,v,micro); let s=o.st;
       if(!s){ s=o.st=Object.assign({},T); }
-      else { s.grow=ease(s.grow,T.grow,dt*.6); s.vig=ease(s.vig,T.vig,dt*.5); s.tur=ease(s.tur,T.tur,T.tur>s.tur?dt*.45:dt*.07); s.droop=ease(s.droop,T.droop,T.droop<s.droop?dt*.4:dt*.08); s.dry=ease(s.dry,T.dry,T.dry<s.dry?dt*.35:dt*.06); s.rot=ease(s.rot,T.rot,dt*.08); s.dew=ease(s.dew,T.dew,dt*.3); s.gloss=ease(s.gloss,T.gloss,dt*.4); s.wind=ease(s.wind,T.wind,dt*.5); s.mut=ease(s.mut,T.mut,dt*.5); s.E=ease(s.E,T.E,dt*.8); }
-      const U=o.U; U.uGrow.value=s.grow; U.uTurgor.value=s.tur; U.uDroop.value=s.droop; U.uDry.value=s.dry; U.uRot.value=s.rot; U.uDew.value=s.dew; U.uGloss.value=s.gloss; U.uWind.value=s.wind; U.uTime.value=t; U.uMut.value=s.mut; U.uCharge.value=s.E;
-      if(o.mag) o.mag.forEach(c=>{ const need=id_(o)==='muschio'?.4:id_(o)==='succulenta'?.35:id_(o)==='fungo'?.15:id_(o)==='carnivora'?.25:.45, k=clamp((s.mut-need)/.25)*clamp(s.grow*1.2); c.visible=k>.02&&s.vig>.15; if(c.visible){ c.scale.setScalar(.35+.65*k); c.userData.m.emissiveIntensity=(1.4+1.8*s.E)*(1+.15*Math.sin(t*2.1+o.g.position.x*9)); } });
-      if(o.sat){ o.sat.forEach(q=>{ q.visible=s.grow>=q.userData.at&&s.vig>.12; }); } }); }
+      else { s.grow=ease(s.grow,T.grow,dt*.6); s.vig=ease(s.vig,T.vig,dt*.5); s.tur=ease(s.tur,T.tur,T.tur>s.tur?dt*.45:dt*.07); s.droop=ease(s.droop,T.droop,T.droop<s.droop?dt*.4:dt*.08); s.dry=ease(s.dry,T.dry,T.dry<s.dry?dt*.35:dt*.06); s.rot=ease(s.rot,T.rot,dt*.08); s.dew=ease(s.dew,T.dew,dt*.3); s.gloss=ease(s.gloss,T.gloss,dt*.4); s.wind=ease(s.wind,T.wind,dt*.5); s.mut=ease(s.mut,T.mut,dt*.5); s.E=ease(s.E,T.E,dt*.8); s.volY=ease(s.volY,T.volY,T.volY<s.volY-.03?dt*9:dt*.5); s.volX=ease(s.volX,T.volX,T.volX<s.volX-.03?dt*9:dt*.5); s.rel=T.rel; s.gg=ease(s.gg,T.gg,dt*.5); s.ombra=T.ombra; s.bite=ease(s.bite||0,T.bite,T.bite>(s.bite||0)?dt*3:dt*.05); }
+      const U=o.U; U.uGrow.value=s.grow; U.uTurgor.value=s.tur; U.uDroop.value=s.droop; U.uDry.value=s.dry; U.uRot.value=s.rot; U.uDew.value=s.dew; U.uGloss.value=s.gloss; U.uWind.value=s.wind; U.uTime.value=t; U.uMut.value=s.mut; U.uCharge.value=s.E; U.uBite.value=(o.id==='muschio'||o.id==='fungo')?0:s.bite||0; o.g.scale.set(s.volX,s.volY,s.volX);
+      if(o.mag) o.mag.forEach(c=>{ const need=(id_(o)==='muschio'?.4:id_(o)==='succulenta'?.35:id_(o)==='fungo'?.15:id_(o)==='carnivora'?.25:.45)-.22*(s.gg||0), k=clamp((s.mut-need)/.25)*clamp(s.grow*1.2); c.visible=k>.02&&s.vig>.15; if(c.visible){ c.scale.setScalar(.35+.65*k); c.userData.m.emissiveIntensity=(1.4+1.8*s.E)*(1+.15*Math.sin(t*2.1+o.g.position.x*9)); } });
+      if(o.sat){ o.sat.forEach(q=>{ q.visible=(s.rel>=q.userData.rel||(q.userData.gj&&s.gg>.35))&&s.grow>=.5&&s.vig>.12; }); } }); }
   // QA e test: forza gli stati (force(null) toglie), settle() salta le transizioni
   function force(st){ forced=st; lastPull=-1; }
   function settle(){ Object.values(objs).forEach(o=>{ o.st=null; }); }
@@ -265,5 +280,6 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     const n=g.attributes.position.count, z=new Float32Array(n*3); ['aP0','aP1','aSpine'].forEach(k=>{ if(!g.attributes[k]) g.setAttribute(k,g.attributes.position); }); if(!g.attributes.aPivot) g.setAttribute('aPivot',new THREE.BufferAttribute(z,3)); if(!g.attributes.aAxis){ const ax=new Float32Array(n*3); for(let i=0;i<n;i++) ax[i*3]=1; g.setAttribute('aAxis',new THREE.BufferAttribute(ax,3)); } if(!g.attributes.aPhase) g.setAttribute('aPhase',new THREE.BufferAttribute(new Float32Array(n),1)); if(!g.attributes.aType) g.setAttribute('aType',new THREE.BufferAttribute(new Float32Array(n),1));
     [].concat(mesh.material).forEach(m=>patch(m,U,kind||1,false)); shadowed(mesh,U,kind||1,false);
     return {U,apply(s){ U.uGrow.value=s.grow; U.uTurgor.value=s.tur; U.uDroop.value=s.droop; U.uDry.value=s.dry; U.uRot.value=s.rot; U.uDew.value=s.dew; U.uGloss.value=s.gloss; U.uWind.value=s.wind; const mi=mesh.morphTargetDictionary; if(mi&&mesh.morphTargetInfluences){ if('uncurl' in mi) mesh.morphTargetInfluences[mi.uncurl]=clamp(s.grow); if('trap_close' in mi) mesh.morphTargetInfluences[mi.trap_close]=s.trap||0; } }}; }
-  return {mk,tick,force,settle,state,target,GROW,ADATTA,objs,level,rametto};
+  const gj=()=>forced&&forced.giungla!=null?forced.giungla:micro&&micro.giungla||0;
+  return {gj,lettiera,mk,tick,force,settle,state,target,GROW,ADATTA,objs,level,rametto};
 };
