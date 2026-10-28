@@ -255,8 +255,8 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     const mg=m&&m.piante?m:null, bio0=f.biomassa!=null?f.biomassa:q&&q.biomassa!=null?q.biomassa:null, rel=bio0==null?.5:clamp(bio0/(BREF[id]||.4)), ombra=f.ombra!=null?f.ombra:q&&q.ombra!=null?q.ombra:0;
     const gg=forced&&forced.giungla!=null?forced.giungla:mg&&mg.giungla!=null?mg.giungla:0, sof=forced&&forced.soffocato!=null?forced.soffocato:mg?!!mg.soffocato:false;
     const bite=f.bite!=null?f.bite:mg&&mg.mangiatoUltimo>0?clamp(mg.mangiatoUltimo*40+.25):0;
-    const growV=Math.min(1.35,grow*(.6+.55*rel)*(1+.12*gg)), volY=(.62+.62*rel+.2*gg)*(BALT[id]||1), volX=.72+.5*rel+.25*gg;
-    const sh=clamp(ombra*1.2), dryO=id==='muschio'&&(sof||ombra>.55)?clamp((ombra-.25)/.4):sh*.7;
+    const growV=Math.min(1.35,grow*(.6+.55*rel)*(1+.12*gg)), volY=(.62+.62*rel+.6*gg)*(BALT[id]||1), volX=.72+.4*rel+.12*gg;
+    const sh=clamp(ombra*1.2), dryO=id==='muschio'&&(sof||ombra>.55)?clamp((ombra-.25)/.4):sh*1.1;
     return {grow:growV,vig,tur:tur*(1-.35*sh),droop:Math.max(droop,sh*.6),dry:Math.max(dry,dryO),rot,dew,gloss:gloss*(1-sh),wind,mut:clamp((v.R-.12)/.6),E:clamp((v.E||0)/100),volY,volX,rel,gg,bite,ombra}; }
   const ease=(a,b,k)=>a+(b-a)*Math.min(1,k);
   function tick(dt,t,v,plantObjs){
