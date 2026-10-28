@@ -2968,18 +2968,29 @@ Org org(){ Org o; o.wilt=0.;
   o.open=smoothstep(.12,.5,u); float w=max(smoothstep(.62,.95,u),uDroop); o.sc=smoothstep(0.,.32,u)*(1.-.4*w); o.bend=-w*aSway*1.1; o.wilt=w;
 #endif
   return o; }
+// vetro: la fronda che arriva alla parete si schiaccia e risale lungo il vetro (curva morbida, niente spigoli); vale anche sotto la spalla che si stringe
+float wallR(float y){ float r=1.; r=mix(.9,r,smoothstep(.1,.4,y)); r=mix(r,.96,smoothstep(1.9,2.08,y)); r=mix(r,.82,smoothstep(2.08,2.18,y)); return r-.05; }
+vec3 glassW(vec3 w,out float k,out vec2 dir){ float r=length(w.xz); dir=r>1e-4?w.xz/r:vec2(1.,0.); float R=wallR(w.y), s=.1, e=r-(R-s); k=0.;
+  if(e<=0.) return w; float r2=R-s+s*(1.-exp(-e/s)); k=smoothstep(0.,.12,e); float lift=min((r-r2)*.55,.28); w.xz=dir*r2; w.y+=lift; return w; }
+vec3 glassP(vec3 p,out float k,out vec2 dir){ vec3 o=modelMatrix[3].xyz; return glassW(p+o,k,dir)-o; }
 vec3 plantPos(Org o){ vec3 p=o.open<.5?mix(aP0,aP1,o.open*2.):mix(aP1,position,o.open*2.-1.);
   float ap=smoothstep(.7,1.,o.open); float lat=mix(1.,1.-.45*uDroop,ap); if(aType==3.) lat=uDew*ap;
   p=aSpine+(p-aSpine)*lat; p=aPivot+(p-aPivot)*o.sc; p=aPivot+rotA(p-aPivot,aAxis,o.bend);
   float w=uWind*aSway*aSway*.011*o.sc; p+=aAxis*w*(sin(uTime*1.6+aPhase*6.28+aSway*2.)+.5*sin(uTime*2.7+aPhase*3.1))+vec3(0.,1.,0.)*w*.35*sin(uTime*2.1+aPhase*5.);
   return p; }
 `;
-  const HEAD_INST=`uniform float uGrow,uTurgor,uDry,uRot,uWind,uTime; attribute float iGrow,iPhase; varying float vDry,vRot,vShade; varying vec3 vMW;\n`;
+  const GLASS_FN=`// vetro: la fronda che arriva alla parete si schiaccia e risale lungo il vetro (curva morbida, niente spigoli); vale anche sotto la spalla che si stringe
+float wallR(float y){ float r=1.; r=mix(.9,r,smoothstep(.1,.4,y)); r=mix(r,.96,smoothstep(1.9,2.08,y)); r=mix(r,.82,smoothstep(2.08,2.18,y)); return r-.05; }
+vec3 glassW(vec3 w,out float k,out vec2 dir){ float r=length(w.xz); dir=r>1e-4?w.xz/r:vec2(1.,0.); float R=wallR(w.y), s=.1, e=r-(R-s); k=0.;
+  if(e<=0.) return w; float r2=R-s+s*(1.-exp(-e/s)); k=smoothstep(0.,.12,e); float lift=min((r-r2)*.55,.28); w.xz=dir*r2; w.y+=lift; return w; }
+vec3 glassP_(vec3 w,out float k,out vec2 dir){ return glassW(w,k,dir); }
+`;
+  const HEAD_INST=GLASS_FN+`uniform float uGrow,uTurgor,uDry,uRot,uWind,uTime; attribute float iGrow,iPhase; varying float vDry,vRot,vShade; varying vec3 vMW;\n`;
   const FRAG_HEAD='uniform float uGloss,uTrans,uMut,uCharge,uTime,uFung,uBite; varying float vDry,vRot,vShade; varying vec3 vMW;\n';
   const FRAG_COL=`#include <color_fragment>
 if(uBite>.001){ vec3 bq_=vMW*15.; vec2 bc_=floor(bq_.xz+bq_.y*.7); float bh_=fract(sin(dot(bc_,vec2(12.9898,78.233)))*43758.5453); vec2 bo_=vec2(fract(bh_*7.3),fract(bh_*3.7))*.5+.25; float bd_=length(fract(bq_.xz+bq_.y*.7)-bo_); if(bh_<uBite*.55&&bd_<.2+.14*fract(bh_*11.)) discard; }
 diffuseColor.rgb*=vShade;
-{ float d=clamp(vDry,0.,1.); vec3 g=vec3(dot(diffuseColor.rgb,vec3(.3,.59,.11))); diffuseColor.rgb=mix(diffuseColor.rgb,mix(g,diffuseColor.rgb,.4)*vec3(1.3,1.08,.55)+vec3(.1,.07,0.),d); }
+{ float d=clamp(vDry,0.,1.); vec3 g=vec3(dot(diffuseColor.rgb,vec3(.3,.59,.11))); diffuseColor.rgb=mix(diffuseColor.rgb,mix(g,diffuseColor.rgb,.3)*vec3(1.5,1.14,.4)+vec3(.12,.08,0.),d); }
 diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.32,.28,.2),clamp(vRot,0.,1.));
 { float nr=exp(-length(vMW.xz)*1.5); float l_=dot(diffuseColor.rgb,vec3(.3,.59,.11)); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.5,.4,.95)*(.25+l_*1.1),clamp(uMut*(.05+.2*nr),0.,.22)); }`;
   // mutazione: bagliore viola #A88BFF su bordi (fresnel) e venature, più forte vicino al sasso e con la carica; verde #7CF5C8 solo come riflesso freddo raro
@@ -3004,10 +3015,10 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     const begin=inst?(kind===CURL_SPK
       ?`float op=smoothstep(iGrow-.12,iGrow+.08,uGrow); float sc=op*(.6+.4*min(uGrow,1.)); vec3 transformed=position*sc; transformed.xz*=(.35+.65*uTurgor); transformed.y*=(.55+.45*uTurgor); transformed.x+=uWind*.0025*sin(uTime*2.2+iPhase*6.28)*position.y*25.; vDry=uDry; vRot=uRot; vShade=1.;`
       :`float op=smoothstep(iGrow-.12,iGrow+.08,uGrow); float sc=op*(.6+.4*min(uGrow,1.)); vec3 transformed=position*sc; transformed.y*=(.42+.58*uTurgor); vDry=uDry; vRot=uRot; vShade=.45+.55*clamp(position.y*.75+.45,0.,1.);`)
-      :`Org o_=org(); vec3 transformed=plantPos(o_); vDry=uDry+o_.wilt*.55; vRot=uRot+o_.wilt*.6; vShade=1.;`;
+      :`Org o_=org(); vec3 transformed=plantPos(o_); vDry=uDry+o_.wilt*.55; vRot=uRot+o_.wilt*.6; vShade=1.; { float gk_; vec2 gd_; transformed=glassP(transformed,gk_,gd_); vShade*=1.-.32*gk_; }`;
     mat.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,U); const SC=mat.userData.secco; if(SC){ sh.uniforms.mapSecco=SC; sh.uniforms.uSeccoOn=mat.userData.seccoOn; }
-      sh.vertexShader=sh.vertexShader.replace('void main() {','#define KIND '+kind+'\n'+head+'void main() {').replace('#include <begin_vertex>',begin+(inst?UV_PLANAR:'')).replace('#include <project_vertex>','#include <project_vertex>\n#ifdef USE_INSTANCING\nvMW=(modelMatrix*instanceMatrix*vec4(transformed,1.)).xyz;\n#else\nvMW=(modelMatrix*vec4(transformed,1.)).xyz;\n#endif');
-      if(!inst) sh.vertexShader=sh.vertexShader.replace('#include <beginnormal_vertex>','Org on_=org(); vec3 objectNormal=rotA(normal,aAxis,on_.bend);');
+      sh.vertexShader=sh.vertexShader.replace('void main() {','#define KIND '+kind+'\n'+head+'void main() {').replace('#include <begin_vertex>',begin+(inst?UV_PLANAR:'')).replace('#include <project_vertex>',inst?'vec4 mvPosition=vec4(transformed,1.); mvPosition=instanceMatrix*mvPosition; { float gk_; vec2 gd_; vec3 gw_=glassW((modelMatrix*mvPosition).xyz,gk_,gd_); mvPosition=viewMatrix*vec4(gw_,1.); vMW=gw_; vShade*=1.-.32*gk_; } gl_Position=projectionMatrix*mvPosition;':'#include <project_vertex>\nvMW=(modelMatrix*vec4(transformed,1.)).xyz;');
+      if(!inst) sh.vertexShader=sh.vertexShader.replace('#include <beginnormal_vertex>','Org on_=org(); vec3 objectNormal=rotA(normal,aAxis,on_.bend); { float gk_; vec2 gd_; glassP(plantPos(on_),gk_,gd_); objectNormal=normalize(mix(objectNormal,-vec3(gd_.x,.25,gd_.y),gk_*.7)); }');
       sh.fragmentShader=sh.fragmentShader.replace('void main() {',FRAG_HEAD+'void main() {'); if(SC) sh.fragmentShader=sh.fragmentShader.replace('void main() {','uniform sampler2D mapSecco; uniform float uSeccoOn;\nvoid main() {').replace('vec4 sampledDiffuseColor = texture2D( map, vMapUv );','vec4 sampledDiffuseColor = texture2D(map,vMapUv); if(uSeccoOn>.5) sampledDiffuseColor=mix(sampledDiffuseColor,texture2D(mapSecco,vMapUv),smoothstep(.12,.65,vDry));'); sh.fragmentShader=sh.fragmentShader.replace('#include <color_fragment>',FRAG_COL).replace('#include <roughnessmap_fragment>',FRAG_ROUGH).replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n'+FRAG_MUT).replace('#include <lights_fragment_end>',FRAG_TRANS); };
     mat.customProgramCacheKey=()=>'pianta'+kind+(inst?'i':'o')+(mat.userData.secco?'s':'')+(mat.isMeshDepthMaterial?'d':'m'); return mat; }
   function uniforms(){ return {uGrow:{value:0},uTurgor:{value:1},uDroop:{value:0},uDry:{value:0},uRot:{value:0},uDew:{value:0},uWind:{value:0},uTime:{value:0},uGloss:{value:0},uTrans:{value:0},uMut:{value:0},uCharge:{value:0},uFung:{value:0},uBite:{value:0}}; }
@@ -3181,8 +3192,8 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     const gg=forced&&forced.giungla!=null?forced.giungla:mg&&mg.giungla!=null?mg.giungla:0, sof=forced&&forced.soffocato!=null?forced.soffocato:mg?!!mg.soffocato:false;
     const bite=f.bite!=null?f.bite:mg&&mg.mangiatoUltimo>0?clamp(mg.mangiatoUltimo*40+.25):0;
     const growV=Math.min(1.35,grow*(.6+.55*rel)*(1+.12*gg)), volY=(.62+.62*rel+.6*gg)*(BALT[id]||1), volX=.72+.4*rel+.12*gg;
-    const sh=clamp(ombra*1.2), dryO=id==='muschio'&&(sof||ombra>.55)?clamp((ombra-.25)/.4):sh*1.1;
-    return {grow:growV,vig,tur:tur*(1-.35*sh),droop:Math.max(droop,sh*.6),dry:Math.max(dry,dryO),rot,dew,gloss:gloss*(1-sh),wind,mut:clamp((v.R-.12)/.6),E:clamp((v.E||0)/100),volY,volX,rel,gg,bite,ombra}; }
+    const sh=clamp(ombra*1.2), dryO=id==='muschio'&&(sof||ombra>.55)?clamp((ombra-.25)/.4):clamp(sh*1.6);
+    return {grow:growV,vig,tur:tur*(1-.35*sh),droop:Math.max(droop,sh*.6),dry:Math.max(dry,dryO),rot,dew,gloss:gloss*(1-sh),wind,mut:forced&&forced.mut!=null?forced.mut:clamp((v.R-.12)/.6),E:clamp((v.E||0)/100),volY,volX,rel,gg,bite,ombra}; }
   const ease=(a,b,k)=>a+(b-a)*Math.min(1,k);
   function tick(dt,t,v,plantObjs){
     if(t-lastPull>.5){ lastPull=t; try{ micro=A.micro?A.micro():null; }catch(e){ micro=null; } }
@@ -3236,12 +3247,12 @@ function build(THREE){
   const glass=new THREE.Mesh(glassGeo,new THREE.MeshPhysicalMaterial({color:0x000000,transparent:true,opacity:1,blending:THREE.AdditiveBlending,roughness:.05,metalness:0,clearcoat:.35,clearcoatRoughness:.03,specularIntensity:.7,envMapIntensity:.9,side:THREE.FrontSide,depthWrite:false})); glass.renderOrder=6; jar.add(glass);
   const rim=new THREE.Mesh(glassGeo,new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{},vertexShader:'varying vec3 vN; varying vec3 vV; void main(){ vec4 mv=modelViewMatrix*vec4(position,1.); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }',fragmentShader:'varying vec3 vN; varying vec3 vV; void main(){ float f=pow(1.-abs(dot(normalize(vN),normalize(vV))),3.); vec3 c=mix(vec3(.72,.9,1.),vec3(1.,.72,.42),smoothstep(-.2,.85,normalize(vN).x*.9-normalize(vN).y*.25)); gl_FragColor=vec4(c*f*.6,f*.55); }'})); rim.renderOrder=7; jar.add(rim); [glass.material,rim.material].forEach(m=>{ m.blending=THREE.CustomBlending; m.blendEquation=THREE.AddEquation; m.blendSrc=THREE.OneFactor; m.blendDst=THREE.OneFactor; m.blendSrcAlpha=THREE.ZeroFactor; m.blendDstAlpha=THREE.OneFactor; m.needsUpdate=true; });
   // filetto e labbro del collo (vetro che cattura la luce: il barattolo si legge anche contro la finestra)
-  [[2.34,.032],[2.27,.02],[2.2,.02]].forEach(([y,r])=>{ const t=new THREE.Mesh(new THREE.TorusGeometry(.8,r,8,64),rim.material); t.rotation.x=Math.PI/2; t.position.y=y; t.renderOrder=6; jar.add(t); });
-  { const sp=new THREE.Mesh(new THREE.LatheGeometry(prof.slice(5),96),rim.material); sp.scale.set(1.004,1,1.004); sp.renderOrder=7; jar.add(sp); } // spalla e collo: il vetro si legge fino al tappo
+  [[2.34,.032],[2.27,.02],[2.2,.02]].forEach(([y,r])=>{ const t=new THREE.Mesh(new THREE.TorusGeometry(.8,r*1.3,8,64),rim.material); t.rotation.x=Math.PI/2; t.position.y=y; t.renderOrder=6; jar.add(t); });
+  { const rm2=rim.material.clone(); rm2.fragmentShader=rm2.fragmentShader.replace('pow(1.-abs(dot(normalize(vN),normalize(vV))),3.)','pow(1.-abs(dot(normalize(vN),normalize(vV))),1.8)').replace('c*f*.6,f*.55','c*f*1.25+vec3(.05,.06,.07),f*.8'); rm2.needsUpdate=true; const sp=new THREE.Mesh(new THREE.LatheGeometry(prof.slice(5),96),rm2); sp.scale.set(1.004,1,1.004); sp.renderOrder=7; jar.add(sp); } // spalla e collo: il vetro si legge fino al tappo
   // bordo fumé del vetro: contro la finestra luminosa il vetro additivo sparisce, il bordo scuro (spessore, verde bottiglia) lo fa leggere sempre, collo e spalla compresi
   { const sm=new THREE.Mesh(glassGeo,new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,uniforms:{},vertexShader:'varying vec3 vN; varying vec3 vV; void main(){ vec4 mv=modelViewMatrix*vec4(position,1.); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }',fragmentShader:'varying vec3 vN; varying vec3 vV; void main(){ float f=pow(1.-abs(dot(normalize(vN),normalize(vV))),2.2); gl_FragColor=vec4(vec3(.16,.24,.22),pow(clamp(f*.8,0.,1.),.45)); }'})); sm.scale.set(1.002,1,1.002); sm.renderOrder=8; jar.add(sm); }
   // coperchio a vite: tappo metallico (oro arrugginito dalla foto «coperchio»), avvitato sul collo; lato e piano hanno materiali separati
-  const corkMk=()=>new THREE.MeshStandardMaterial({color:0xd9a840,metalness:1,roughness:.3}); const corkMats=[corkMk(),corkMk(),corkMk()]; const cork=new THREE.Mesh(new THREE.CylinderGeometry(.84,.84,.34,64),corkMats); cork.position.y=2.31; cork.castShadow=true; jar.add(cork);
+  const corkMk=()=>new THREE.MeshStandardMaterial({color:0xd9a840,metalness:1,roughness:.3}); const corkMats=[corkMk(),corkMk(),corkMk()]; const cork=new THREE.Mesh((()=>{ const g=new THREE.CylinderGeometry(.80,.80,.2,72,1); const p=g.attributes.position; for(let i=0;i<p.count;i++){ if(Math.abs(p.getY(i))>.099 && false) continue; const a=Math.atan2(p.getZ(i),p.getX(i)), r=Math.hypot(p.getX(i),p.getZ(i)); if(r>.79){ const k=(.8-.012*Math.pow(Math.abs(Math.sin(a*36)),.6))/r; p.setX(i,p.getX(i)*k); p.setZ(i,p.getZ(i)*k); } } g.computeVertexNormals(); return g; })(),corkMats); cork.position.y=2.30; [.1,-.1].forEach(dy=>{ const t=new THREE.Mesh(new THREE.TorusGeometry(.79,.018,8,72),corkMats[0]); t.rotation.x=Math.PI/2; t.position.y=dy; cork.add(t); }); cork.userData.zig=1; cork.castShadow=true; jar.add(cork);
   // ---------- terreno: strati visibili dal vetro (ghiaia di drenaggio, rete, terriccio) con PBR generato in codice (app/materials.js → __TERRENO) ----------
   // Scala: 1 unità = 10 cm. Ghiaia 0 → GH (1,9 cm), rete a SOIL0, terriccio da SOIL0 a S.soilTop, disco in rilievo sopra (grani e sassolini veri, ±3 mm).
   const SOIL0=.2, GH=.19, AMP=.032, DISC_REP=1.9; // DISC_REP: tessere da 10 cm sul disco Ø 19 cm
@@ -3279,7 +3290,7 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
     const side=(t)=>{ if(!t||!t.image) return null; const im=t.image, W=im.width||im.naturalWidth, H=im.height||im.naturalHeight, cw=Math.round(W*.6), ov=Math.round(cw*.25), T=cw-ov, ch=Math.round(H*.17), sx=W*.2, sy=H*.415, c=document.createElement('canvas'); c.width=T; c.height=ch; const g=c.getContext('2d'); g.drawImage(im,sx,sy,T,ch,0,0,T,ch);
       const m=document.createElement('canvas'); m.width=ov; m.height=ch; const mg=m.getContext('2d'); mg.drawImage(im,sx+T,sy,ov,ch,0,0,ov,ch); mg.globalCompositeOperation='destination-in'; const gr=mg.createLinearGradient(0,0,ov,0); gr.addColorStop(0,'rgba(0,0,0,1)'); gr.addColorStop(1,'rgba(0,0,0,0)'); mg.fillStyle=gr; mg.fillRect(0,0,ov,ch); g.drawImage(m,0,0); /* dissolvenza di chiusura: la coda della foto sfuma sull'inizio, la tessera si chiude da sola */
       const x=new THREE.CanvasTexture(c); x.wrapS=THREE.RepeatWrapping; x.wrapT=THREE.ClampToEdgeWrapping; x.repeat.set(2,1); x.anisotropy=4; if(t.colorSpace) x.colorSpace=t.colorSpace; return x; };
-    [[corkMats[0],side(M.map),side(M.normalMap),side(M.roughnessMap)],[corkMats[1],M.map,M.normalMap,M.roughnessMap],[corkMats[2],M.map,M.normalMap,M.roughnessMap]].forEach(([m,mp,nm,rm])=>{ m.map=mp; m.normalMap=nm||null; m.roughnessMap=rm||null; m.color.set(0xffffff); m.metalness=1; m.roughness=.3; m.envMapIntensity=2.4; m.emissiveMap=null; m.emissiveIntensity=0; m.emissive.set(0x000000); m.needsUpdate=true; }); }); }
+    [[corkMats[0],side(M.map),side(M.normalMap),side(M.roughnessMap)],[corkMats[1],M.map,M.normalMap,M.roughnessMap],[corkMats[2],M.map,M.normalMap,M.roughnessMap]].forEach(([m,mp,nm,rm])=>{ m.map=mp; m.normalMap=nm||null; m.roughnessMap=rm||null; m.color.set(0xffffff); m.metalness=1; m.roughness=.3; m.envMapIntensity=3.6; m.color.set(0xfff0c8); m.emissiveMap=mp||null; m.emissiveIntensity=.42; m.emissive.set(0xffd890); m.needsUpdate=true; }); }); }
   const FT=fotoMat('terriccio'), FG=fotoMat('ghiaia'); // terriccio e ghiaia fotografici; senza __MAT_FOTO resta il terreno procedurale
   const TG=window.__TERRENO?{terra:FT?null:window.__TERRENO(THREE,{kind:'terra',seed:17}),ghiaia:FG?null:window.__TERRENO(THREE,{kind:'ghiaia',seed:29})}:null, TMAPS={};
   const terraMaps=l=>{ l=Math.max(0,Math.min(2,l|0)); if(TMAPS[l]) return TMAPS[l]; const p=Math.min(l,1), t=FT&&FT.ready?FT.maps(l):TG&&TG.terra?TG.terra.maps(p?.5:1):null, g=FG&&FG.ready?FG.maps(l):TG&&TG.ghiaia?TG.ghiaia.maps(p?.5:1):null; if(!t&&!g) return null; const o={terra:t,ghiaia:g}; if((!FT||FT.ready)&&(!FG||FG.ready)) TMAPS[l]=o; return o; };
