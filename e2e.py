@@ -9,7 +9,7 @@ VW,VH=(int(sys.argv[1]),int(sys.argv[2])) if len(sys.argv)>2 else (390,844)
 tag=sys.argv[3] if len(sys.argv)>3 else 'n'
 with sync_playwright() as p:
     b=p.chromium.launch(); ctx=b.new_context(viewport={'width':VW,'height':VH},device_scale_factor=2); ctx.add_init_script("window.__fast=true; window.__no3d=true"); pg=ctx.new_page()
-    def goto(t): pg.evaluate("(t)=>{ __ui.tab=t; __ui.render(); }",t); pg.wait_for_timeout(120)
+    def goto(t): pg.evaluate("(t)=>{ document.querySelectorAll('.scrim[data-a=sx],[data-a=sx].scrim').forEach(b=>b.click()); __ui.tab=t; __ui.render(); }",t); pg.wait_for_timeout(120)  # chiude un foglio rimasto aperto (scrim) prima di cambiare scheda
     pg.on('pageerror',lambda e:errs.append('ERR '+str(e)[:200])); pg.on('console',lambda m: errs.append('CON '+m.text[:160]) if m.type=='error' else None)
     pg.goto('file://'+__import__('os').path.abspath('dist')+'/terrario-gioco.html'); pg.wait_for_timeout(1900)
     sc=lambda:pg.evaluate("__film.scene")
@@ -215,6 +215,7 @@ with sync_playwright() as p:
         pg.wait_for_timeout(300)
     t('la rivelazione dice «Il Vaso Spento»',pg.locator('#reveal').count()==1 and 'Spento' in pg.inner_text('#reveal')); pg.screenshot(path=f'screenshots/{tag}_n5_finale_spento.png'); pg.click('[data-a=fin-continue]'); pg.click('[data-a=fin-close]'); pg.wait_for_timeout(500); drain()
     t('Il Vaso Spento chiude il capitolo e dà una carta',pg.evaluate("__app.G.libro.spento!=null") and pg.evaluate("__app.sim.view().chapter")>=3)
+    pg.evaluate("document.querySelectorAll('[data-a=sx]').forEach(b=>b.click()); __app.popups&&(__app.popups.length=0)"); pg.wait_for_timeout(200)  # una notifica casuale (scrim) non deve bloccare il quaderno
     goto('quaderno'); pg.click('[data-a=cdx][data-t=pagine]'); pg.wait_for_timeout(300); np_=pg.evaluate("__app.G.quaderno.length"); t('il quaderno racconta più pagine',np_>=3,np_); pg.screenshot(path=f'screenshots/{tag}_g9_quaderno.png')
     goto('imp'); pg.wait_for_timeout(200)
     d0=pg.evaluate("__app.sim.d"); pg.reload(); pg.wait_for_timeout(1900); t('dopo il ricaricamento il gioco riprende',pg.evaluate("__ui.mode")=='game' and pg.evaluate("__app.sim.d")>=d0,(pg.evaluate("__app.sim.d"),d0))
