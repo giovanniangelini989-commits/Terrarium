@@ -43,18 +43,29 @@ Org org(){ Org o; o.wilt=0.;
   o.open=smoothstep(.12,.5,u); float w=max(smoothstep(.62,.95,u),uDroop); o.sc=smoothstep(0.,.32,u)*(1.-.4*w); o.bend=-w*aSway*1.1; o.wilt=w;
 #endif
   return o; }
+// vetro: la fronda che arriva alla parete si schiaccia e risale lungo il vetro (curva morbida, niente spigoli); vale anche sotto la spalla che si stringe
+float wallR(float y){ float r=1.; r=mix(.9,r,smoothstep(.1,.4,y)); r=mix(r,.96,smoothstep(1.9,2.08,y)); r=mix(r,.82,smoothstep(2.08,2.18,y)); return r-.05; }
+vec3 glassW(vec3 w,out float k,out vec2 dir){ float r=length(w.xz); dir=r>1e-4?w.xz/r:vec2(1.,0.); float R=wallR(w.y), s=.1, e=r-(R-s); k=0.;
+  if(e<=0.) return w; float r2=R-s+s*(1.-exp(-e/s)); k=smoothstep(0.,.12,e); float lift=min((r-r2)*.55,.28); w.xz=dir*r2; w.y+=lift; return w; }
+vec3 glassP(vec3 p,out float k,out vec2 dir){ vec3 o=modelMatrix[3].xyz; return glassW(p+o,k,dir)-o; }
 vec3 plantPos(Org o){ vec3 p=o.open<.5?mix(aP0,aP1,o.open*2.):mix(aP1,position,o.open*2.-1.);
   float ap=smoothstep(.7,1.,o.open); float lat=mix(1.,1.-.45*uDroop,ap); if(aType==3.) lat=uDew*ap;
   p=aSpine+(p-aSpine)*lat; p=aPivot+(p-aPivot)*o.sc; p=aPivot+rotA(p-aPivot,aAxis,o.bend);
   float w=uWind*aSway*aSway*.011*o.sc; p+=aAxis*w*(sin(uTime*1.6+aPhase*6.28+aSway*2.)+.5*sin(uTime*2.7+aPhase*3.1))+vec3(0.,1.,0.)*w*.35*sin(uTime*2.1+aPhase*5.);
   return p; }
 `;
-  const HEAD_INST=`uniform float uGrow,uTurgor,uDry,uRot,uWind,uTime; attribute float iGrow,iPhase; varying float vDry,vRot,vShade; varying vec3 vMW;\n`;
+  const GLASS_FN=`// vetro: la fronda che arriva alla parete si schiaccia e risale lungo il vetro (curva morbida, niente spigoli); vale anche sotto la spalla che si stringe
+float wallR(float y){ float r=1.; r=mix(.9,r,smoothstep(.1,.4,y)); r=mix(r,.96,smoothstep(1.9,2.08,y)); r=mix(r,.82,smoothstep(2.08,2.18,y)); return r-.05; }
+vec3 glassW(vec3 w,out float k,out vec2 dir){ float r=length(w.xz); dir=r>1e-4?w.xz/r:vec2(1.,0.); float R=wallR(w.y), s=.1, e=r-(R-s); k=0.;
+  if(e<=0.) return w; float r2=R-s+s*(1.-exp(-e/s)); k=smoothstep(0.,.12,e); float lift=min((r-r2)*.55,.28); w.xz=dir*r2; w.y+=lift; return w; }
+vec3 glassP_(vec3 w,out float k,out vec2 dir){ return glassW(w,k,dir); }
+`;
+  const HEAD_INST=GLASS_FN+`uniform float uGrow,uTurgor,uDry,uRot,uWind,uTime; attribute float iGrow,iPhase; varying float vDry,vRot,vShade; varying vec3 vMW;\n`;
   const FRAG_HEAD='uniform float uGloss,uTrans,uMut,uCharge,uTime,uFung,uBite; varying float vDry,vRot,vShade; varying vec3 vMW;\n';
   const FRAG_COL=`#include <color_fragment>
 if(uBite>.001){ vec3 bq_=vMW*15.; vec2 bc_=floor(bq_.xz+bq_.y*.7); float bh_=fract(sin(dot(bc_,vec2(12.9898,78.233)))*43758.5453); vec2 bo_=vec2(fract(bh_*7.3),fract(bh_*3.7))*.5+.25; float bd_=length(fract(bq_.xz+bq_.y*.7)-bo_); if(bh_<uBite*.55&&bd_<.2+.14*fract(bh_*11.)) discard; }
 diffuseColor.rgb*=vShade;
-{ float d=clamp(vDry,0.,1.); vec3 g=vec3(dot(diffuseColor.rgb,vec3(.3,.59,.11))); diffuseColor.rgb=mix(diffuseColor.rgb,mix(g,diffuseColor.rgb,.4)*vec3(1.3,1.08,.55)+vec3(.1,.07,0.),d); }
+{ float d=clamp(vDry,0.,1.); vec3 g=vec3(dot(diffuseColor.rgb,vec3(.3,.59,.11))); diffuseColor.rgb=mix(diffuseColor.rgb,mix(g,diffuseColor.rgb,.3)*vec3(1.5,1.14,.4)+vec3(.12,.08,0.),d); }
 diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.32,.28,.2),clamp(vRot,0.,1.));
 { float nr=exp(-length(vMW.xz)*1.5); float l_=dot(diffuseColor.rgb,vec3(.3,.59,.11)); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.5,.4,.95)*(.25+l_*1.1),clamp(uMut*(.05+.2*nr),0.,.22)); }`;
   // mutazione: bagliore viola #A88BFF su bordi (fresnel) e venature, più forte vicino al sasso e con la carica; verde #7CF5C8 solo come riflesso freddo raro
@@ -79,10 +90,10 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     const begin=inst?(kind===CURL_SPK
       ?`float op=smoothstep(iGrow-.12,iGrow+.08,uGrow); float sc=op*(.6+.4*min(uGrow,1.)); vec3 transformed=position*sc; transformed.xz*=(.35+.65*uTurgor); transformed.y*=(.55+.45*uTurgor); transformed.x+=uWind*.0025*sin(uTime*2.2+iPhase*6.28)*position.y*25.; vDry=uDry; vRot=uRot; vShade=1.;`
       :`float op=smoothstep(iGrow-.12,iGrow+.08,uGrow); float sc=op*(.6+.4*min(uGrow,1.)); vec3 transformed=position*sc; transformed.y*=(.42+.58*uTurgor); vDry=uDry; vRot=uRot; vShade=.45+.55*clamp(position.y*.75+.45,0.,1.);`)
-      :`Org o_=org(); vec3 transformed=plantPos(o_); vDry=uDry+o_.wilt*.55; vRot=uRot+o_.wilt*.6; vShade=1.;`;
+      :`Org o_=org(); vec3 transformed=plantPos(o_); vDry=uDry+o_.wilt*.55; vRot=uRot+o_.wilt*.6; vShade=1.; { float gk_; vec2 gd_; transformed=glassP(transformed,gk_,gd_); vShade*=1.-.32*gk_; }`;
     mat.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,U); const SC=mat.userData.secco; if(SC){ sh.uniforms.mapSecco=SC; sh.uniforms.uSeccoOn=mat.userData.seccoOn; }
-      sh.vertexShader=sh.vertexShader.replace('void main() {','#define KIND '+kind+'\n'+head+'void main() {').replace('#include <begin_vertex>',begin+(inst?UV_PLANAR:'')).replace('#include <project_vertex>','#include <project_vertex>\n#ifdef USE_INSTANCING\nvMW=(modelMatrix*instanceMatrix*vec4(transformed,1.)).xyz;\n#else\nvMW=(modelMatrix*vec4(transformed,1.)).xyz;\n#endif');
-      if(!inst) sh.vertexShader=sh.vertexShader.replace('#include <beginnormal_vertex>','Org on_=org(); vec3 objectNormal=rotA(normal,aAxis,on_.bend);');
+      sh.vertexShader=sh.vertexShader.replace('void main() {','#define KIND '+kind+'\n'+head+'void main() {').replace('#include <begin_vertex>',begin+(inst?UV_PLANAR:'')).replace('#include <project_vertex>',inst?'vec4 mvPosition=vec4(transformed,1.); mvPosition=instanceMatrix*mvPosition; { float gk_; vec2 gd_; vec3 gw_=glassW((modelMatrix*mvPosition).xyz,gk_,gd_); mvPosition=viewMatrix*vec4(gw_,1.); vMW=gw_; vShade*=1.-.32*gk_; } gl_Position=projectionMatrix*mvPosition;':'#include <project_vertex>\nvMW=(modelMatrix*vec4(transformed,1.)).xyz;');
+      if(!inst) sh.vertexShader=sh.vertexShader.replace('#include <beginnormal_vertex>','Org on_=org(); vec3 objectNormal=rotA(normal,aAxis,on_.bend); { float gk_; vec2 gd_; glassP(plantPos(on_),gk_,gd_); objectNormal=normalize(mix(objectNormal,-vec3(gd_.x,.25,gd_.y),gk_*.7)); }');
       sh.fragmentShader=sh.fragmentShader.replace('void main() {',FRAG_HEAD+'void main() {'); if(SC) sh.fragmentShader=sh.fragmentShader.replace('void main() {','uniform sampler2D mapSecco; uniform float uSeccoOn;\nvoid main() {').replace('vec4 sampledDiffuseColor = texture2D( map, vMapUv );','vec4 sampledDiffuseColor = texture2D(map,vMapUv); if(uSeccoOn>.5) sampledDiffuseColor=mix(sampledDiffuseColor,texture2D(mapSecco,vMapUv),smoothstep(.12,.65,vDry));'); sh.fragmentShader=sh.fragmentShader.replace('#include <color_fragment>',FRAG_COL).replace('#include <roughnessmap_fragment>',FRAG_ROUGH).replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n'+FRAG_MUT).replace('#include <lights_fragment_end>',FRAG_TRANS); };
     mat.customProgramCacheKey=()=>'pianta'+kind+(inst?'i':'o')+(mat.userData.secco?'s':'')+(mat.isMeshDepthMaterial?'d':'m'); return mat; }
   function uniforms(){ return {uGrow:{value:0},uTurgor:{value:1},uDroop:{value:0},uDry:{value:0},uRot:{value:0},uDew:{value:0},uWind:{value:0},uTime:{value:0},uGloss:{value:0},uTrans:{value:0},uMut:{value:0},uCharge:{value:0},uFung:{value:0},uBite:{value:0}}; }
@@ -256,8 +267,8 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     const gg=forced&&forced.giungla!=null?forced.giungla:mg&&mg.giungla!=null?mg.giungla:0, sof=forced&&forced.soffocato!=null?forced.soffocato:mg?!!mg.soffocato:false;
     const bite=f.bite!=null?f.bite:mg&&mg.mangiatoUltimo>0?clamp(mg.mangiatoUltimo*40+.25):0;
     const growV=Math.min(1.35,grow*(.6+.55*rel)*(1+.12*gg)), volY=(.62+.62*rel+.6*gg)*(BALT[id]||1), volX=.72+.4*rel+.12*gg;
-    const sh=clamp(ombra*1.2), dryO=id==='muschio'&&(sof||ombra>.55)?clamp((ombra-.25)/.4):sh*1.1;
-    return {grow:growV,vig,tur:tur*(1-.35*sh),droop:Math.max(droop,sh*.6),dry:Math.max(dry,dryO),rot,dew,gloss:gloss*(1-sh),wind,mut:clamp((v.R-.12)/.6),E:clamp((v.E||0)/100),volY,volX,rel,gg,bite,ombra}; }
+    const sh=clamp(ombra*1.2), dryO=id==='muschio'&&(sof||ombra>.55)?clamp((ombra-.25)/.4):clamp(sh*1.6);
+    return {grow:growV,vig,tur:tur*(1-.35*sh),droop:Math.max(droop,sh*.6),dry:Math.max(dry,dryO),rot,dew,gloss:gloss*(1-sh),wind,mut:forced&&forced.mut!=null?forced.mut:clamp((v.R-.12)/.6),E:clamp((v.E||0)/100),volY,volX,rel,gg,bite,ombra}; }
   const ease=(a,b,k)=>a+(b-a)*Math.min(1,k);
   function tick(dt,t,v,plantObjs){
     if(t-lastPull>.5){ lastPull=t; try{ micro=A.micro?A.micro():null; }catch(e){ micro=null; } }
