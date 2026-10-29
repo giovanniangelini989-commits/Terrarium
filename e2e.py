@@ -58,6 +58,7 @@ with sync_playwright() as p:
     for tipo in ['felce','formica']:
         for _ in range(14):
             if pg.locator('.sheet [data-a=arr-ok]').count(): break
+            pg.evaluate("document.querySelectorAll('.scrim[data-a=sx]').forEach(b=>b.click())"); pg.wait_for_timeout(120)  # un foglio (dono, missione) non deve coprire le cure
             if pg.evaluate("__app.sim.view().needs.um")<.5: pg.click('[data-a=act][data-k=acqua]'); pg.wait_for_timeout(150)
             if pg.locator('.sheet').count()==0: pg.evaluate('__ui.passaNotte()'); pg.wait_for_timeout(400)
             for _ in range(5):
