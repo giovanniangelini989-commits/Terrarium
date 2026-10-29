@@ -1,0 +1,9 @@
+{ "id": "lumache", "version": "3.0.0", "class": "organic",
+  "body_length": 0.34, "body_length_note": "estensione totale su X, tentacoli inclusi",
+  "triangles": { "close": 5900, "swarm": 779 },
+  "textures": { "close": "1024 WebP", "swarm": "256 WebP", "mutata": ["mutata_close.webp", "mutata_swarm.webp"], "maschera_emissiva": ["maschera_emissiva_close.png", "maschera_emissiva_swarm.png"], "note": "stessa UV del modello normale; maschera: 1 = bagliore viola #A88BFF (venature/crescita del guscio, puntini sul corpo)" },
+  "attributes": { "_EMIT": "1 su tutto il guscio, 0 sul corpo (maschera per vertice; il dettaglio venature e nella maschera texture)" },
+  "orientation": "testa +X, su +Y, suolo y=0; rotazione sorgente -90 gradi su Y",
+  "rig": "assente: modello statico, segmentazione/rig da fare (brief 5.2)",
+  "generator": { "tool": "Magnific (Tripo), scaricato a mano da Giovanni", "preview": "https://www.magnific.com/app/creation/1l0w50nr4r", "source_triangles": 11650, "license": "commercial use allowed: yes (piano Premium+ di Magnific, dichiarato da Giovanni)" },
+  "processing": "weld, simplify meshopt Permissive con attributi UV/normali, resize, webp, normalize --organic, qa_gate APPROVATO" }
