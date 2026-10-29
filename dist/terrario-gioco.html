@@ -2734,7 +2734,7 @@ window.__LUCI=function(THREE,o){
     '   gl_FragColor=mix(gl_FragColor,mb/8.,clamp((lp-1.5)/3.,0.,1.)); }',
     ' }',
     ' if(uBloom>0.){ vec3 bl=(texture2D(tB0,vUv).rgb*.7+texture2D(tB1,vUv).rgb*1.1)*uBloom; gl_FragColor.rgb+=bl; gl_FragColor.a=min(1.,gl_FragColor.a+max(bl.r,max(bl.g,bl.b))); }',
-    ' if(any(isnan(gl_FragColor))) gl_FragColor=vec4(0.,0.,0.,0.);',
+    ' if(any(isnan(gl_FragColor))) gl_FragColor=vec4(.07,.055,.05,1.);',  // mai un buco trasparente: si vedrebbe lo sfondo della pagina
     ' #include <tonemapping_fragment>',
     ' #include <colorspace_fragment>',
     ' float v=1.-uVig*smoothstep(.25,.95,length(dc*vec2(uRes.x/uRes.y,1.))*1.25);',            // vignettatura (scurisce anche la foto di fondo, alfa premoltiplicato)
@@ -3367,7 +3367,7 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
   const disc=(function(){ const RR=22, RS=64, pos=[], uv=[], idx=[]; for(let i=0;i<=RR;i++){ const rad=i/RR*.95, segs=i===0?1:RS; for(let j=0;j<segs;j++){ const a=j/RS*6.2831853; pos.push(Math.cos(a)*rad,0,Math.sin(a)*rad); uv.push(Math.cos(a)*rad/1.9+.5,Math.sin(a)*rad/1.9+.5); } }
     const base=i=>i===0?0:1+(i-1)*RS; for(let j=0;j<RS;j++) idx.push(0,base(1)+(j+1)%RS,base(1)+j); for(let i=1;i<RR;i++) for(let j=0;j<RS;j++){ const a=base(i)+j, b=base(i)+(j+1)%RS, c=base(i+1)+j, d=base(i+1)+(j+1)%RS; idx.push(a,d,c,a,b,d); }
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.userData.base=pos.slice(); const m=new THREE.Mesh(g,soilMat); m.receiveShadow=true; m.visible=false; jar.add(m); return m; })();
-  const terraH=FT?FT.height:TG&&TG.terra?TG.terra.height:null; function discRelief(on){ const g=disc.geometry, p=g.attributes.position, b=g.userData.base, uv=g.attributes.uv; for(let i=0;i<p.count;i++){ const h=on&&terraH?terraH(uv.getX(i)*DISC_REP/(FT?FT.scala:1),uv.getY(i)*DISC_REP/(FT?FT.scala:1)):.2; p.setY(i,b[i*3+1]+.003+AMP*h); } p.needsUpdate=true; g.computeVertexNormals(); }
+  const terraH=FT?FT.height:TG&&TG.terra?TG.terra.height:null; function discRelief(on){ const g=disc.geometry, p=g.attributes.position, b=g.userData.base, uv=g.attributes.uv; for(let i=0;i<p.count;i++){ const h=on&&terraH?terraH(uv.getX(i)*DISC_REP/(FT?FT.scala:1),uv.getY(i)*DISC_REP/(FT?FT.scala:1)):.2; p.setY(i,b[i*3+1]+.003+AMP*h); } p.needsUpdate=true; g.computeVertexNormals(); if(g.index&&g.attributes.uv) try{ g.computeTangents(); }catch(e){} }
   discRelief(true);
   // linea d'acqua nella ghiaia (drenaggio pieno o ristagno): banda lucida tagliata al livello + menisco riflettente
   const waterPlane=new THREE.Plane(new V3(0,-1,0),0); renderer.localClippingEnabled=true;
@@ -3380,6 +3380,11 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
   function terrainLevel(l,force){ l=Math.max(0,Math.min(2,l|0)); if(l===terrainLvl&&!force) return; terrainLvl=l; const M=terraMaps(l); if(!M) return; const full=l<2;
     const set=(m,src,rep)=>{ if(!src) return; const cl=t=>{ if(!t) return null; const c=t.clone(); c.repeat.set(rep[0],rep[1]); c.needsUpdate=true; return c; }; m.map=cl(src.map); m.normalMap=cl(src.normalMap); m.roughnessMap=cl(src.roughnessMap||src.orm); m.aoMap=src.orm?m.roughnessMap:null; if(m.normalMap) m.normalScale.set(1,1); m.needsUpdate=true; };
     set(soilMat,M.terra,[DISC_REP/ST,DISC_REP/ST]); set(sideMat,M.terra,[6/ST,.3/ST]); set(gravMat,M.ghiaia,[5.97/SG,1.99/SG]); discRelief(full); pebbles.visible=full; }
+  // iPhone: zoomando, le derivate delle UV del rilievo diventano minuscole e il normal map dà NaN (terra nera, poi trasparente).
+  // Tangenti precalcolate (niente derivate) + rete di sicurezza: un pixel NaN della terra diventa terra scura, mai buco.
+  const nanSafe=m=>{ const prev=m.onBeforeCompile; m.onBeforeCompile=(sh,r)=>{ if(prev) prev(sh,r); sh.fragmentShader=sh.fragmentShader.replace('#include <dithering_fragment>','#include <dithering_fragment>\n if(any(isnan(gl_FragColor))||any(isinf(gl_FragColor))) gl_FragColor=vec4(diffuseColor.rgb*.3,1.);'); }; m.customProgramCacheKey=()=>'nanSafe'; m.needsUpdate=true; };
+  [soilMat,sideMat,gravMat].forEach(nanSafe);
+  jar.traverse(o=>{ if(o.isMesh&&[soilMat,sideMat,gravMat].includes(o.material)&&o.geometry.index&&o.geometry.attributes.uv&&!o.geometry.attributes.tangent) try{ o.geometry.computeTangents(); }catch(e){} });
   terrainLevel(0); if(FT) FT.when(()=>terrainLevel(terrainLvl,true)); if(FG) FG.when(()=>terrainLevel(terrainLvl,true));
   const crackTex=(function(){ const c=document.createElement('canvas'); c.width=c.height=256; const g=c.getContext('2d'); g.strokeStyle='rgba(20,12,8,.85)'; g.lineWidth=2; const r=rngS(3); for(let i=0;i<14;i++){ let x=128,y=128,a=r()*6.283; g.beginPath(); g.moveTo(x,y); for(let k=0;k<7;k++){ a+=r()*1.2-.6; x+=Math.cos(a)*(14+r()*14); y+=Math.sin(a)*(14+r()*14); g.lineTo(x,y); } g.stroke(); } const t=new THREE.CanvasTexture(c); return t; })();
   const cracks=new THREE.Mesh(new THREE.CircleGeometry(.93,48),new THREE.MeshBasicMaterial({map:crackTex,transparent:true,opacity:0,depthWrite:false})); cracks.rotation.x=-Math.PI/2; cracks.visible=false; jar.add(cracks);
