@@ -136,4 +136,25 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   P.archiviaVaso({k:'gigante'}); t('Mostri → il sasso parte carico (E 40)',P.sim.E===40&&P.sim.view().needs.um===0,P.sim.E);
   P.archiviaVaso({k:'conquista'}); P.doAct('terra'); P.doAct('acqua'); P.inbox().forEach(a=>P.takeArrival(a.id,'si')); const fa=P.G.arrivi.list.find(a=>a.force==='formiche'); t('Conflitti → la prima specie arriva un giorno prima',fa&&fa.due===P.G.ui.d3+6,JSON.stringify(fa));
   for(let i=0;i<8;i++) P.archiviaVaso({k:'fede'}); P.persist(); const kb=localStorage.getItem('terrario.save.v2').length; t('dopo 12 vasi il salvataggio resta leggero (< 60 KB)',P.G.vasi.length===12&&kb<60000,kb); console.log('mensola di 12 vasi:',JSON.stringify(P.G.vasi).length,'byte · salvataggio',Math.round(kb/1024),'KB'); }
+// 9) ritorno: «Mentre non c'eri», dono della nonna, Avanza di una notte, carta ogni 7 giorni di cura
+{ const P=window.__app; P.newGame('T',JSON.parse(JSON.stringify(su))); P.popups.length=0; P.G.ui.fase=5; const dec=()=>{ let g=0; while(P.sim.pending.length&&g++<20){ const d=P.sim.pending[0]; P.sim.resolve?P.sim.resolve(d.id,'lascia'):0; if(P.sim.pending[0]===d) break; } };
+  // 1+2) assenza di 3 giorni: un solo risveglio con notti, un solo dono, nessun accumulo
+  P.G.dev.offset+=3; P.popups.length=0; P.checkNewDay();
+  const rv=P.popups.filter(p=>p.t==='risveglio'), dn=P.popups.filter(p=>p.t==='dono');
+  t('ritorno: un solo foglio risveglio con il numero di notti',rv.length===1&&rv[0].notti>=4&&rv[0].giorni>=3,JSON.stringify(rv.map(x=>[x.notti,x.giorni])));
+  t('dono della nonna: uno solo dopo 3 giorni di assenza, in seconda persona',dn.length===1&&dn[0].testo.length>20&&P.G.nonna.n===1,JSON.stringify(dn));
+  P.popups.length=0; P.checkNewDay(); P.donoNonna(); t('stesso giorno: nessun secondo dono',!P.popups.some(p=>p.t==='dono')&&P.G.nonna.n===1);
+  P.G.dev.offset+=1; P.popups.length=0; P.checkNewDay(); t('il giorno dopo: un altro dono, senza serie',P.G.nonna.n===2&&P.popups.filter(p=>p.t==='dono').length===1&&P.G.nonna.serie===undefined);
+  const ids=new Set(); for(let i=0;i<12;i++){ P.G.dev.offset+=1; P.popups.length=0; P.checkNewDay(); ids.add(P.G.nonna.id); } t('i doni variano',ids.size>=3,[...ids].join());
+  // 3) Avanza di una notte
+  P.G.dev.offset+=1; P.checkNewDay(); P.popups.length=0; P.sim.pending.length=0; P.G.letargo=null; P.G.real.owed=0; P.G.power.resto=0; let ai=P.avanzaInfo();
+  const d0=P.sim.d; let okN=0; for(let i=0;i<5;i++){ const r=P.avanzaNotte(); if(r.ok) okN++; P.sim.pending.length=0; P.G.real.owed=0; }
+  t('avanza: tetto di '+P.AVANZA.max+' notti per apertura',okN===P.AVANZA.max&&P.sim.d-d0>=P.AVANZA.max&&P.avanzaInfo().why==='tetto',okN+' '+JSON.stringify(P.avanzaInfo()));
+  P.G.dev.offset+=40/1440; P.checkNewDay(); t('avanza: dopo 30 minuti di chiusura il tetto si ricarica',P.avanzaInfo().n===0&&P.avanzaInfo().why==='');
+  P.G.letargo={da:1,giorni:2}; t('avanza: bloccato in letargo',P.avanzaNotte().ok===false&&P.avanzaInfo().why==='letargo'); P.G.letargo=null;
+  // 4) carta di cura ogni 7 giorni reali con almeno una cura
+  P.G.carte=null; P.G.album={}; P.popups.length=0; let carte=0; for(let g=0;g<14;g++){ P.G.dev.offset+=1; P.checkNewDay(); P.doAct('acqua'); P.doAct('pulisci'); carte+=P.popups.filter(p=>p.t==='carta'&&p.fonte==='cura').length; P.popups.length=0; }
+  t('carta di cura: 14 giorni con cure → 2 pesche (7° e 14°)',carte===2&&P.G.carte.giorniCura===14,carte+' '+JSON.stringify(P.G.carte));
+  P.G.dev.offset+=1; P.checkNewDay(); P.popups.length=0; P.G.dev.offset+=1; P.checkNewDay(); t('i giorni senza cure non contano',P.G.carte.giorniCura===14);
+}
 console.log(ok,'ok',bad,'falliti');
