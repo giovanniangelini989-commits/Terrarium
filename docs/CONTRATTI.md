@@ -138,3 +138,11 @@ Pesca di cura: curaDay() in reqCheck → ogni 7 giorni (reali, non di fila) in c
 - `__app.pota()` → `{ok, motivo, pianta, tagliato, text}`; limite giornaliero = `micro.pota.pronta`; non costa mani. Pulsante «Pota» (icona `IC.pota`) visibile solo con `copertura > 0,6` o `giungla > 0`.
 - Brucatori passati al microclima in `microSync`: `min(1, Σ min(2, pop/12) per lumache e coleotteri vivi / 6)` (due specie alla partenza = 0,33, equilibrio).
 - Avvisi una volta per giorno del vaso: `G.ui.avSoff` («La felce ha coperto il muschio.», `ombra > 0,8`) e `G.ui.avMang` («Le lumache hanno rosicchiato le foglie.», `mangiatoUltimo > 0`); mai in letargo.
+
+## Biologia reale del motore (29 ottobre 2026, ramo motore/biologia)
+Regole cambiate **in `sim.js` e in `engine_old.js` insieme** (`equiv.js` resta a 0: è un test di regressione, non uno storico). Nessun cambio a `view()` né all'API; la chiave `radioattivo` resta (solo il nome mostrato è «Radiotolleranza»).
+- Felce `foglie` 0,5 (poco appetibile). Radiotolleranza: +0,3 di tolleranza, niente più tossicità. Ogni mutazione ha un costo (riproduzione ×0,88–0,92; iperfertilità: piccoli più fragili `suscept`×1,2). Tetto **2 mutazioni per specie** (`th=[6,14]`): le app non devono assumere più di 2 elementi in `mut`.
+- Pressione presente: corazza (predatore o secco `w<.35`), bioluminescenza (buio `s<.4`), iperfertilità (affollamento `pop/K>.6`); la riga `why` del registro lo spiega.
+- Ragni: digiuno lungo, −0,8 %/giorno dopo 10 giorni senza prede (prima −3 % subito). Termiti: capacità ×0,8 (manca il legno morto; proposta: oggetto «legno», non fatto).
+- **Guerra solo formiche contro termiti** (basta che entrambe abbiano ≥12 individui, niente società richiesta); le altre specie competono per il cibo. Finali «Conquista»/«Patto» di conseguenza più rari.
+- Solo con `needs` (non toccano equiv): carnivora senza dipendenza dal detrito; tasso di riproduzione ×fattore temperatura (`clima.Tc`, <20 °C rallenta, 8 °C quasi fermo) e ×0,5 con acqua <0,2 (lumache hanno già l'estivazione). I collemboli restano l'indice `clima.collemboli` (nessuna specie nuova): menzione narrativa nell'evento esistente.

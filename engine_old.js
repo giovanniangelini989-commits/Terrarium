@@ -12,7 +12,7 @@ const METEO=[{nome:'Piccolo',g:.7},{nome:'Medio',g:1},{nome:'Grande',g:1.4}];
 
 const PIANTE={
  muschio:{nome:'Muschio',icon:'🌿',opt:{l:.45,w:.7},rad:.2,foglie:.45,rot:0,nota:'Ama l’umido; resiste alla radiazione.'},
- felce:{nome:'Felce',icon:'🍃',opt:{l:.55,w:.6},rad:.7,foglie:1,rot:0,nota:'Cibo ricco per gli erbivori; soffre la radiazione.'},
+ felce:{nome:'Felce',icon:'🍃',opt:{l:.55,w:.6},rad:.7,foglie:.5,rot:0,nota:'Poco appetibile per gli erbivori (difese chimiche); soffre la radiazione.'},
  succulenta:{nome:'Succulenta',icon:'🌵',opt:{l:.95,w:.25},rad:.5,foglie:.8,rot:0,nota:'Vuole sole e poca acqua.'},
  fungo:{nome:'Funghi',icon:'🍄',opt:{l:.3,w:.8},rad:-.7,foglie:0,rot:1.2,nota:'Nutre chi mangia il marcio. Si nutre di radiazione.'},
  carnivora:{nome:'Pianta carnivora',icon:'🪴',opt:{l:.75,w:.65},rad:.6,foglie:.3,rot:0,pred:true,nota:'Cattura le mosche.'},
@@ -37,11 +37,11 @@ const OGGETTI={
 };
 const MUT={
  gigantismo:{nome:'Gigantismo',agg:['giganti','giganti'],txt:n=>`${n} diventano giganti.`,fx:'Dimensioni ×1,8, più aggressive, ma servono più risorse.'},
- radioattivo:{nome:'Radioattività',agg:['radioattive','radioattivi'],txt:n=>`${n} assorbono la radiazione e diventano radioattive.`,fx:'Tollerano la radiazione e sono tossiche per i predatori.'},
- intelligenza:{nome:'Intelligenza',agg:['ingegnose','ingegnosi'],txt:n=>`${n} sviluppano un’intelligenza insolita.`,fx:'+0,25 di intelligenza: più vicine a una società.'},
- corazza:{nome:'Corazza',agg:['corazzate','corazzati'],txt:n=>`${n} sviluppano una corazza spessa.`,fx:'Molto più difficili da predare.'},
- velenoso:{nome:'Veleno',agg:['velenose','velenosi'],txt:n=>`${n} producono un veleno potente.`,fx:'I predatori le evitano.'},
- iperfertilita:{nome:'Iperfertilità',agg:['prolifiche','prolifici'],txt:n=>`${n} si moltiplicano a ritmo vertiginoso.`,fx:'Si riproducono il 50% più in fretta.'},
+ radioattivo:{nome:'Radiotolleranza',agg:['radiotolleranti','radiotolleranti'],txt:n=>`${n} si abituano alla radiazione del sasso e la reggono meglio.`,fx:'Reggono molta più radiazione, ma si riproducono un po’ più piano.'},
+ intelligenza:{nome:'Intelligenza',agg:['ingegnose','ingegnosi'],txt:n=>`${n} sviluppano un’intelligenza insolita.`,fx:'+0,25 di intelligenza (più vicine a una società), ma un cervello costa: si riproducono un po’ più piano.'},
+ corazza:{nome:'Corazza',agg:['corazzate','corazzati'],txt:n=>`${n} sviluppano una corazza spessa.`,fx:'Molto più difficili da predare, ma la corazza costa energia: si riproducono più piano.'},
+ velenoso:{nome:'Veleno',agg:['velenose','velenosi'],txt:n=>`${n} producono un veleno potente.`,fx:'I predatori le evitano, ma il veleno costa: si riproducono un po’ più piano.'},
+ iperfertilita:{nome:'Iperfertilità',agg:['prolifiche','prolifici'],txt:n=>`${n} si moltiplicano a ritmo vertiginoso.`,fx:'Si riproducono il 50% più in fretta, ma i piccoli sono più fragili e si fanno predare di più.'},
  bioluminescenza:{nome:'Bioluminescenza',agg:['luminose','luminosi'],txt:n=>`${n} cominciano a brillare nel buio.`,fx:'Brillano; attirano i predatori.'},
 };
 const CULT={
@@ -112,7 +112,7 @@ function run(setup,opts){
     sp.forEach(x=>{
       if(!x.alive) return;
       let K;
-      if(x.dieta==='foglie') K=70*leaf; else if(x.dieta==='marcio') K=60*(rot+.15); else if(x.dieta==='onnivora') K=50*(.5*leaf+.6*rot+.35); else if(x.dieta==='misto') K=45*(.6*leaf+.6*rot+.1);
+      if(x.dieta==='foglie') K=70*leaf; else if(x.dieta==='marcio') K=60*(rot+.15)*(x.id==='termiti'?.8:1); else if(x.dieta==='onnivora') K=50*(.5*leaf+.6*rot+.35); else if(x.dieta==='misto') K=45*(.6*leaf+.6*rot+.1);
       else { let prey=0; sp.forEach(y=>{ if(y!==x&&y.alive&&y.dieta!=='insetti') prey+=y.pop*y.size*y.suscept; }); K=.7*prey/x.size; }
       K=Math.min(100,K)*(x.mut.includes('gigantismo')?.6:1);
       const suit=clamp(1-.55*Math.abs(s-x.tol.l)-.7*Math.abs(w-x.tol.w)-.8*Math.max(0,R-x.tol.r));
@@ -127,7 +127,7 @@ function run(setup,opts){
       let dp=r*x.pop*(1-comp/x.K);
       // disagio: se l'ambiente è troppo lontano dai gusti della specie, muoiono individui
       if(x.suit<.55) dp-=(.55-x.suit)*.16*x.pop;
-      if(x.dieta==='insetti'){ let prey=0; sp.forEach(y=>{ if(y!==x&&y.alive&&y.dieta!=='insetti') prey+=y.pop; }); if(prey<8) dp-=.03*x.pop; }
+      if(x.dieta==='insetti'){ let prey=0; sp.forEach(y=>{ if(y!==x&&y.alive&&y.dieta!=='insetti') prey+=y.pop; }); if(prey<8){ x.fame=(x.fame||0)+1; if(x.fame>10) dp-=.008*x.pop; } else x.fame=0; }
       // stress idrico: troppo secco o troppo bagnato per la specie
       const stress=Math.max(0,Math.abs(w-x.tol.w)-.35)*.08; if(stress>0) dp-=stress*x.pop;
       if(stress>.015 && !x.idro && d>8){ x.idro=true; ev(d,'ambiente','💧',x.nome+(w<x.tol.w?' soffrono la siccità.':' soffrono l’umidità eccessiva.'),['Acqua '+ACQUA[setup.acqua].nome.toLowerCase()+': non è l’ambiente giusto per '+x.nome.toLowerCase()+'.']); }
@@ -145,20 +145,21 @@ function run(setup,opts){
       if(x.pop<1){ x.alive=false; ev(d,'estinzione','💀',x.nome+' si estinguono.',['Cibo o clima non adatti ('+(x.suit<.3?'condizioni sfavorevoli':'competizione e predazione')+').']); return; }
       x.genAcc+=x.rep0*.1; if(x.genAcc>=1){ x.genAcc=0; x.gen++; }
       const gain=Math.pow(R,1.3)*1.0*(x.pop>3?1:0); x.mutIdx+=gain; x.X+=gain;
-      const th=[6,14,26,40][x.mut.length];
-      if(th!=null && x.mutIdx>=th && x.mut.length<4){
+      const th=[6,14][x.mut.length];
+      if(th!=null && x.mutIdx>=th && x.mut.length<2){
         const pool=Object.keys(MUT).filter(m=>!x.mut.includes(m)&&!(m==='intelligenza'&&!x.sociale&&x.int<.35)).map(m=>{
           let wt=(x.aff[m]||0.3);
           if(m==='radioattivo') wt*=.5+R*1.2; if(m==='corazza'||m==='velenoso') wt*=sp.some(y=>y.dieta==='insetti'&&y.alive)?1.8:.6;
-          if(m==='iperfertilita') wt*=x.pop<30?1.6:.7; if(m==='bioluminescenza') wt*=1.4-s*.6; if(m==='gigantismo') wt*=x.K>40?1.3:.6;
+          if(m==='iperfertilita') wt*=x.pop/x.K>.6?2:.4; if(m==='bioluminescenza') wt*=s<.4?2:.35; if(m==='corazza'&&w<.35) wt*=1.8; if(m==='gigantismo') wt*=x.K>40?1.3:.6;
           return [m,Math.max(.01,wt)]; });
         let tot=pool.reduce((a,b)=>a+b[1],0), r=R_()*tot, pick=pool[0][0]; for(const [m,wt] of pool){ r-=wt; if(r<=0){pick=m;break;} }
         x.mut.push(pick); const M=MUT[pick];
-        if(pick==='gigantismo'){ x.size*=1.8; x.agg=clamp(x.agg+.2); } if(pick==='radioattivo'){ x.tol.r+=.3; x.tossico=true; x.suscept*=.6; }
-        if(pick==='intelligenza') x.intBonus+=.25; if(pick==='corazza') x.suscept*=.45; if(pick==='velenoso'){ x.suscept*=.6; x.agg=clamp(x.agg+.1); }
-        if(pick==='iperfertilita') x.rep*=1.5; if(pick==='bioluminescenza') x.suscept*=1.25;
+        if(pick==='gigantismo'){ x.size*=1.8; x.agg=clamp(x.agg+.2); } if(pick==='radioattivo'){ x.tol.r+=.3; x.rep*=.9; }
+        if(pick==='intelligenza'){ x.intBonus+=.25; x.rep*=.92; } if(pick==='corazza'){ x.suscept*=.45; x.rep*=.88; } if(pick==='velenoso'){ x.suscept*=.6; x.agg=clamp(x.agg+.1); x.rep*=.92; }
+        if(pick==='iperfertilita'){ x.rep*=1.5; x.suscept*=1.2; } if(pick==='bioluminescenza') x.suscept*=1.25;
         const why=['Radiazione media finora '+f2(radBase.reduce((a,b)=>a+b,0)/radBase.length)+' ('+LUCE[setup.luce].nome.toLowerCase()+').'];
         why.push('Tratti di '+x.nome.toLowerCase()+': '+(x.aff[pick]>=2?'molto portate':'portate')+' a questa mutazione.');
+        { const pr=pick==='corazza'?(sp.some(y=>y.dieta==='insetti'&&y.alive)?'C’è un predatore nel vaso: chi ha un guscio più duro sopravvive.':(w<.35?'L’aria è secca: una cuticola più spessa trattiene l’acqua.':'')):pick==='bioluminescenza'?(s<.4?'Il vaso è buio: la luce propria serve.':''):pick==='iperfertilita'?(x.pop/x.K>.6?'Il vaso è affollato: chi fa più piccoli vince.':''):pick==='radioattivo'?'La radiazione del sasso seleziona chi la regge. Nessuna radiazione esce da loro.':pick==='velenoso'?'C’è chi li caccia: il veleno li difende.':''; if(pr) why.push(pr); why.push('Costo: ogni cambiamento si paga (riproduzione più lenta o più fragilità). Al massimo due per specie.'); }
         ev(d,'mutazione','🧬',M.txt(x.nome),why);
         if(pick==='gigantismo' && !x.sociale && !x.monster && x.pop>25){ x.monster=true; ev(d,'mostro','👹',x.nome+' giganti dominano il vaso.',['Mutazione gigante + popolazione alta ('+Math.round(x.pop)+').']); }
       }
@@ -185,7 +186,7 @@ function run(setup,opts){
     if(d>=30 && d%4===0){
       for(let i=0;i<sp.length;i++)for(let j=i+1;j<sp.length;j++){
         const a=sp[i],b=sp[j]; if(!a.alive||!b.alive||a.pop<12||b.pop<12) continue;
-        if(!((a.society&&b.society)||(a.society&&!b.sociale&&b.agg>=.3)||(b.society&&!a.sociale&&a.agg>=.3))) continue; if(a.dieta==='insetti'||b.dieta==='insetti') continue;
+        if(!((a.id==='formiche'&&b.id==='termiti')||(a.id==='termiti'&&b.id==='formiche'))) continue;
         const ov=overlap(a,b); if(ov<=0) continue;
         const crowd=Math.max((a.pop+ov*b.pop)/a.K,(b.pop+ov*a.pop)/b.K); const key=a.id+'|'+b.id; const cur=wars.find(x=>x.key===key&&!x.end);
         const prev=wars.filter(x=>x.key===key); const last=prev[prev.length-1]; const bothSoc=a.society&&b.society;
