@@ -81,7 +81,13 @@ h1,h2,h3{margin:0}
 .xp{height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;margin:6px 0}.xp i{display:block;height:6px;background:var(--green)}
 .fcard{display:grid;grid-template-columns:40px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}.fcard:first-of-type{border-top:0}
 textarea.tx{width:100%;min-height:90px;border-radius:12px;border:1px solid var(--line2);background:var(--s2);color:var(--body);font:12px ui-monospace,monospace;padding:8px}
-.splash{position:fixed;inset:0;z-index:40;background:#0A0F15;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s}
+.splash{position:fixed;inset:0;z-index:40;background:#0F0D14;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .25s cubic-bezier(.4,0,.2,1)}
+.splash .mk{width:min(40vw,168px);height:auto;animation:splp 1.6s cubic-bezier(.45,0,.55,1) infinite;will-change:transform}
+.splash .sname{font:italic 400 28px Newsreader,Georgia,serif;color:#EDE8F7;margin-top:18px;letter-spacing:.02em}
+@keyframes splp{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@media (prefers-reduced-motion: reduce){.splash .mk{animation:none}.splash{transition-duration:.01s}}
+img.ico{width:1.05em;height:1.05em;object-fit:contain;display:inline-block;vertical-align:-.14em;pointer-events:none}
+.nf span img.ico{width:24px;height:24px;vertical-align:middle}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* ===== avventura guidata ===== */

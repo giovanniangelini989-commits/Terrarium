@@ -2,7 +2,7 @@ sim=open('sim.js').read(); css=open('app/app.css').read()
 a1=open('app/microclima.js').read()+'\n'+open('app/app1.js').read(); a2=open('app/app2.js').read(); a3=open('app/fx.js').read()+'\n'+open('app/carte.js').read()+'\n'+open('app/app3.js').read()+'\n'+open('app/scenari.js').read()
 st=open('app/story.js').read()+'\n'+open('app/notti.js').read(); au=open('app/audio.js').read(); fl=open('app/apertura.js').read()+'\n'+open('app/film.js').read(); v3=open('app/modelli.js').read()+'\n'+open('app/piante.js').read()+'\n'+open('app/v3d.js').read(); km=open('app/kimi.js').read()+'\n'+open('app/materials.js').read()+'\n'+open('app/luci.js').read()+'\n'+open('app/tex.js').read()
 # Modelli di Kimi incorporati (tier swarm e close + LOD derivati in vendor/lod): il gioco resta un solo file HTML
-import base64, json, os, shutil
+import base64, json, os, shutil, io
 def _b64(path): return base64.b64encode(open(path,'rb').read()).decode('ascii')
 GLB={}
 for sp in sorted(os.listdir('assets/kimi')):
@@ -35,6 +35,26 @@ glb+='window.__MAT_FOTO='+json.dumps(MATF,separators=(',',':'))+';'
 print('materiali fotografici:',{k:sorted(v) for k,v in MATF.items()})
 print('scenografia apertura:',sorted(GLB_AP))
 print('modelli incorporati:',{k:sorted(v) for k,v in GLB.items()},'base64',len(glb),'byte')
+
+# Icone delle creature (assets/icone, da Giovanni): 128 px WebP in base64 -> window.__ICONE={id:dataURI}; le altre specie restano emoji
+from PIL import Image
+ICONE={}
+for _id in ('formiche','lumache','orologio'):
+    _f='assets/icone/'+_id+'.webp'
+    if os.path.exists(_f):
+        _im=Image.open(_f).convert('RGBA'); _im.thumbnail((128,128),Image.LANCZOS); _b=io.BytesIO(); _im.save(_b,'WEBP',quality=82,method=6)
+        ICONE[_id]='data:image/webp;base64,'+base64.b64encode(_b.getvalue()).decode('ascii')
+icone_js='window.__ICONE='+json.dumps(ICONE,separators=(',',':'))+';'
+print('icone:',{k:len(v) for k,v in ICONE.items()})
+# Manifest minimale per «Aggiungi a Home»: icone 192/512 ricompresse (palette) e incorporate come data URI
+def _png_small(path):
+    _im=Image.open(path).convert('RGBA').quantize(128,method=Image.FASTOCTREE); _b=io.BytesIO(); _im.save(_b,'PNG',optimize=True)
+    return 'data:image/png;base64,'+base64.b64encode(_b.getvalue()).decode('ascii')
+MANIFEST={"name":"Terrario","short_name":"Terrario","lang":"it","display":"standalone","orientation":"portrait","background_color":"#0F0D14","theme_color":"#0F0D14","start_url":".","icons":[{"src":_png_small('assets/brand/icona-192.png'),"sizes":"192x192","type":"image/png"},{"src":_png_small('assets/brand/icona-512.png'),"sizes":"512x512","type":"image/png","purpose":"any"}]}
+MAN_URI='data:application/manifest+json;base64,'+base64.b64encode(json.dumps(MANIFEST,separators=(',',':')).encode()).decode('ascii')
+MARCHIO=open('assets/brand/marchio.svg').read().split('?>',1)[-1]
+MARCHIO=__import__('re').sub(r'<!--.*?-->','',MARCHIO,flags=__import__('re').S).strip().replace('<svg ','<svg class="mk" aria-hidden="true" ',1)
+print('manifest',len(MAN_URI),'byte')
 # marchio e icona dell'app (assets/brand, da Giovanni): incorporati, così «Aggiungi a Home» mostra l'icona vera
 ICO180=base64.b64encode(open('assets/brand/icona-180.png','rb').read()).decode(); FAV=base64.b64encode(open('assets/brand/favicon-64.png','rb').read()).decode()
 html=f'''<!doctype html>
@@ -46,6 +66,7 @@ html=f'''<!doctype html>
 <meta name="theme-color" content="#0F0D14">
 <title>Terrario</title>
 <meta name="apple-mobile-web-app-title" content="Terrario">
+<link rel="manifest" href="{MAN_URI}">
 <link rel="apple-touch-icon" href="data:image/png;base64,{ICO180}">
 <link rel="icon" type="image/png" href="data:image/png;base64,{FAV}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,7 +80,10 @@ html=f'''<!doctype html>
 <body>
 <div id="app"><div id="screen" class="screen"></div><nav id="tabbar" class="glass" hidden aria-label="Sezioni"></nav></div>
 <div id="layer"></div>
-<div id="splash" class="splash"><div style="font-size:54px">🫙</div><div style="font-family:Unbounded,sans-serif;font-weight:200;font-size:30px;margin-top:10px;letter-spacing:.04em">TERRARIO</div><div class="muted" style="margin-top:12px">Il terrario si sta svegliando…</div><div class="muted faint" style="position:absolute;bottom:24px;font-size:11px">prototipo giocabile · titolo provvisorio</div></div>
+<div id="splash" class="splash" role="status" aria-label="Terrario si sta caricando">{MARCHIO}<div class="sname">Terrario</div></div>
+<script>
+{icone_js}
+</script>
 <script>
 {sim}
 </script>
