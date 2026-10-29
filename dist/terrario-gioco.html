@@ -3605,6 +3605,7 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
   // ---------- terreno vivo: bagnato/secco, linea d'acqua, muschio (microclima __app.micro(); senza microclima usa i bisogni) ----------
   function terrainTick(dt){ const m=S.m; let wet, wl=0, rist=0;
     if(m&&m.acqua){ wet=clamp(m.acqua.terriccio*.85+m.acqua.superficie*.45); wl=clamp(Math.max(m.acqua.drenaggio,m.acqua.ristagno*.9)); rist=clamp(m.acqua.ristagno); } else wet=clamp((S.n.um-.2)/.7);
+    const F=(x,d)=>Number.isFinite(x)?x:d; wet=F(wet,.5); wl=F(wl,0); rist=F(rist,0); S.wet=F(S.wet,wet); S.wl=F(S.wl,0); S.rist=F(S.rist,0); // un valore mancante del microclima non deve mai rendere NaN il terreno (terra a specchio)
     const k=Math.min(1,dt*.35); S.wet+=(wet-S.wet)*k; S.wl+=(wl-S.wl)*Math.min(1,dt*.25); S.rist+=(rist-S.rist)*k;
     const w=S.wet; // secco: chiaro e opaco · bagnato: scuro e lucido (la mappa resta la stessa: cambia la tinta, la roughness e un velo di clearcoat)
     if(FT) soilMat.color.setRGB(1.06-.62*w,1.02-.62*w,.98-.6*w).lerp(CPOOR2,S.poor*.5); else soilMat.color.setRGB(1.16-.66*w,1.04-.6*w,.88-.5*w).lerp(CPOOR2,S.poor*.5); soilMat.roughness=1-.5*w; soilMat.clearcoat=.5*w; sideMat.color.copy(soilMat.color).multiplyScalar(.9); sideMat.roughness=soilMat.roughness; sideMat.clearcoat=soilMat.clearcoat*.6;
