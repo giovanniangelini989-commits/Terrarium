@@ -37,3 +37,6 @@ Giovanni sceglie che il gioco segua i sei scenari (`docs/riferimenti/sei-scenari
 
 ## Versioni mutate: stesso modello, texture diversa (Giovanni, 29 ottobre 2026)
 Ogni creatura e pianta ha **un solo modello 3D**. La versione mutata usa la stessa geometria con una seconda texture (colore + maschera del bagliore viola), mescolata dal gioco in base alla mutazione. Per le piante si fa già così con le foto «magiche». Per lumache e insetti: un modello, due texture (normale e mutata), mai due modelli.
+
+## Suono: il battito del meteorite sempre presente (Giovanni, 29 ottobre 2026)
+Il battito e l'interferenza del meteorite di oggi restano **sempre presenti**, sotto qualsiasi musica: sono la firma sonora del gioco (bassi che «vibrano» il telefono). La colonna sonora futura si mette sopra, senza coprirli né sostituirli.
