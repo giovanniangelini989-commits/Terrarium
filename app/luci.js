@@ -106,7 +106,7 @@ window.__LUCI=function(THREE,o){
     '   gl_FragColor=mix(gl_FragColor,mb/8.,clamp((lp-1.5)/3.,0.,1.)); }',
     ' }',
     ' if(uBloom>0.){ vec3 bl=(texture2D(tB0,vUv).rgb*.7+texture2D(tB1,vUv).rgb*1.1)*uBloom; gl_FragColor.rgb+=bl; gl_FragColor.a=min(1.,gl_FragColor.a+max(bl.r,max(bl.g,bl.b))); }',
-    ' if(any(isnan(gl_FragColor))) gl_FragColor=vec4(0.,0.,0.,0.);',
+    ' if(any(isnan(gl_FragColor))) gl_FragColor=vec4(.07,.055,.05,1.);',  // mai un buco trasparente: si vedrebbe lo sfondo della pagina
     ' #include <tonemapping_fragment>',
     ' #include <colorspace_fragment>',
     ' float v=1.-uVig*smoothstep(.25,.95,length(dc*vec2(uRes.x/uRes.y,1.))*1.25);',            // vignettatura (scurisce anche la foto di fondo, alfa premoltiplicato)
