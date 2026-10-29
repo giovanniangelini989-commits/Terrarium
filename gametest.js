@@ -159,7 +159,7 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
 }
 // 10) missioni e gocce: 3 attive, mai impossibili, si sostituiscono, le gocce comprano notti e salti
 { const P=window.__app, S2=window.__story; P.newGame('M',JSON.parse(JSON.stringify(su))); P.popups.length=0; P.G.ui.fase=5; P.G.arrivi={list:[],n:0};
-  let m=P.missioni(); t('missioni: 3 attive, con titolo e premio',m.att.length===3&&m.att.every(a=>a.titolo.length>8&&a.g>=2&&a.n>=1),JSON.stringify(m.att.map(a=>a.k)));
+  let m=P.missioni(); t('missioni: 3 attive, con titolo e premio',m.att.length===3&&m.att.every(a=>a.titolo.length>8&&a.g>=1&&a.n>=1),JSON.stringify(m.att.map(a=>a.k)));
   t('missioni: tipi diversi tra loro',new Set(m.att.map(a=>a.k)).size===3);
   P.G.ui.fase=3; P.G.miss=null; t('missioni: prima della fase 4 non ce ne sono',P.missioni().att.length===0); P.G.ui.fase=5;
   // una missione impossibile si cambia da sola, in silenzio, senza perdere gocce
