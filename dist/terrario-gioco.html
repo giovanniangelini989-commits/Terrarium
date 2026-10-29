@@ -4584,7 +4584,7 @@ function importa(){ var applica=function(t){ try{ var g=JSON.parse(t); if(!g||g.
   var chiedi=function(){ var t=null; try{ t=window.prompt('Incolla qui il salvataggio'); }catch(e){} if(t) applica(t); };
   try{ if(navigator.clipboard&&navigator.clipboard.readText){ navigator.clipboard.readText().then(function(t){ if(t&&t.trim().charAt(0)==='{') applica(t); else chiedi(); }).catch(chiedi); return 'skip'; } }catch(e){}
   chiedi(); return 'skip'; }
-function azzera(){ var ok=true; try{ ok=window.confirm('Azzerare la partita? Il salvataggio sparisce.'); }catch(e){} if(!ok) return 'skip'; A.store.del(); toast('Partita azzerata'); setTimeout(function(){ location.reload(); },400); return 'skip'; }
+function azzera(){ var ok=true; try{ ok=window.confirm('Azzerare la partita? Il salvataggio sparisce.'); }catch(e){} if(!ok) return 'skip'; try{ A.persist=function(){}; if(A.store.set) A.store.set=function(){}; if(A.store.save) A.store.save=function(){}; }catch(e){} A.store.del(); /* niente salvataggi tra la cancellazione e il ricaricamento */ toast('Partita azzerata'); setTimeout(function(){ location.reload(); },400); return 'skip'; }
 
 /* ---------- prestazioni ---------- */
 var stat=null, statRaf=0, statOn=false;
@@ -4602,6 +4602,7 @@ const SEZ=[
   V('avviato','Vaso avviato: muschio, felce, formiche',function(){ nuova([],[],[]); A.skipStart(); entra(); return true; })]},
  {t:'Popolazioni',v:[
   V('f20','20 formiche',function(){ nuova(['formiche'],['muschio','felce'],[]); pop('formiche',20); entra(); return true; }),
+  V('giungla-tot','Giungla totale: le piante occupano tutto',function(){ nuova(['formiche','lumache'],['muschio','felce','fungo','carnivora','succulenta'],[]); entra(); var f={giungla:1,detrito:.5}; ['muschio','felce','fungo','carnivora','succulenta'].forEach(function(id){ f[id]={vigore:.95,crescita:400,biomassa:1}; }); setTimeout(function(){ try{ if(window.__v3d&&window.__v3d.piante) window.__v3d.piante.force(f); }catch(e){} },300); return true; }),
   V('grande','Popolazione grande (100+)',function(){ nuova(['formiche','termiti'],['muschio','felce'],[]); pop('formiche',120); pop('termiti',110); entra(); return true; }),
   V('tutte','Tutte le specie insieme',function(){ var P=Object.keys(T.PIANTE),S=Object.keys(T.SPECIE); nuova(S,P,[]); S.forEach(function(i){ pop(i,30); }); entra(); return true; }),
   V('mutata','Una specie mutata',function(){ nuova(['formiche'],['muschio','felce'],[]); var x=sp('formiche'); x.mut.push('gigantismo','radioattivo'); x.size*=1.8; x.gen=6; A.updateCodex(); entra(); return true; }),
