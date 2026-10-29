@@ -338,6 +338,8 @@ body.v3load .stage.full .vasebox.hero::before{content:'';position:absolute;left:
 .rstate{margin:10px 0 0;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
 .rstate div{display:flex;gap:8px;font-size:13.5px;color:var(--body);padding:2px 0}
 body:has(.stage.full) .toast{bottom:calc(env(safe-area-inset-bottom) + 170px)}
+/* con i controlli della modalità test accesi la notifica sale sopra di loro (non li copre) */
+body:has(.demoov.on) .toast{bottom:calc(env(safe-area-inset-bottom) + 250px)}
 
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js"}}</script>
