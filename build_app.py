@@ -13,7 +13,24 @@ for sp in sorted(os.listdir('assets/kimi')):
     for t in ('lod1','lod2'):
         f='vendor/lod/'+sp+'_'+t+'.glb'
         if os.path.exists(f): GLB[sp][t]=_b64(f)
+# Lumaca vera (assets/modelli/lumache, Magnific/Tripo): GLB close+swarm in __GLB; pelle mutata e bagliore in __GLBX (stessa UV, DECISIONI «Versioni mutate»).
+# Pelle mutata ripulita dai puntini (mediano) e maschera del bagliore sfocata+soglia: resta luce lungo spirale e venature, niente puntini sul guscio.
+from PIL import Image as _I, ImageFilter as _F
+import numpy as _np
+GLBX={}
+_LU='assets/modelli/lumache'
+if os.path.exists(_LU+'/close.glb'):
+    GLB['lumache']={t:_b64(_LU+'/'+t+'.glb') for t in ('close','swarm') if os.path.exists(_LU+'/'+t+'.glb')}
+    GLBX['lumache']={}
+    def _webp(im,q): b=io.BytesIO(); im.save(b,'WEBP',quality=q); return base64.b64encode(b.getvalue()).decode('ascii')
+    for t,(med,rad,sz) in {'close':(5,7,512),'swarm':(3,2,128)}.items():
+        mu=_I.open(_LU+'/mutata_'+t+'.webp').convert('RGB').filter(_F.MedianFilter(med))
+        GLBX['lumache']['mut_'+t]=_webp(mu,80)
+        mk=_I.open(_LU+'/maschera_emissiva_'+t+'.png').convert('L').filter(_F.GaussianBlur(rad))
+        a=_np.clip((_np.asarray(mk,dtype=_np.float32)/255-.15)/.28,0,1)
+        GLBX['lumache']['glow_'+t]=_webp(_I.fromarray((a*255).astype('uint8')).resize((sz,sz),_I.BILINEAR).convert('RGB'),85)
 glb='window.__GLB='+json.dumps(GLB,separators=(',',':'))+';'
+glb+='window.__GLBX='+json.dumps(GLBX,separators=(',',':'))+';'
 # Scenografia del video iniziale (app/apertura.js, agente finali): stessi file e stesso formato di __GLB ({id:{close}}),
 # in una chiave a parte perché non sono specie. Il meteorite entra qui (solo close, mai hero: DECISIONI §5).
 # Quando Kimi consegna la passata F basta mettere assets/kimi/<id>/close.glb e ricostruire.
