@@ -310,7 +310,7 @@ let lastTouch=0; ['pointerdown','touchstart','click'].forEach(ev=>document.addEv
 setInterval(()=>{ if(mode!=='game'||!A.G) return; if(Date.now()-lastTouch<2500||busy()) return; const ch=A.checkNewDay(); const rr=A.refreshReq(); if((ch||rr)&&tab==='vaso') render(); showNextPopup(); },15000);
 document.addEventListener('click',e=>{ if(e.target!==V.cv||mode!=='game'||tab!=='vaso'||cine||sheetOpen()) return; const id=V.hit(e.clientX,e.clientY); if(id) groupSheet(id); });
 // ---------------- avvio ----------------
-function boot(){ const has=A.loadSave(); requestAnimationFrame(()=>setTimeout(()=>{ const s=$('#splash'); if(s){ s.style.opacity=0; setTimeout(()=>s.remove(),250); } if(has){ mode='game'; try3d(); A.checkNewDay(); A.queueDecisions(); render(); setTimeout(showNextPopup,300); setTimeout(donoToast,1600); } else startFilm(false); },0)); }
+function boot(){ const has=A.loadSave(); requestAnimationFrame(()=>setTimeout(()=>{ const s=$('#splash'); if(s){ let vista=false; try{ vista=sessionStorage.getItem('terrario-splash')==='1'; sessionStorage.setItem('terrario-splash','1'); }catch(e){} const resta=vista?0:Math.max(0,1400-performance.now()); setTimeout(()=>{ s.style.opacity=0; setTimeout(()=>s.remove(),250); },resta); } if(has){ mode='game'; try3d(); A.checkNewDay(); A.queueDecisions(); render(); setTimeout(showNextPopup,300); setTimeout(donoToast,1600); } else startFilm(false); },0)); }
 window.__ui.passaNotte=()=>H['notte-ui']();
 window.__ui.boot=boot; boot();
 // aggancio alla guardia prestazioni di v3d.js: quando avvisa che il 3D e' lento, spegne i vetri sfocati
