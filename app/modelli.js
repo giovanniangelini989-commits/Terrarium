@@ -69,9 +69,9 @@ function patch(mat,depth){ mat.onBeforeCompile=sh=>{ sh.uniforms.uTime=uni.uTime
 const SN_VHEAD=`
 attribute float aEmit; attribute vec4 iAnim; attribute float iMut;
 uniform float uTime;
-varying float vMut; varying float vShell;`;
+varying float vMut; varying float vShell; varying vec3 vLoc;`;
 const SN_VBEGIN=`vec3 transformed=vec3(position);
-vMut=iMut; vShell=aEmit;
+vMut=iMut; vShell=aEmit; vLoc=position;
 { float ph=iAnim.x*6.2832, spd=iAnim.y, body=1.-step(.5,aEmit);
   float low=1.-smoothstep(.04,.09,position.y), amp=.5+.5*spd;
   float ar=uTime*(.9+1.3*spd)-position.x*34.+ph;
@@ -80,11 +80,14 @@ vMut=iMut; vShell=aEmit;
   float tent=body*smoothstep(.085,.115,position.y)*step(.09,position.x);
   transformed.z+=tent*(position.y-.085)*.9*sin(uTime*1.1+ph+position.y*16.);
   transformed.x+=tent*(position.y-.085)*.5*sin(uTime*.8+ph*1.7); }`;
-function patchSnail(mat,tier,tx){ mat.onBeforeCompile=sh=>{ sh.uniforms.uTime=uni.uTime; sh.uniforms.uMutMap={value:tx.mut}; sh.uniforms.uGlow={value:tx.glow}; sh.uniforms.uCharge=uni.uCharge;
+// spirale del guscio (coordinate locali del modello, asse e centro ricavati dalla geometria del guscio: PCA dei vertici con _EMIT=1; spirale logaritmica, passo 2x per giro)
+const SN_SP={close:{c:[-.0602,.0832,.0119],a:[.503,.862,-.061],b:[-.512,.24,-.824],o:[.0033,.0011]},swarm:{c:[-.0499,.0784,.0075],a:[.488,.867,-.101],b:[-.473,.165,-.866],o:[.0033,.0011]}};
+const v3=a=>'vec3('+a.join(',')+')';
+function patchSnail(mat,tier,tx){ const SP=SN_SP[tier]||SN_SP.close; mat.onBeforeCompile=sh=>{ sh.uniforms.uTime=uni.uTime; sh.uniforms.uMutMap={value:tx.mut}; sh.uniforms.uGlow={value:tx.glow}; sh.uniforms.uCharge=uni.uCharge;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\n'+SN_VHEAD).replace('#include <begin_vertex>',SN_VBEGIN);
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vMut; varying float vShell; uniform float uTime,uCharge; uniform sampler2D uMutMap,uGlow;')
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vMut; varying float vShell; varying vec3 vLoc; uniform float uTime,uCharge; uniform sampler2D uMutMap,uGlow;')
       .replace('#include <map_fragment>','#include <map_fragment>\n{ float mk=smoothstep(0.,1.,clamp(vMut,0.,1.)); diffuseColor.rgb=mix(diffuseColor.rgb,texture2D(uMutMap,vMapUv).rgb*vec3(.32,.26,.4),mk*.8); }')
-.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{ float k=clamp(vMut,0.,1.3), mk=k*k, g=smoothstep(.5,.95,texture2D(uGlow,vMapUv).r)*step(.5,vShell); float fr=pow(1.-abs(dot(normalize(normal),normalize(vViewPosition))),4.); float pl=.85+.15*sin(uTime*1.6+vMapUv.x*9.); vec3 V=vec3(.3,.04,1.), hue=mix(V,mix(vec3(.9,.15,.7),vec3(.15,.55,1.),.5+.5*sin(vMapUv.x*14.+vMapUv.y*9.+uTime*.7)),.3*g); float ch=.5+.7*uCharge; float sh=step(.5,vShell); totalEmissiveRadiance+=hue*(g*pl*mk*(1.0+1.9*ch)+fr*mk*(sh*.2+(1.-sh)*.9)*ch)*vec3(1.,1.,1.); }'); };
+.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{ float k=clamp(vMut,0.,1.3), mk=k*k, g0=smoothstep(.5,.95,texture2D(uGlow,vMapUv).r)*step(.5,vShell); vec3 lp=vLoc-'+v3(SP.c)+'; vec2 sq=vec2(dot(lp,'+v3(SP.a)+'),dot(lp,'+v3(SP.b)+'))-vec2('+SP.o.join(',')+'); float sr=length(sq)+1e-5, sph=log(sr)*1.4427-atan(sq.y,sq.x)*.159155, sf=abs(sph-floor(sph+.5)); float sline=smoothstep(.1,.02,sf)*smoothstep(.003,.012,sr)*step(.5,vShell), shalo=smoothstep(.26,.0,sf)*step(.5,vShell)*smoothstep(.003,.02,sr); float g=(max(sline,g0*.35)+shalo*.12)*.36; float fr=pow(1.-abs(dot(normalize(normal),normalize(vViewPosition))),4.); float pl=.85+.15*sin(uTime*1.6+vMapUv.x*9.); vec3 V=vec3(.42,.02,1.), hue=mix(V,mix(vec3(1.,.2,.75),vec3(.15,.6,1.),.5+.5*sin(sph*6.2832+uTime*.7)),smoothstep(.05,.2,sf)*.75*step(.5,vShell)+.1*g0); float ch=.5+.7*uCharge; float sh=step(.5,vShell); totalEmissiveRadiance+=hue*(g*pl*mk*(1.0+1.9*ch)+fr*mk*(sh*.2+(1.-sh)*.9)*ch)*vec3(1.,1.,1.); }'); };
   mat.customProgramCacheKey=()=>'snail_'+tier; return mat; }
 function loadTex(b64,srgb){ const t=new THREE.TextureLoader().load('data:image/webp;base64,'+b64); t.flipY=false; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; if(srgb) t.colorSpace=THREE.SRGBColorSpace; return t; }
 const depthMat=patch(new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking}),true);
