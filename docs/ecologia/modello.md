@@ -147,11 +147,17 @@ Approvato da Giovanni: le piante crescono a dismisura se nessuno le tiene a bada
 - Ombra: `ombra = 1,4·max(0, Σ b delle piante più alte − 0,1) + 2·max(0, copertura − 0,8)`. Altezze: felce 1, carnivora 0,55, succulenta 0,5, fungo 0,25, muschio 0,1. Sotto 0,1 di chioma non c'è ombra. Effetto: luce ×(1 − 0,7·ombra) nella finestra di luce, `vigore −0,01·ombra` all'ora (fungo escluso: vive al buio).
 - Senescenza: `perso = b·(0,004·(1 − vigore) + 0,02·ombra²)` all'ora (metà per i funghi): le foglie ingiallite cadono e diventano `detrito` (60 % del perso). Più detrito = più cibo per la muffa sulla terra.
 - Fogliame fitto: traspirazione ×(0,5 + 2,5·b) per pianta (più umidità e più condensa), ventilazione ×(1 − 0,4·giungla) (aria ferma), muffa sulle foglie e sulla terra ×(1 + 0,6·giungla), substrato della muffa sulle foglie +0,4·giungla.
-- Brucatori (lumache, coleotteri): `mangiato = 0,08·brucatori·cop/(cop + 0,5)` all'ora, ripartito per `appetibilità × biomassa` (felce 1, succulenta 0,6, muschio e carnivora 0,3, fungo 0,2); il 15 % torna come feci (detrito). Risposta satura: pochi morsi se c'è poca pianta, quindi i brucatori non estinguono mai del tutto la copertura.
+- Brucatori (lumache, coleotteri): `mangiato = 0,08·brucatori·cop/(cop + 0,5)` all'ora, ripartito per `appetibilità × biomassa` (succulenta 0,6, felce 0,5 [era 1: le felci sono poco appetibili, audit 29 ott], muschio e carnivora 0,3, fungo 0,2); il 15 % torna come feci (detrito). Risposta satura: pochi morsi se c'è poca pianta, quindi i brucatori non estinguono mai del tutto la copertura.
 - Pota: taglia il 40 % della biomassa della pianta più invadente (peso: `b·(0,5 + altezza)`), max 0,3; vigore −0,05; 30 % del tagliato → detrito. Una al giorno del vaso (6 h), apre il tappo come ogni cura.
 - Letargo: biomassa congelata, niente brucatura.
 
-**Numeri (muschio + felce, mezz'ombra, tappo chiuso; 1 giorno del vaso = 6 h).**
+**Ritmo di crescita (29 ottobre 2026, Giovanni: «le piante non crescono abbastanza velocemente»).** Una notte del vaso = 6 h = 1 «giorno del vaso»; 4 notti = 1 giorno reale. Prima la biomassa soffocava il vaso in 8 notti (2 giorni reali) ma la forma visiva dipendeva dalle «ore buone» (`crescita`, ~1 a notte) con una curva lineare lenta: per giorni si vedeva solo il germoglio. Ora due cose separate.
+1. **Biomassa (competizione, ombra, giungla) più lenta**: costante `KT = 0,3` moltiplica `r`, la brucatura (`BRUCA_G`) e la senescenza, quindi l'equilibrio coi brucatori resta identico ma il tempo è ×3,3. Giungla alla notte 26, soffoca alla 35: vaso pieno alla fine della prima settimana reale (28 notti), giungla oltre.
+2. **Forma visiva ease-out** (`piante.js`): `grow = GMIN + (CAP − GMIN)·(1 − e^(−c/τ))` con `c` ore buone; τ muschio 4, felce 5, carnivora 8, succulenta 12. `rel = b/BREF` entra con radice quadrata (`√rel`), `BREF` più bassi (muschio 0,25, felce 0,3): il germoglio guadagna molto subito, poi si assesta. Quando il bersaglio sale di più di 0,03 l'animazione è 2,7× più veloce (si vede crescere al ritorno).
+Notti → aspetto (muschio+felce, mezz'ombra, senza brucatori): notte 1 germoglio ~+60 %, notte 4 piante giovani (≈70 % della taglia), notte 12 adulte (≈90 %), notte 26 copertura 0,7 (giungla), notte 35 soffocato. Con brucatori 0,25 copertura stabile ~0,33 (mai giungla); con 0,1 sale lentamente (0,69 a 48 notti).
+Semplificazione: `KT` allunga solo il tempo; è una scelta di gioco, non botanica (una felce vera raddoppia in settimane).
+
+**Numeri (muschio + felce, mezz'ombra, tappo chiuso; 1 giorno del vaso = 6 h). Valori PRIMA di KT (storico), per i nuovi vedi sopra.**
 | Brucatori | Giungla dal giorno | Soffocato dal giorno | Copertura a 24 giorni |
 |---|---|---|---|
 | 0 | 6 | 8 | 0,87 (muschio morto all'ombra) |

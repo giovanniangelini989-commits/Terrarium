@@ -35,8 +35,10 @@ const PIANTE={
 // ---------- biomassa, spazio, brucatori (docs/ecologia/modello.md §9) ----------
 // r: crescita logistica per ora a condizioni ottime (la copertura totale limita tutte: 1-cop); alt: altezza relativa (chi è più alto ombreggia chi è più basso);
 // pal: appetibilità per lumache e coleotteri; b0: copertura iniziale
-const BIO={ muschio:{r:.2,alt:.1,pal:.3,b0:.15}, felce:{r:.4,alt:1,pal:1,b0:.08}, succulenta:{r:.1,alt:.5,pal:.6,b0:.06}, fungo:{r:.2,alt:.25,pal:.2,b0:.04}, carnivora:{r:.15,alt:.55,pal:.3,b0:.06} };
-const GIUNGLA_DA=.7, GIUNGLA_PIENA=1.0, SOFFOCO=.8, BIO_MIN=.02, POTA_ORE=6, POTA_TAGLIO=.4, POTA_MAX=.3, BRUCA_G=.08;
+// KT: scala del tempo di crescita (Giovanni 29 ott: «le piante non crescono abbastanza»; poi il vaso pieno arriva a fine prima settimana reale = ~28 notti, non in 8). Vedi modello.md §9.
+const KT=.3;
+const BIO={ muschio:{r:.2*KT,alt:.1,pal:.3,b0:.15}, felce:{r:.4*KT,alt:1,pal:.5,b0:.08}, succulenta:{r:.1*KT,alt:.5,pal:.6,b0:.06}, fungo:{r:.2*KT,alt:.25,pal:.2,b0:.04}, carnivora:{r:.15*KT,alt:.55,pal:.3,b0:.06} };
+const GIUNGLA_DA=.7, GIUNGLA_PIENA=1.0, SOFFOCO=.8, BIO_MIN=.02, POTA_ORE=6, POTA_TAGLIO=.4, POTA_MAX=.3, BRUCA_G=.08*KT;
 const nuovaPianta=(p,v)=>({vigore:v,crescita:0,biomassa:BIO[p].b0,ombra:0});
 // finestra di benessere: 1 in una fascia larga attorno all'ottimo, scende a 0 ai limiti
 function finestra(x,lo,opt,hi){ if(x<=lo||x>=hi) return 0; return x<opt?clamp((x-lo)/((opt-lo)*.6)):clamp((hi-x)/((hi-opt)*.6)); }
@@ -149,7 +151,7 @@ function create(st0){ st0=st0||{};
       let dv=(bene-q.vigore)/48; if(S.marciume>.5) dv-=.01; if(S.muffa.foglie>.6) dv-=.004; if(p!=='fungo') dv-=.01*q.ombra;
       q.vigore=clamp(q.vigore+dv*dt); q.crescita+=Math.max(0,bene)*q.vigore*dt*(A.lux>0?1:.2);
       if(!S.letargo){ const gr=BIO[p].r*Math.max(0,bene)*q.vigore*q.biomassa*Math.max(0,1-cop)*(A.lux>0?1:.2);
-        const perso=q.biomassa*(.004*(1-q.vigore)+.02*q.ombra*q.ombra)*(p==='fungo'?.5:1);   // foglie ingiallite e secche
+        const perso=q.biomassa*KT*(.004*(1-q.vigore)+.02*q.ombra*q.ombra)*(p==='fungo'?.5:1);   // foglie ingiallite e secche
         q.biomassa=Math.max(BIO_MIN,q.biomassa+(gr-perso)*dt); S.detrito=clamp(S.detrito+perso*.6*dt); } });
     // --- brucatori: lumache e coleotteri mangiano foglie e germogli (risposta satura: poca pianta = poco morso); ripartono per appetibilità×biomassa; le radici ricacciano (BIO_MIN)
     if(!S.letargo&&S.brucatori>0&&cop>BIO_MIN*1.5){ const w={}; let wt=0; Object.keys(S.piante).forEach(p=>{ w[p]=BIO[p].pal*S.piante[p].biomassa; wt+=w[p]; });

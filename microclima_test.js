@@ -66,31 +66,37 @@ const maxOf=(a,f)=>Math.max(...a.map(f)), minOf=(a,f)=>Math.min(...a.map(f));
 
 // 8-11. Giungla: biomassa, spazio, brucatori, pota (1 giorno del vaso = 6 h)
 const giorni=(m,n,f,a)=>{ const o=[]; for(let d=1;d<=n;d++){ if(f) f(d,m); o.push(m.step(6,a||amb('mezza','mezza'))); } return o; };
-{ console.log('\n== Giungla: vaso lasciato a sé (24 giorni del vaso)'); const m=M.create({piante:['muschio','felce']}); const o=giorni(m,24);
-  const dS=o.findIndex(v=>v.soffocato)+1, dG=o.findIndex(v=>v.giungla>0)+1; console.log('  giungla dal giorno',dG,'· soffocato dal giorno',dS,'· copertura finale',o[23].copertura,'muschio',JSON.stringify(o[23].piante.muschio));
-  ok(o[1].giungla===0&&o[1].copertura<.6,'al giorno 2 il vaso è ancora ordinato (copertura '+o[1].copertura+')');
-  ok(dG>=4&&dG<=7,'la giungla comincia tra il giorno 4 e 7 (giorno '+dG+')');
-  ok(dS>=6&&dS<=10,'soffoca in 6–10 giorni del vaso, in linea col ciclo di 7 (giorno '+dS+')');
-  ok(o[23].piante.muschio.vigore<.15&&o[23].piante.muschio.ombra>.8,'il muschio all’ombra della felce ingiallisce (vigore '+o[23].piante.muschio.vigore+', ombra '+o[23].piante.muschio.ombra+')');
-  ok(o[23].piante.felce.ombra<.3,'la felce in cima resta in luce');
-  ok(o[23].detrito>o[0].detrito+.2&&o[23].muffa.foglie>.5,'foglie morte → detrito ('+o[0].detrito+'→'+o[23].detrito+') → muffa sulle foglie ('+o[23].muffa.foglie+')'); }
-{ const mk=b=>{ const m=M.create({piante:['muschio','felce'],brucatori:b}); return giorni(m,24); };
-  const o=mk(.25); console.log('\n== Giungla: con brucatori .25 (24 giorni)'); console.log('  copertura',o.filter((v,i)=>i%4===3).map(v=>v.copertura).join(' '),'mangiato',o[23].mangiato);
-  ok(maxOf(o,v=>v.copertura)<.7&&maxOf(o,v=>v.giungla)===0&&!o[23].soffocato,'con brucatori .25 la copertura resta sotto 0,7 (max '+maxOf(o,v=>v.copertura)+')');
-  ok(o[23].mangiato>.5&&o[23].mangiatoUltimo>0,'view() dice quanto è stato mangiato ('+o[23].mangiato+')');
-  ok(o[23].piante.muschio.vigore>.4,'il muschio vive ('+o[23].piante.muschio.vigore+')');
-  const debole=mk(.1); ok(debole.findIndex(v=>v.soffocato)>14||debole.findIndex(v=>v.soffocato)<0,'pochi brucatori (.1) ritardano molto la giungla (soffoca al giorno '+(debole.findIndex(v=>v.soffocato)+1)+')');
+{ console.log('\n== Giungla: vaso lasciato a sé (48 giorni del vaso = 12 giorni reali)'); const m=M.create({piante:['muschio','felce']}); const o=giorni(m,48);
+  const dS=o.findIndex(v=>v.soffocato)+1, dG=o.findIndex(v=>v.giungla>0)+1; console.log('  giungla dal giorno',dG,'· soffocato dal giorno',dS,'· copertura finale',o[47].copertura,'muschio',JSON.stringify(o[47].piante.muschio));
+  ok(o[1].giungla===0&&o[1].copertura<.4,'al giorno 2 il vaso è ancora ordinato (copertura '+o[1].copertura+')');
+  ok(dG>=22&&dG<=30,'la giungla comincia tra il giorno 22 e 30 (6–7 giorni reali) (giorno '+dG+')');
+  ok(dS>=30&&dS<=40,'soffoca tra il giorno 30 e 40, a fine della prima settimana reale (28 notti) (giorno '+dS+')');
+  ok(o[47].piante.muschio.vigore<.15&&o[47].piante.muschio.ombra>.7,'il muschio all’ombra della felce ingiallisce (vigore '+o[47].piante.muschio.vigore+', ombra '+o[47].piante.muschio.ombra+')');
+  ok(o[47].piante.felce.ombra<.3,'la felce in cima resta in luce');
+  ok(o[47].detrito>o[0].detrito+.15&&o[47].muffa.foglie>.45,'foglie morte → detrito ('+o[0].detrito+'→'+o[47].detrito+') → muffa sulle foglie ('+o[47].muffa.foglie+')'); }
+{ const mk=b=>{ const m=M.create({piante:['muschio','felce'],brucatori:b}); return giorni(m,48); };
+  const o=mk(.25); console.log('\n== Giungla: con brucatori .25 (48 giorni)'); console.log('  copertura',o.filter((v,i)=>i%6===5).map(v=>v.copertura).join(' '),'mangiato',o[47].mangiato);
+  ok(maxOf(o,v=>v.copertura)<.7&&maxOf(o,v=>v.giungla)===0&&!o[47].soffocato,'con brucatori .25 la copertura resta sotto 0,7 (max '+maxOf(o,v=>v.copertura)+')');
+  ok(o[47].mangiato>.5&&o[47].mangiatoUltimo>0,'view() dice quanto è stato mangiato ('+o[47].mangiato+')');
+  ok(o[47].piante.muschio.vigore>.4,'il muschio vive ('+o[47].piante.muschio.vigore+')');
+  const debole=mk(.1); ok(debole.findIndex(v=>v.soffocato)>44||debole.findIndex(v=>v.soffocato)<0,'pochi brucatori (.1) ritardano molto la giungla (soffoca al giorno '+(debole.findIndex(v=>v.soffocato)+1)+')');
   const troppi=mk(1); ok(troppi[23].copertura<.15,'troppi brucatori spelano il vaso (copertura '+troppi[23].copertura+'), ma le radici ricacciano (≥ 0,02)'); }
-{ console.log('\n== Pota'); const m=M.create({piante:['muschio','felce']}); giorni(m,8); const prima=m.view(); const v=m.act('pota');
+{ console.log('\n== Pota'); const m=M.create({piante:['muschio','felce']}); giorni(m,36); const prima=m.view(); const v=m.act('pota');
   ok(v.pota.ultima.ok&&v.pota.ultima.pianta==='felce'&&v.pota.ultima.tagliato>.15&&v.pota.ultima.tagliato<=.3,'pota taglia la pianta più invadente ('+v.pota.ultima.pianta+' −'+v.pota.ultima.tagliato+')');
   ok(v.copertura<prima.copertura-.15&&v.detrito>prima.detrito,'la copertura scende ('+prima.copertura+'→'+v.copertura+') e resta un po’ di detrito');
   const v2=m.act('pota'); ok(!v2.pota.ultima.ok&&v2.pota.ultima.motivo==='riposo'&&v2.copertura===v.copertura,'una pota al giorno del vaso: la seconda subito dopo non taglia');
   m.step(6,amb('mezza','mezza')); ok(m.view().pota.pronta,'dopo un giorno del vaso si può potare di nuovo');
-  const k=M.create({piante:['muschio','felce']}); const o=giorni(k,24,(d,mm)=>{ if(d>=5&&d%2===1) mm.act('pota'); }); console.log('  potando un giorno su due dal 5°: copertura',o.filter((v,i)=>i%4===3).map(v=>v.copertura).join(' '));
-  ok(o[23].giungla===0&&!o[23].soffocato&&o[23].copertura>.15,'potando un giorno su due il vaso non soffoca né si spela (copertura '+o[23].copertura+')'); }
+  const k=M.create({piante:['muschio','felce']}); const o=giorni(k,48,(d,mm)=>{ if(d>=24&&d%6===0) mm.act('pota'); }); console.log('  potando ogni 6 giorni dal 24°: copertura',o.filter((v,i)=>i%6===5).map(v=>v.copertura).join(' '));
+  ok(o[47].giungla===0&&!o[47].soffocato&&o[47].copertura>.15,'potando ogni 6 giorni il vaso non soffoca né si spela (copertura '+o[47].copertura+')'); }
 { const m=M.create({piante:['felce']}); giorni(m,5); const a=m.view().copertura; m.step(24*10,t=>Object.assign(M.ambienteDi(t,{}),{letargo:true}));
   ok(Math.abs(m.view().copertura-a)<.01,'in letargo la biomassa si ferma ('+a+'→'+m.view().copertura+')');
   const s=m.save(); delete s.S.piante.felce.biomassa; delete s.S.piante.felce.ombra; delete s.S.potaFino; const m2=M.create(); m2.load(s); const v=m2.view(); ok(v.piante.felce.biomassa>0&&v.pota.pronta,'un salvataggio vecchio senza biomassa si apre'); }
+
+{ console.log('\n== Crescita visibile (notti = giorni del vaso)'); const m=M.create({piante:['muschio','felce']}); const c0=m.view().copertura; const o=giorni(m,12);
+  console.log('  copertura per notte',o.map(v=>v.copertura).join(' '));
+  ok(o[0].piante.felce.crescita>.3&&o[0].piante.muschio.crescita>.5,'dopo la prima notte le ore buone sono già > 0 (muschio '+o[0].piante.muschio.crescita+', felce '+o[0].piante.felce.crescita+')');
+  ok(o[3].piante.muschio.crescita>3.5&&o[3].piante.felce.crescita>4,'dopo 4 notti (1 giorno reale) piante giovani: ore buone muschio '+o[3].piante.muschio.crescita+', felce '+o[3].piante.felce.crescita);
+  ok(o[3].copertura>c0+.04,'la copertura sale già nel primo giorno reale ('+c0+'→'+o[3].copertura+')'); }
 
 console.log('\n'+(fails?fails+' controlli falliti':'tutti i controlli passano'));
 process.exit(fails?1:0);
