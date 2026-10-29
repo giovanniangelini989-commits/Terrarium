@@ -382,7 +382,7 @@ const METEO=[{nome:'Piccolo',g:.7},{nome:'Medio',g:1},{nome:'Grande',g:1.4}];
 
 const PIANTE={
  muschio:{nome:'Muschio',icon:'🌿',opt:{l:.45,w:.7},rad:.2,foglie:.45,rot:0,nota:'Ama l’umido; resiste alla radiazione.'},
- felce:{nome:'Felce',icon:'🍃',opt:{l:.55,w:.6},rad:.7,foglie:1,rot:0,nota:'Cibo ricco per gli erbivori; soffre la radiazione.'},
+ felce:{nome:'Felce',icon:'🍃',opt:{l:.55,w:.6},rad:.7,foglie:.5,rot:0,nota:'Poco appetibile per gli erbivori (difese chimiche); soffre la radiazione.'},
  succulenta:{nome:'Succulenta',icon:'🌵',opt:{l:.95,w:.25},rad:.5,foglie:.8,rot:0,nota:'Vuole sole e poca acqua.'},
  fungo:{nome:'Funghi',icon:'🍄',opt:{l:.3,w:.8},rad:-.7,foglie:0,rot:1.2,nota:'Nutre chi mangia il marcio. Si nutre di radiazione.'},
  carnivora:{nome:'Pianta carnivora',icon:'🪴',opt:{l:.75,w:.65},rad:.6,foglie:.3,rot:0,pred:true,nota:'Cattura le mosche.'},
@@ -407,11 +407,11 @@ const OGGETTI={
 };
 const MUT={
  gigantismo:{nome:'Gigantismo',agg:['giganti','giganti'],txt:n=>`${n} diventano giganti.`,fx:'Dimensioni ×1,8, più aggressive, ma servono più risorse.'},
- radioattivo:{nome:'Radioattività',agg:['radioattive','radioattivi'],txt:n=>`${n} assorbono la radiazione e diventano radioattive.`,fx:'Tollerano la radiazione e sono tossiche per i predatori.'},
- intelligenza:{nome:'Intelligenza',agg:['ingegnose','ingegnosi'],txt:n=>`${n} sviluppano un’intelligenza insolita.`,fx:'+0,25 di intelligenza: più vicine a una società.'},
- corazza:{nome:'Corazza',agg:['corazzate','corazzati'],txt:n=>`${n} sviluppano una corazza spessa.`,fx:'Molto più difficili da predare.'},
- velenoso:{nome:'Veleno',agg:['velenose','velenosi'],txt:n=>`${n} producono un veleno potente.`,fx:'I predatori le evitano.'},
- iperfertilita:{nome:'Iperfertilità',agg:['prolifiche','prolifici'],txt:n=>`${n} si moltiplicano a ritmo vertiginoso.`,fx:'Si riproducono il 50% più in fretta.'},
+ radioattivo:{nome:'Radiotolleranza',agg:['radiotolleranti','radiotolleranti'],txt:n=>`${n} si abituano alla radiazione del sasso e la reggono meglio.`,fx:'Reggono molta più radiazione, ma si riproducono un po’ più piano.'},
+ intelligenza:{nome:'Intelligenza',agg:['ingegnose','ingegnosi'],txt:n=>`${n} sviluppano un’intelligenza insolita.`,fx:'+0,25 di intelligenza (più vicine a una società), ma un cervello costa: si riproducono un po’ più piano.'},
+ corazza:{nome:'Corazza',agg:['corazzate','corazzati'],txt:n=>`${n} sviluppano una corazza spessa.`,fx:'Molto più difficili da predare, ma la corazza costa energia: si riproducono più piano.'},
+ velenoso:{nome:'Veleno',agg:['velenose','velenosi'],txt:n=>`${n} producono un veleno potente.`,fx:'I predatori le evitano, ma il veleno costa: si riproducono un po’ più piano.'},
+ iperfertilita:{nome:'Iperfertilità',agg:['prolifiche','prolifici'],txt:n=>`${n} si moltiplicano a ritmo vertiginoso.`,fx:'Si riproducono il 50% più in fretta, ma i piccoli sono più fragili e si fanno predare di più.'},
  bioluminescenza:{nome:'Bioluminescenza',agg:['luminose','luminosi'],txt:n=>`${n} cominciano a brillare nel buio.`,fx:'Brillano; attirano i predatori.'},
 };
 const CULT={
@@ -473,11 +473,12 @@ function createSim(setup0,opts){
   function applyMut(x,pick){
     x.mut.push(pick); const M=MUT[pick];
 
-        if(pick==='gigantismo'){ x.size*=1.8; x.agg=clamp(x.agg+.2); } if(pick==='radioattivo'){ x.tol.r+=.3; x.tossico=true; x.suscept*=.6; }
-        if(pick==='intelligenza') x.intBonus+=.25; if(pick==='corazza') x.suscept*=.45; if(pick==='velenoso'){ x.suscept*=.6; x.agg=clamp(x.agg+.1); }
-        if(pick==='iperfertilita') x.rep*=1.5; if(pick==='bioluminescenza') x.suscept*=1.25;
+        if(pick==='gigantismo'){ x.size*=1.8; x.agg=clamp(x.agg+.2); } if(pick==='radioattivo'){ x.tol.r+=.3; x.rep*=.9; }
+        if(pick==='intelligenza'){ x.intBonus+=.25; x.rep*=.92; } if(pick==='corazza'){ x.suscept*=.45; x.rep*=.88; } if(pick==='velenoso'){ x.suscept*=.6; x.agg=clamp(x.agg+.1); x.rep*=.92; }
+        if(pick==='iperfertilita'){ x.rep*=1.5; x.suscept*=1.2; } if(pick==='bioluminescenza') x.suscept*=1.25;
         const why=['Radiazione media finora '+f2((radSum/Math.max(1,radN)))+' ('+LUCE[setup.luce].nome.toLowerCase()+').'];
         why.push('Tratti di '+x.nome.toLowerCase()+': '+(x.aff[pick]>=2?'molto portate':'portate')+' a questa mutazione.');
+        { const pr=pick==='corazza'?(sp.some(y=>y.dieta==='insetti'&&y.alive)?'C’è un predatore nel vaso: chi ha un guscio più duro sopravvive.':(w<.35?'L’aria è secca: una cuticola più spessa trattiene l’acqua.':'')):pick==='bioluminescenza'?(s<.4?'Il vaso è buio: la luce propria serve.':''):pick==='iperfertilita'?(x.pop/x.K>.6?'Il vaso è affollato: chi fa più piccoli vince.':''):pick==='radioattivo'?'La radiazione del sasso seleziona chi la regge. Nessuna radiazione esce da loro.':pick==='velenoso'?'C’è chi li caccia: il veleno li difende.':''; if(pr) why.push(pr); why.push('Costo: ogni cambiamento si paga (riproduzione più lenta o più fragilità). Al massimo due per specie.'); }
         ev(d,'mutazione','🧬',M.txt(x.nome),why);
         if(pick==='gigantismo' && !x.sociale && !x.monster && x.pop>25){ x.monster=true; ev(d,'mostro','👹',x.nome+' giganti dominano il vaso.',['Mutazione gigante + popolazione alta ('+Math.round(x.pop)+').']); }
   }
@@ -514,7 +515,7 @@ function createSim(setup0,opts){
     plants.forEach(p=>{
       let v=clamp(1-1.1*Math.abs(s-p.opt.l)-1.1*Math.abs(w-p.opt.w));
       v*= p.rad<0 ? 1+(-p.rad)*R : clamp(1-p.rad*Math.max(0,R-.5)*1.4,.1,1.5);
-      if(NEEDS){ v*=clamp(.45+1.1*detr,.45,1)*(1-clamp((muffa-.6)*1.2,0,.8)); v=climaPianta(p,v); } p.v=v; leaf+=p.foglie*v; rot+=p.rot*v; if(p.pred) carn+=v;
+      if(NEEDS){ v*=(p.pred?1:clamp(.45+1.1*detr,.45,1))*(1-clamp((muffa-.6)*1.2,0,.8)); v=climaPianta(p,v); } p.v=v; leaf+=p.foglie*v; rot+=p.rot*v; if(p.pred) carn+=v;
       if(!p.mut && R>.62 && d>25 && R_()<.03 && v>.3){ p.mut=true; ev(d,'mutazione','✨',p.id==='fungo'?'I funghi brillano e prosperano nella radiazione.':(p.id==='muschio'?'Il muschio comincia a emettere una luce verde.':p.nome+' cresce in forme strane vicino al meteorite.'),['Radiazione alta ('+f2(R)+') per molti giorni.']); }
     });
     if(NEEDS) climaWarn();
@@ -524,7 +525,7 @@ function createSim(setup0,opts){
     sp.forEach(x=>{
       if(!x.alive) return;
       let K;
-      if(x.dieta==='foglie') K=70*leaf; else if(x.dieta==='marcio') K=60*(rot+.15); else if(x.dieta==='onnivora') K=50*(.5*leaf+.6*rot+.35); else if(x.dieta==='misto') K=45*(.6*leaf+.6*rot+.1);
+      if(x.dieta==='foglie') K=70*leaf; else if(x.dieta==='marcio') K=60*(rot+.15)*(x.id==='termiti'?.8:1); else if(x.dieta==='onnivora') K=50*(.5*leaf+.6*rot+.35); else if(x.dieta==='misto') K=45*(.6*leaf+.6*rot+.1);
       else { let prey=0; sp.forEach(y=>{ if(y!==x&&y.alive&&y.dieta!=='insetti') prey+=y.pop*y.size*y.suscept; }); K=.7*prey/x.size; }
       K=Math.min(100,K)*(x.mut.includes('gigantismo')?.6:1);
       const suit=clamp(1-.55*Math.abs(s-x.tol.l)-.7*Math.abs(w-x.tol.w)-.8*Math.max(0,R-x.tol.r)-(NEEDS?clamp((muffa-.6)*.5,0,.3):0));
@@ -535,11 +536,11 @@ function createSim(setup0,opts){
     sp.forEach(x=>{
       if(!x.alive) return;
       let comp=x.pop; sp.forEach(y=>{ if(y!==x&&y.alive) comp+=overlap(x,y)*y.pop*(y.size/x.size); });
-      const r=.12*x.rep*clamp(x.suit+.15,0,1.2);
+      const r=.12*x.rep*clamp(x.suit+.15,0,1.2)*(NEEDS?clamp((clima.Tc-8)/12,.2,1)*(w<.2&&x.id!=='lumache'?.5:1):1);
       let dp=r*x.pop*(1-comp/x.K);
       // disagio: se l'ambiente è troppo lontano dai gusti della specie, muoiono individui
       if(x.suit<.55) dp-=(.55-x.suit)*.16*x.pop;
-      if(x.dieta==='insetti'){ let prey=0; sp.forEach(y=>{ if(y!==x&&y.alive&&y.dieta!=='insetti') prey+=y.pop; }); if(prey<8) dp-=.03*x.pop; }
+      if(x.dieta==='insetti'){ let prey=0; sp.forEach(y=>{ if(y!==x&&y.alive&&y.dieta!=='insetti') prey+=y.pop; }); if(prey<8){ x.fame=(x.fame||0)+1; if(x.fame>10) dp-=.008*x.pop; } else x.fame=0; }
       // stress idrico: troppo secco o troppo bagnato per la specie
       const stress=Math.max(0,Math.abs(w-x.tol.w)-.35)*.08; if(stress>0) dp-=stress*x.pop; if(NEEDS){ const crit=(w<CW?1:0)+(detr<.04?.5:0)+(muffa>.88?.5:0); if(crit) dp-=crit*CM*x.pop; }
       if(stress>.015 && !x.idro && d>8){ x.idro=true; ev(d,'ambiente','💧',x.nome+(w<x.tol.w?' soffrono la siccità.':' soffrono l’umidità eccessiva.'),['Acqua '+ACQUA[setup.acqua].nome.toLowerCase()+': non è l’ambiente giusto per '+x.nome.toLowerCase()+'.']); }
@@ -558,12 +559,12 @@ function createSim(setup0,opts){
       if(x.pop<1){ x.alive=false; ev(d,'estinzione','💀',x.nome+' si estinguono.',['Cibo o clima non adatti ('+(x.suit<.3?'condizioni sfavorevoli':'competizione e predazione')+').']); return; }
       x.genAcc+=x.rep0*.1; if(x.genAcc>=1){ x.genAcc=0; x.gen++; }
       const gain=Math.pow(R,1.3)*1.0*(x.pop>3?1:0); x.mutIdx+=gain; x.X+=gain;
-      const th=[6,14,26,40][x.mut.length];
-      if(th!=null && x.mutIdx>=th && x.mut.length<4){
+      const th=[6,14][x.mut.length];
+      if(th!=null && x.mutIdx>=th && x.mut.length<2){
         const pool=Object.keys(MUT).filter(m=>!x.mut.includes(m)&&!(m==='intelligenza'&&!x.sociale&&x.int<.35)).map(m=>{
           let wt=(x.aff[m]||0.3);
           if(m==='radioattivo') wt*=.5+R*1.2; if(m==='corazza'||m==='velenoso') wt*=sp.some(y=>y.dieta==='insetti'&&y.alive)?1.8:.6;
-          if(m==='iperfertilita') wt*=x.pop<30?1.6:.7; if(m==='bioluminescenza') wt*=1.4-s*.6; if(m==='gigantismo') wt*=x.K>40?1.3:.6;
+          if(m==='iperfertilita') wt*=x.pop/x.K>.6?2:.4; if(m==='bioluminescenza') wt*=s<.4?2:.35; if(m==='corazza'&&w<.35) wt*=1.8; if(m==='gigantismo') wt*=x.K>40?1.3:.6;
           return [m,Math.max(.01,wt)]; });
         let tot=pool.reduce((a,b)=>a+b[1],0), r=R_()*tot, pick=pool[0][0]; for(const [m,wt] of pool){ r-=wt; if(r<=0){pick=m;break;} }
         if(opts.decisions && !x.decisionDone){ x.decisionDone=true; pending.push({id:'m'+d+'-'+x.id,type:'mutazione',sp:x.id,mutation:pick,d,th}); }
@@ -593,7 +594,7 @@ function createSim(setup0,opts){
     if(d>=30 && d%4===0){
       for(let i=0;i<sp.length;i++)for(let j=i+1;j<sp.length;j++){
         const a=sp[i],b=sp[j]; if(!a.alive||!b.alive||a.pop<12||b.pop<12) continue;
-        if(!((a.society&&b.society)||(a.society&&!b.sociale&&b.agg>=.3)||(b.society&&!a.sociale&&a.agg>=.3))) continue; if(a.dieta==='insetti'||b.dieta==='insetti') continue;
+        if(!((a.id==='formiche'&&b.id==='termiti')||(a.id==='termiti'&&b.id==='formiche'))) continue;
         const ov=overlap(a,b); if(ov<=0) continue;
         const crowd=Math.max((a.pop+ov*b.pop)/a.K,(b.pop+ov*a.pop)/b.K); const key=a.id+'|'+b.id; const cur=wars.find(x=>x.key===key&&!x.end);
         const prev=wars.filter(x=>x.key===key); const last=prev[prev.length-1]; const bothSoc=a.society&&b.society;
@@ -831,7 +832,7 @@ const REQ={}; Object.keys(REQV).forEach(k=>Object.defineProperty(REQ,k,{enumerab
 // ---------- la voce del vaso ----------
 const NM={
  gigantismo:[N=>cap(N)+' crescono giorno dopo giorno. Mangiano per tre: il cibo, nel vaso, adesso finisce prima.',N=>'Qualcosa nella luce: '+N+' sono più grandi di ieri. Dove passano, gli altri si scansano.',N=>cap(N)+' non passano più tra i fili del muschio. Ci camminano sopra, e il muschio si piega.',N=>'Il vetro sembra più vicino: '+N+' hanno bisogno di spazio. E di molto più cibo.'],
- radioattivo:[(N,F)=>'Vicino al sasso la terra è tiepida. '+cap(N)+' ci passano sopra e cambiano. Chi prova a '+(F?'mangiarle':'mangiarli')+', adesso, sta male.',(N,F)=>cap(N)+' brillano appena, di un verde che non c’era. La luce del sasso non '+(F?'le':'li')+' brucia più.',(N,F)=>cap(N)+' dormono '+(F?'attaccate':'attaccati')+' al sasso. Lì nessun altro resiste: è il loro posto.',N=>'Chi caccia assaggia '+N+' e sputa. Sanno di sasso, di qualcosa che fa male.'],
+ radioattivo:[(N,F)=>'Vicino al sasso la terra è tiepida. '+cap(N)+' ci passano sopra, e col tempo imparano a reggere la luce strana. Non sono diventat'+(F?'e':'i')+' pericolos'+(F?'e':'i')+': hanno solo la pelle più dura.',(N,F)=>cap(N)+' brillano appena, di un verde che non c’era. Ormai la luce del sasso non '+(F?'le':'li')+' disturba più.',(N,F)=>cap(N)+' dormono '+(F?'attaccate':'attaccati')+' al sasso. Lì nessun altro resiste: è il loro posto.',N=>'Nessuna radiazione esce da '+N+'. Semplicemente, adesso la sopportano.'],
  intelligenza:[N=>cap(N)+' si fermano più spesso. Guardano. Hanno capito che c’è un vetro, e che dietro ci sei tu.',N=>'Qualcuno, tra '+N+', ha trascinato una briciola fino al sasso. Come un’offerta. Stanno imparando.',N=>cap(N)+' hanno trovato una strada più corta per il cibo. Gli altri la seguono. Un popolo è vicino.',(N,F)=>'Quando ti avvicini, '+N+' si girano verso di te. '+(F?'Tutte':'Tutti')+' insieme, come una domanda.'],
  corazza:[N=>cap(N)+' si coprono di una scorza scura come inchiostro. Chi caccia, adesso, ci rinuncia.',(N,F)=>cap(N)+' hanno un guscio sempre più spesso. Sotto il dito suonano come sassolini. Nessuno '+(F?'le':'li')+' morde più.',N=>'Tic, tic: '+N+' battono contro il vetro con il guscio nuovo. Non hanno più paura di niente.',(N,F)=>cap(N)+' camminano piano, '+(F?'pesanti. La corazza le protegge, ma le rende lente.':'pesanti. La corazza li protegge, ma li rende lenti.')],
  velenoso:[N=>'Un odore dolce e sbagliato: '+N+' hanno imparato a difendersi. I predatori girano alla larga.',N=>cap(N)+' lasciano una traccia amara. Adesso nessuno si avvicina più.',N=>'Chi morde '+N+' sputa e scappa. Nel vaso è cambiato chi ha paura di chi.',N=>cap(N)+' attraversano il muschio senza nascondersi. Non ne hanno più bisogno.'],
@@ -839,7 +840,7 @@ const NM={
  bioluminescenza:[N=>'Quando spegni la luce, '+N+' accendono la loro. Belle, e visibili da chi caccia.',N=>cap(N)+' brillano nel buio come lucciole inquiete. Adesso chiunque sa dove sono.',N=>'Di notte il vaso ha una costellazione nuova: '+N+'. Chi caccia segue ogni loro passo.',N=>cap(N)+' fanno luce sul muschio. Di notte il vaso non è più buio, per nessuno.']
 };
 // conseguenza in una riga, per la scheda della mutazione (interfaccia): MUTFX[m]
-const MUTFX={gigantismo:'Diventano grandi: mangiano di più e gli altri si scansano.',radioattivo:'Reggono la luce del sasso. Chi le mangia sta male.',intelligenza:'Imparano in fretta. Un popolo è più vicino.',corazza:'Guscio duro: chi caccia ci rinuncia.',velenoso:'Hanno il veleno: i predatori girano alla larga.',iperfertilita:'Nascono in fretta: il cibo finirà prima.',bioluminescenza:'Brillano al buio: belle, ma si vedono da lontano.'};
+const MUTFX={gigantismo:'Diventano grandi: mangiano di più e gli altri si scansano.',radioattivo:'Reggono la luce del sasso (radiotolleranza), ma fanno meno piccoli.',intelligenza:'Imparano in fretta. Un popolo è più vicino.',corazza:'Guscio duro: chi caccia ci rinuncia, ma costa fatica e fanno meno piccoli.',velenoso:'Hanno il veleno: i predatori girano alla larga.',iperfertilita:'Nascono in fretta: il cibo finirà prima.',bioluminescenza:'Brillano al buio: belle, ma si vedono da lontano.'};
 const MUTMAP={}; Object.keys(T.MUT).forEach(m=>Object.values(T.SPECIE).forEach(s=>{ MUTMAP[T.MUT[m].txt(s.nome)]={m,nome:s.nome}; }));
 function narra(e){ const t=e.text, d=e.d||0; let m;
   if(MUTMAP[t]){ const {m:mm,nome}=MUTMAP[t]; return pick(NM[mm],d)(the(nome),fem(nome)); }
@@ -883,7 +884,7 @@ function osserva(v,seed){ const soc=v.sp.find(x=>x.alive&&x.society), mon=v.sp.f
   if(soc) return {focus:{kind:'specie',id:soc.id},text:pick(['Ti avvicini. Sul terreno ci sono segni che sembrano strade, e in fondo una piccola costruzione di terra. Qualcuno ha cominciato a raccontare storie.','Una fila ordinata si muove verso il centro del vaso. '+ag(soc.nome,'Ognuna porta qualcosa. Nessuna ti guarda, ma tutte sanno','Ognuno porta qualcosa. Nessuno ti guarda, ma tutti sanno')+' che ci sei.'],seed)};
   if(mon) return {focus:{kind:'specie',id:mon.id},text:'La creatura più grande occupa quasi metà del vetro. Quando ti avvicini, si ferma. Ti guarda. Poi riprende a mangiare.'};
   if(v.E>70) return {focus:{kind:'meteorite'},text:'Il sasso batte forte. Le crepe viola pulsano a ritmo con qualcosa che non è nel vaso, ma dentro di te.'};
-  if(al.length){ const x=pick(al,seed); const mu=x.mut.length; return {focus:{kind:'specie',id:x.id},text:mu?cap(the(x.nome))+' si muovono con più sicurezza di prima. '+(x.mut.includes('radioattivo')?'Hanno un alone verde, appena visibile.':x.mut.includes('gigantismo')?'Hanno un passo pesante, nuovo.':'Qualcosa in loro è cambiato.'):'Ti avvicini a guardare '+the(x.nome)+'. Esplorano il muschio, una briciola alla volta, senza fretta.'}; }
+  if(al.length){ const x=pick(al,seed); const mu=x.mut.length; return {focus:{kind:'specie',id:x.id},text:mu?cap(the(x.nome))+' si muovono con più sicurezza di prima. '+(x.mut.includes('radioattivo')?'Hanno un alone verde, appena visibile: la luce del sasso non li disturba più.':x.mut.includes('gigantismo')?'Hanno un passo pesante, nuovo.':'Qualcosa in loro è cambiato.'):'Ti avvicini a guardare '+the(x.nome)+'. Esplorano il muschio, una briciola alla volta, senza fretta.'}; }
   return {focus:{kind:'meteorite'},text:'Il sasso batte piano. Il vaso è quieto, come in attesa di qualcuno.'}; }
 // ---------- voce ambientale ----------
 function ambient(v,night,seed){ const p=[]; const nd=v.needs; if(!v.sp.length&&!v.setup.piante.length) return pick(['Il sasso batte, solo, nel barattolo vuoto.','Un filo di luce attraversa il vetro. Dentro non c’è ancora niente.','Il vuoto, qui dentro, ha un suono: è il battito.'],seed); if(nd){ if(nd.um<.28) return 'Le foglie si arricciano: qualcuno ha sete.'; if(nd.ter<.15) return 'Il terreno è grigio e stanco.'; if(nd.pul<.4) return 'Il vetro è appannato di sporco e la muffa avanza.'; }
