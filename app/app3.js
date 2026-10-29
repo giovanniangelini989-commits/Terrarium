@@ -1,3 +1,11 @@
+/* Icone delle creature: window.__ICONE (build_app.py) sostituisce le emoji di formiche, lumache e tempo con le foto;
+   senza icona resta l'emoji. Livello: nessuna animazione propria (eredita quella dell'elemento che le contiene). */
+(function(){ const IC=window.__ICONE||{}, MAP={'\u{1F41C}':'formiche','\u{1F40C}':'lumache','\u23F1':'orologio','\u{1F570}':'orologio','\u23F3':'orologio'}; const RE=/(\u{1F41C}|\u{1F40C}|\u23F1|\u{1F570}|\u23F3)\uFE0F?/gu;
+  if(!Object.keys(IC).length||!window.MutationObserver) return;
+  const fix=n=>{ if(n.nodeType===3){ const t=n.nodeValue; RE.lastIndex=0; if(!RE.test(t)) return; const p=n.parentNode; if(!p||/^(SCRIPT|STYLE|TEXTAREA|TITLE)$/.test(p.nodeName)) return; const fr=document.createDocumentFragment(); let last=0; RE.lastIndex=0; let m; while((m=RE.exec(t))){ const id=MAP[m[1]]; if(!IC[id]) continue; if(m.index>last) fr.appendChild(document.createTextNode(t.slice(last,m.index))); const im=document.createElement('img'); im.className='ico'; im.alt=''; im.src=IC[id]; im.draggable=false; fr.appendChild(im); last=m.index+m[0].length; } if(last){ if(last<t.length) fr.appendChild(document.createTextNode(t.slice(last))); p.replaceChild(fr,n); } } else if(n.nodeType===1&&n.nodeName!=='IMG'&&n.nodeName!=='CANVAS'){ for(let c=n.firstChild;c;){ const nx=c.nextSibling; fix(c); c=nx; } } };
+  new MutationObserver(ms=>{ for(const m of ms){ m.addedNodes.forEach(fix); if(m.type==='characterData') fix(m.target); } }).observe(document.body,{childList:true,subtree:true,characterData:true});
+})();
+
 /* ============ TABELLA DEI LIVELLI DI RISPOSTA (motion) ============
    Si animano solo transform e opacity. Ogni effetto torna a riposo. Niente movimento lineare.
    evento                                  livello   durata
@@ -302,7 +310,7 @@ let lastTouch=0; ['pointerdown','touchstart','click'].forEach(ev=>document.addEv
 setInterval(()=>{ if(mode!=='game'||!A.G) return; if(Date.now()-lastTouch<2500||busy()) return; const ch=A.checkNewDay(); const rr=A.refreshReq(); if((ch||rr)&&tab==='vaso') render(); showNextPopup(); },15000);
 document.addEventListener('click',e=>{ if(e.target!==V.cv||mode!=='game'||tab!=='vaso'||cine||sheetOpen()) return; const id=V.hit(e.clientX,e.clientY); if(id) groupSheet(id); });
 // ---------------- avvio ----------------
-function boot(){ const has=A.loadSave(); const delay=has?800:1100; setTimeout(()=>{ const s=$('#splash'); if(s){ s.style.opacity=0; setTimeout(()=>s.remove(),500); } if(has){ mode='game'; try3d(); A.checkNewDay(); A.queueDecisions(); render(); setTimeout(showNextPopup,300); setTimeout(donoToast,1600); } else startFilm(false); },delay); }
+function boot(){ const has=A.loadSave(); requestAnimationFrame(()=>setTimeout(()=>{ const s=$('#splash'); if(s){ s.style.opacity=0; setTimeout(()=>s.remove(),250); } if(has){ mode='game'; try3d(); A.checkNewDay(); A.queueDecisions(); render(); setTimeout(showNextPopup,300); setTimeout(donoToast,1600); } else startFilm(false); },0)); }
 window.__ui.passaNotte=()=>H['notte-ui']();
 window.__ui.boot=boot; boot();
 // aggancio alla guardia prestazioni di v3d.js: quando avvisa che il 3D e' lento, spegne i vetri sfocati
