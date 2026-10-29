@@ -34,3 +34,6 @@ La musica e gli effetti si generano con Magnific. L'agente **musicista** scrive 
 
 ## Direzione: magico e luminoso (27 ottobre 2026)
 Giovanni sceglie che il gioco segua i sei scenari (`docs/riferimenti/sei-scenari.png`): materiali fotografici veri, ma vaso maturo luminoso con bloom viola, funghi e venature che brillano, riflessi rosa/azzurro ammessi nelle mutazioni. L'interfaccia resta a due colori.
+
+## Versioni mutate: stesso modello, texture diversa (Giovanni, 29 ottobre 2026)
+Ogni creatura e pianta ha **un solo modello 3D**. La versione mutata usa la stessa geometria con una seconda texture (colore + maschera del bagliore viola), mescolata dal gioco in base alla mutazione. Per le piante si fa già così con le foto «magiche». Per lumache e insetti: un modello, due texture (normale e mutata), mai due modelli.
