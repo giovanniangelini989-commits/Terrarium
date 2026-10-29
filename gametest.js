@@ -145,7 +145,7 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   t('dono della nonna: uno solo dopo 3 giorni di assenza, in seconda persona',dn.length===1&&dn[0].testo.length>20&&P.G.nonna.n===1,JSON.stringify(dn));
   P.popups.length=0; P.checkNewDay(); P.donoNonna(); t('stesso giorno: nessun secondo dono',!P.popups.some(p=>p.t==='dono')&&P.G.nonna.n===1);
   P.G.dev.offset+=1; P.popups.length=0; P.checkNewDay(); t('il giorno dopo: un altro dono, senza serie',P.G.nonna.n===2&&P.popups.filter(p=>p.t==='dono').length===1&&P.G.nonna.serie===undefined);
-  const ids=new Set(); for(let i=0;i<12;i++){ P.G.dev.offset+=1; P.popups.length=0; P.checkNewDay(); ids.add(P.G.nonna.id); } t('i doni variano',ids.size>=3,[...ids].join());
+  const ids=new Set(); for(let i=0;i<12;i++){ P.G.dev.offset+=1; P.popups.length=0; P.checkNewDay(); ids.add(P.G.nonna.id); P.doAct('pulisci'); } t('i doni variano (a chi cura il vaso)',ids.size>=3,[...ids].join());
   // 3) Avanza di una notte
   P.G.dev.offset+=1; P.checkNewDay(); P.popups.length=0; P.sim.pending.length=0; P.G.letargo=null; P.G.real.owed=0; P.G.power.resto=0; let ai=P.avanzaInfo();
   const d0=P.sim.d; let okN=0; for(let i=0;i<5;i++){ const r=P.avanzaNotte(); if(r.ok) okN++; P.sim.pending.length=0; P.G.real.owed=0; }

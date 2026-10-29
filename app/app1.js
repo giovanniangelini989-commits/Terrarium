@@ -226,7 +226,7 @@ function checkNewDay(){ const t=todayIdx(), s=slotIdx(), r=G.real; donoPower(); 
   persist(); return {nuovi,notti:nuove}; }
 // ---------- Il dono della nonna: uno al giorno reale, mai accumulato né perso, nessuna serie ----------
 function donoNonna(){ const t=todayIdx(); if((G.ui.fase==null?5:G.ui.fase)<2) return null; const n=G.nonna||(G.nonna={ultimo:null,id:null,n:0}); if(n.ultimo===t) return null;
-  const v=sim.view().needs, L=S.NONNA, ok={acqua:v.um<.85,terra:v.ter<.85,latte:(G.real.cure||0)<maniMax()+2,biscotto:true,spago:true};
+  const v=sim.view().needs, L=S.NONNA, cur=CK().lastCura!=null&&t-CK().lastCura<=1, ok={acqua:cur&&v.um<.85,terra:cur&&v.ter<.85,latte:(G.real.cure||0)<maniMax()+2,biscotto:true,spago:true};
   let i=((G.seed||0)+t)%L.length, k=0; while(k<L.length&&!ok[L[i].id]){ i=(i+1)%L.length; k++; } const d=L[i];
   if(d.id==='acqua') bumpNeeds({um:.08}); else if(d.id==='terra') bumpNeeds({ter:.08}); else if(d.id==='latte') G.real.cure=Math.min(maniMax()+2,(G.real.cure||0)+2);
   else if(d.id==='biscotto') G.ui.nextBiscotto=Math.max(G.ui.nextBiscotto||0,sim.d)+3; else if(d.id==='spago') giveXP(3);
