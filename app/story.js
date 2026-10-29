@@ -263,6 +263,14 @@ function atto(v){ if(v.finalePending) return {n:4,t:'Il destino',x:'Il vaso ha t
   return {n:1,t:'Il sasso che batte',x:'Il meteorite è appena arrivato. Il vaso si sta svegliando: osserva, cura, aspetta.'}; }
 function biscotto(){ return {intro:'Un’ombra sul muro. Poi una zampa sul coperchio. Biscotto ha deciso che il barattolo è suo.',pallina:'Biscotto insegue la pallina e dimentica il vaso. Tu respiri.',pallinaNo:'Biscotto ignora la pallina e dà una zampata al coperchio.',davanzale:'Sposti il vaso sul davanzale, fuori portata. Qui il sole è più forte: il sasso lo sente.',ok:'Il vaso è salvo. Per questa volta.',male:'Il barattolo cade sul ripiano. Non si rompe, ma il vetro si scheggia: per qualche giorno entrerà meno luce.'}; }
 // ---------- tempo, mani, calendario, fine del vaso (bozze in seconda persona; motore + storia) ----------
+// Ritorno e dono della nonna (docs/CONTRATTI.md «Ritorno…»). Seconda persona, mai un obbligo.
+const RITORNO={notti:n=>n===1?'È passata una notte.':'Sono passate '+n+' notti.',titolo:'Mentre non c’eri',buongiorno:'Buongiorno',guarda:'Guarda il vaso',avanza:'Avanza di una notte',avanzaTetto:'Per ora basta notti: il vaso ha bisogno di respirare.',avanzaDone:'Una notte passa. Il sasso batte, il muschio respira.',dono:'Sul davanzale'};
+const NONNA=[
+ {id:'acqua',ic:'🥛',t:'Sul davanzale c’è un bicchiere d’acqua. L’ha lasciato la nonna: «Per le tue piante».'},
+ {id:'terra',ic:'🍂',t:'Qualcuno ha lasciato una manciata di foglie secche accanto al vaso. Faranno da nutrimento.'},
+ {id:'latte',ic:'☕',t:'C’è una tazza di latte caldo sul davanzale. Con quella, le mani si rimettono in moto.'},
+ {id:'biscotto',ic:'🍪',t:'La nonna ha lasciato un biscotto per Biscotto. Per un po’ sarà il gatto più buono della casa.'},
+ {id:'spago',ic:'🧶',t:'Un pezzo di spago, lasciato lì da qualcuno. Non serve a niente, ma ti fa sentire a casa.'}];
 const TEMPO={
  prossima:ore=>ore<=0?'La prossima notte sta arrivando.':ore===1?'La prossima notte arriva tra un’ora.':'La prossima notte arriva tra '+ore+' ore.',
  prossimaAlle:h=>'La prossima notte arriva alle '+h+'.',
@@ -284,5 +292,5 @@ const TEMPO={
  eredita:{Quiete:'La terra nuova è già un po’ umida: il vaso di prima le ha lasciato il suo respiro.','Mostri':'Il sasso batte forte fin dal primo giorno: ricorda il gigante.','Società':'Sul tavolo, la prima cosa che troverai sarà quella che il popolo adorava.',Conflitti:'Chi arriverà per primo, arriverà in fretta: il vaso di prima ha insegnato la fretta.'},
  mensola:(n,nome,giorni)=>'Vaso '+n+' · '+nome+' · '+giorni+(giorni===1?' giorno':' giorni')+' nel vaso'};
 const CAL={inizio:'Il vaso comincia',nasce:'Qualcuno arriva',estinta:'Non ne resta nessuna',muta:'Qualcuno cambia',popolo:'Nasce un popolo',cultura:'Il popolo cambia idea',mostro:'Nasce un gigante',guerra:'Scoppia una guerra',pace:'Torna la pace',pianta:'Cresce una pianta',oggetto:'Una cosa dal tavolo',scelta:'Hai scelto',carta:'Hai giocato una carta',gatto:'Biscotto',capitolo:'Un finale',pagina:'Hai scritto nel quaderno',letargo:'Il vaso dormiva',risveglio:'Il vaso si è svegliato',salto:'Hai saltato due giorni',vaso:'Un vaso nuovo'};
-window.__story={TEMPO,CAL,the,cap,pick,TITOLI,PRO,OGG_VOCE,ARR,REQ,REQV,narra,osserva,ambient,PAG,DIARIO,diario,MITO,EPI,epilogo,atto,biscotto,MUTMAP,MUTFX,LETARGO,letargo,SALTO_NO,SALTO_DONO,SALTO_FATTO,FILM_FEDE};
+window.__story={RITORNO,NONNA,TEMPO,CAL,the,cap,pick,TITOLI,PRO,OGG_VOCE,ARR,REQ,REQV,narra,osserva,ambient,PAG,DIARIO,diario,MITO,EPI,epilogo,atto,biscotto,MUTMAP,MUTFX,LETARGO,letargo,SALTO_NO,SALTO_DONO,SALTO_FATTO,FILM_FEDE};
 })();
