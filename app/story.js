@@ -265,6 +265,17 @@ function biscotto(){ return {intro:'Un’ombra sul muro. Poi una zampa sul coper
 // ---------- tempo, mani, calendario, fine del vaso (bozze in seconda persona; motore + storia) ----------
 // Ritorno e dono della nonna (docs/CONTRATTI.md «Ritorno…»). Seconda persona, mai un obbligo.
 const RITORNO={notti:n=>n===1?'È passata una notte.':'Sono passate '+n+' notti.',titolo:'Mentre non c’eri',buongiorno:'Buongiorno',guarda:'Guarda il vaso',avanza:'Avanza di una notte',avanzaTetto:'Per ora basta notti: il vaso ha bisogno di respirare.',avanzaDone:'Una notte passa. Il sasso batte, il muschio respira.',dono:'Sul davanzale'};
+// Missioni (seconda persona, gentili: niente scadenze). Le gocce sono «gocce di rugiada».
+const MISS={art:{coleotteri:'i',ragni:'i'},gocce:'gocce di rugiada',titolo:'Missioni',riposo:'Per oggi basta così: domani arrivano missioni nuove.',vuoto:'Per ora nessuna missione: il vaso deve prima riempirsi.',cambia:'Cambia',cambiata:'Una missione non era più possibile: ne è arrivata un’altra.',fatta:'Missione compiuta',guarda:'Guarda le missioni',
+  spendi:{avanza:'Una notte in più',salto:'Un Salta 2 in più'},spendiSotto:{avanza:'Oltre il tetto di questa visita.',salto:'Si aggiunge alle tue carte.'},ok:{avanza:'Hai una notte in più da usare.',salto:'Hai un Salta 2 in più.'},no:{gocce:'Ti servono ancora un po’ di gocce.',tetto:'Ne hai già abbastanza da parte.',inizio:'Il vaso deve prima riempirsi.'},
+  vivi:{t:(n,a)=>'Tieni in vita '+a+' '+n+' per 3 giorni',s:'Basta che ci siano ancora, giorno dopo giorno.'},
+  pota:{t:'Pota la felce prima che copra il muschio',s:'Quando la felce cresce troppo, compare il tasto Pota.'},
+  osserva:{t:(n,a)=>'Osserva da vicino '+a+' '+n,s:'Tocca Osserva mentre sono nel vaso.'},
+  umidita:{t:'Tieni l’umidità giusta per 2 giorni',s:'Né secco né zuppo. I giorni buoni si sommano.'},
+  fungo:{t:'Fai crescere un fungo',s:'Accogli quello che bussa e tienilo umido.'},
+  muta:{t:'Trova una mutazione',s:'Succede nei vasi in salute. Non ha fretta.'},
+  cure:{t:'Dedica tre cure al vaso',s:'Acqua, terra o vetro: come preferisci.'},
+  arrivo:{t:'Accogli un nuovo ospite',s:'Quando qualcuno bussa, apri.'}};
 const NONNA=[
  {id:'acqua',ic:'🥛',t:'Sul davanzale c’è un bicchiere d’acqua. L’ha lasciato la nonna: «Per le tue piante».'},
  {id:'terra',ic:'🍂',t:'Qualcuno ha lasciato una manciata di foglie secche accanto al vaso. Faranno da nutrimento.'},
@@ -292,5 +303,5 @@ const TEMPO={
  eredita:{Quiete:'La terra nuova è già un po’ umida: il vaso di prima le ha lasciato il suo respiro.','Mostri':'Il sasso batte forte fin dal primo giorno: ricorda il gigante.','Società':'Sul tavolo, la prima cosa che troverai sarà quella che il popolo adorava.',Conflitti:'Chi arriverà per primo, arriverà in fretta: il vaso di prima ha insegnato la fretta.'},
  mensola:(n,nome,giorni)=>'Vaso '+n+' · '+nome+' · '+giorni+(giorni===1?' giorno':' giorni')+' nel vaso'};
 const CAL={inizio:'Il vaso comincia',nasce:'Qualcuno arriva',estinta:'Non ne resta nessuna',muta:'Qualcuno cambia',popolo:'Nasce un popolo',cultura:'Il popolo cambia idea',mostro:'Nasce un gigante',guerra:'Scoppia una guerra',pace:'Torna la pace',pianta:'Cresce una pianta',oggetto:'Una cosa dal tavolo',scelta:'Hai scelto',carta:'Hai giocato una carta',gatto:'Biscotto',capitolo:'Un finale',pagina:'Hai scritto nel quaderno',letargo:'Il vaso dormiva',risveglio:'Il vaso si è svegliato',salto:'Hai saltato due giorni',vaso:'Un vaso nuovo'};
-window.__story={RITORNO,NONNA,TEMPO,CAL,the,cap,pick,TITOLI,PRO,OGG_VOCE,ARR,REQ,REQV,narra,osserva,ambient,PAG,DIARIO,diario,MITO,EPI,epilogo,atto,biscotto,MUTMAP,MUTFX,LETARGO,letargo,SALTO_NO,SALTO_DONO,SALTO_FATTO,FILM_FEDE};
+window.__story={RITORNO,NONNA,MISS,TEMPO,CAL,the,cap,pick,TITOLI,PRO,OGG_VOCE,ARR,REQ,REQV,narra,osserva,ambient,PAG,DIARIO,diario,MITO,EPI,epilogo,atto,biscotto,MUTMAP,MUTFX,LETARGO,letargo,SALTO_NO,SALTO_DONO,SALTO_FATTO,FILM_FEDE};
 })();

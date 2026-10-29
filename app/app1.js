@@ -56,7 +56,7 @@ function takeArrival0(id,choice){ const a=G.arrivi.list.find(x=>x.id===id); if(!
   if(choice==='no'){ a.state='rifiutato'; if(a.kind==='oggetto') a.alt.forEach(o=>{}); a.param=a.param||(a.alt&&a.alt[0]); if(a.force&&(G.ui.fase||0)<(a.kind==='pianta'?3:4)) G.arrivi.list.push({id:'a'+(G.arrivi.n++),slot:a.slot,force:a.force,due:sim.d+1,state:'futuro'}); }
   else { a.state='accettato'; if(a.kind==='specie') ok=sim.addSpecies(a.param); else if(a.kind==='pianta') ok=sim.addPlant(a.param); else { a.param=choice; ok=sim.addObject(choice); } giveXP(10);
     if(ok){ if(a.kind==='pianta'&&(G.ui.fase||0)<3){ G.ui.fase=3; G.ui.d3=sim.d; planAfterMoss(sim.d); G.req=makeRequest(); } else if(a.kind==='specie'&&(G.ui.fase||0)<4){ G.ui.fase=4; G.ui.eredita=null; G.req=makeRequest(); } } }
-  updateCodex(); persist(); return ok; }
+  if(ok){ try{ missEv('arrivo'); }catch(e){} } updateCodex(); persist(); return ok; }
 function skipStart(){ if((G.ui.fase||0)>=4) return false; sim.setNeeds({um:.7,ter:.8}); ['muschio','felce'].forEach(p=>sim.addPlant(p)); sim.addSpecies('formiche'); G.ui.fase=5; G.arrivi={list:[],n:0}; G.arrivi.list=[]; planArrivals(sim.d); G.req=makeRequest(); updateCodex(); persist(); return true; }
 function forceArrival(slot,force){ G.arrivi.list.push({id:'a'+(G.arrivi.n++),slot,force,due:sim.d,state:'futuro'}); dueArrivals().forEach(x=>popups.push({t:'arrivo',id:x.id})); }
 function planAfterMoss(d){ const a=G.arrivi, ant=(G.ui.eredita&&G.ui.eredita.anticipo)||0; a.list.push({id:'a'+(a.n++),slot:'pianta',force:'felce',due:d+3,state:'futuro'},{id:'a'+(a.n++),slot:'insetto',force:'formiche',due:d+7-ant,state:'futuro'}); planArrivals(d+10); }
@@ -113,7 +113,7 @@ function ricordo(id){ const r=giveCard(id,'ricordo'); if(r) popups.push({t:'cart
 function cardImg(id){ const a=G.album&&G.album[id]; if(!a) return null; if(a.img) return a.img; if(a.ni){ const n=(G.tree||{nodes:[]}).nodes.find(x=>x.img&&x.d===a.ni.d&&x.t===a.ni.t); if(n) return n.img; } return null; }
 function keepRicordo(node){ if(!G.album||!node.img) return; Object.values(G.album).forEach(a=>{ if(a.ni&&!a.img&&a.ni.d===node.d&&a.ni.t===node.t) a.img=node.img; }); }
 // Un giorno in cui curi il vaso conta una volta sola; ogni 7 giorni di cura (non di fila) arriva una pesca. Niente si perde.
-function curaDay(){ const C=CK(), t=todayIdx(); if(C.lastCura===t) return; C.lastCura=t; C.giorniCura++; if(C.giorniCura%ODDS.cura===0){ const r=drawCard(null,'cura'); if(r) popups.push({t:'carta',id:r.id,fonte:'cura',nuova:r.nuova}); } }
+function curaDay(){ const C=CK(), t=todayIdx(); if(C.lastCura===t) return; C.lastCura=t; try{ missGoccia(MISS.curaGoccia); }catch(e){} C.giorniCura++; if(C.giorniCura%ODDS.cura===0){ const r=drawCard(null,'cura'); if(r) popups.push({t:'carta',id:r.id,fonte:'cura',nuova:r.nuova}); } }
 function canPlay(id){ const c=CARTE[id]; if(!c) return 'Non hai questa carta.'; if(c.r==='ricordo') return 'È un ricordo: resta nell’album.'; if(!(G.mazzo[id]>0)) return 'Non hai questa carta.'; const v=sim.view();
   if(id==='sasso'&&v.setup.meteorite>=2) return 'Il sasso è già al massimo.'; if((id==='moneta'||id==='candela'||id==='radio')&&v.setup.oggetti.includes(id)) return 'Questo oggetto è già nel vaso.'; if((id==='scudo'||id==='fusa')&&G.ui.scudo) return 'Lo scudo è già pronto.'; if(id==='gomitolo'&&G.ui.gomitolo) return 'Il gomitolo è già sul tappeto.'; return ''; }
 function playCard(id){ const r=playCard0(id); if(r&&r.ok!==false){ try{ treeNode({k:'carta',lane:'vaso',t:'Giochi la carta «'+((CARTE[id]||{}).n||id)+'»'}); }catch(e){} } return r; }
@@ -131,10 +131,10 @@ let toastT=null;
 function toast(msg){ let el=$('#toast'); if(el) el.remove(); el=document.createElement('div'); el.className='toast'; el.id='toast'; el.textContent=msg; document.body.appendChild(el); clearTimeout(toastT); toastT=setTimeout(()=>{ const e=$('#toast'); if(e) e.remove(); },2600); }
 function doAct(name){ regen(); const n0=sim.view().needs, f0=G.ui.fase==null?5:G.ui.fase; const free=name==='terra'?(f0<1||n0.ter<.35):name==='acqua'?n0.um<.35:name==='nutri'?n0.ter<.35:name==='pulisci'?n0.pul<.5:true; let gratis=false;
   if(G.real.cure>0) G.real.cure--; else if(free) gratis=true; else return {ok:false,why:'zero',text:S.TEMPO.maniZero,mani:mani()};
-  const troppa=name==='acqua'&&n0.um>=.95; const m=sim.act(name); G.ui.tut=true; reqCheck(name); try{ curaDay(); }catch(e){} const f=G.ui.fase==null?5:G.ui.fase;
+  const troppa=name==='acqua'&&n0.um>=.95; const m=sim.act(name); G.ui.tut=true; reqCheck(name); try{ curaDay(); }catch(e){} try{ missEv('cura',name); }catch(e){} const f=G.ui.fase==null?5:G.ui.fase;
   if(name==='terra'&&f<1){ G.ui.fase=1; G.req=makeRequest(); } else if(name==='acqua'&&f===1){ G.ui.fase=2; sim.setNeeds({um:Math.max(.6,sim.view().needs.um)}); G.req=makeRequest(); forceArrival('pianta','muschio'); }
   persist(); return {ok:true,text:m,mani:mani(),gratis,troppa}; }
-function osserva(){ const v=sim.view(); const o=S.osserva(v,sim.d+G.player.xp); reqCheck('osserva'); persist(); return o; }
+function osserva(){ const v=sim.view(); const o=S.osserva(v,sim.d+G.player.xp); reqCheck('osserva'); try{ missEv('osserva'); }catch(e){} persist(); return o; }
 // ---------- tempo reale ----------
 function queueDecisions(){ sim.pending.forEach(p=>{ if(!popups.some(q=>q.t==='decisione'&&q.id===p.id)) popups.push({t:'decisione',id:p.id}); }); }
 // ---------- le mani (energia delle cure, docs/gameplay/tempo.md §2): 6 al massimo (8 dal livello 3, 10 dal 5), una ogni 20 minuti, +2 per richiesta esaudita ----------
@@ -168,7 +168,7 @@ function nottiSalto(){ const p=powerEnsure(), startN=lastN(), nb0=popups.filter(
   const eventi=sim.log.filter(e=>(e.n||0)>startN&&e.kind!=='azione'&&e.kind!=='meteorite'); persist(); return {passi,pausa,resto:p.resto,eventi}; }
 function usaSalto(){ donoPower(); const why=saltoWhy(); if(why) return {ok:false,why,passi:0,eventi:[]}; const p=G.power, t=todayIdx(); p.salto--; p.usate=(p.usate||0)+1; p.resto=POWER.giorni; calRow(t)[2]|=4; p.saltiOggi=(p.saltiOggi&&p.saltiOggi.t===t)?{t,n:p.saltiOggi.n+POWER.giorni}:{t,n:POWER.giorni}; return Object.assign({ok:true},nottiSalto()); } // niente nodo nell'albero: non è un evento del vaso, e 2 nodi al giorno gonfiano il salvataggio
 function riprendiSalto(){ const p=powerEnsure(); if(!(p.resto>0)||sim.pending.length||G.real.owed>0) return null; return nottiSalto(); }
-function afterDay(){ try{ treeDiff(); }catch(e){} try{ diarioDay(); }catch(e){} dueArrivals().forEach(a=>popups.push({t:'arrivo',id:a.id})); const d=sim.d; if(!G.ui.nextBiscotto) G.ui.nextBiscotto=d+14;
+function afterDay(){ try{ missEv('notte'); }catch(e){} try{ treeDiff(); }catch(e){} try{ diarioDay(); }catch(e){} dueArrivals().forEach(a=>popups.push({t:'arrivo',id:a.id})); const d=sim.d; if(!G.ui.nextBiscotto) G.ui.nextBiscotto=d+14;
   if(d>=G.ui.nextBiscotto&&d>=10&&(G.ui.fase==null||G.ui.fase>=4)){ const st=G.ui.gatto||0; if(st===1||st>=5){ if(G.ui.gattoFine!=='guardiano') popups.push({t:'biscotto'}); } else popups.push({t:'gatto',s:st}); if(st<5) G.ui.gatto=st+1; G.ui.nextBiscotto=d+(st>=4?30:12)+((d*7)%7); } }
 
 // ===== L'albero del vaso: discendenze, scelte e strade non prese =====
@@ -234,9 +234,9 @@ function donoNonna(){ const t=todayIdx(); if((G.ui.fase==null?5:G.ui.fase)<2) re
 // ---------- Avanza di una notte: una notte vera subito, tetto per apertura (ricaricato dopo 30 min di chiusura), senza conti alla rovescia ----------
 const AVANZA={max:3,pausaMin:30};
 function avanzaVisto(){ const a=G.ui.avanza||(G.ui.avanza={n:0,visto:nowMs()}), now=nowMs(); if(now-(a.visto||0)>AVANZA.pausaMin*60000) a.n=0; a.visto=now; }
-function avanzaWhy(){ avanzaVisto(); if((G.ui.fase==null?5:G.ui.fase)<3) return 'inizio'; if(G.letargo) return 'letargo'; if(sim.finalePending) return 'finale'; const p=powerEnsure(); if(sim.pending.length||G.real.owed>0||p.resto>0) return 'decisione'; if(G.ui.avanza.n>=AVANZA.max) return 'tetto'; return ''; }
+function avanzaWhy(){ avanzaVisto(); if((G.ui.fase==null?5:G.ui.fase)<3) return 'inizio'; if(G.letargo) return 'letargo'; if(sim.finalePending) return 'finale'; const p=powerEnsure(); if(sim.pending.length||G.real.owed>0||p.resto>0) return 'decisione'; if(G.ui.avanza.n>=AVANZA.max&&!(G.miss&&G.miss.pronte>0)) return 'tetto'; return ''; }
 function avanzaInfo(){ const why=avanzaWhy(); return {n:G.ui.avanza.n,max:AVANZA.max,why}; }
-function avanzaNotte(){ const why=avanzaWhy(); if(why) return {ok:false,why,passi:0,pausa:false,eventi:[],rimaste:Math.max(0,AVANZA.max-G.ui.avanza.n)}; G.ui.avanza.n++; calRow(todayIdx())[2]|=4; const r=passaNotte(); return {ok:true,passi:r.passi,pausa:r.pausa,eventi:r.eventi,rimaste:Math.max(0,AVANZA.max-G.ui.avanza.n)}; }
+function avanzaNotte(){ const why=avanzaWhy(); if(why) return {ok:false,why,passi:0,pausa:false,eventi:[],rimaste:Math.max(0,AVANZA.max-G.ui.avanza.n)}; if(G.ui.avanza.n>=AVANZA.max) G.miss.pronte--; else G.ui.avanza.n++; calRow(todayIdx())[2]|=4; const r=passaNotte(); return {ok:true,passi:r.passi,pausa:r.pausa,eventi:r.eventi,rimaste:Math.max(0,AVANZA.max-G.ui.avanza.n)}; }
 function orologio(){ const s=slotIdx(), r=G.real, t=todayIdx(); return {d:sim.d,vaso:G.ui.vasoN||1,quarto:((s%NOTTI_GIORNO)+NOTTI_GIORNO)%NOTTI_GIORNO,prossimaNotteMs:Math.max(0,(s+1)*SLOT_MS-localMs()),notti:NOTTI_GIORNO,letargo:!!G.letargo,dovute:(r.owed||0)+Math.max(0,s-(r.lastSlot==null?s:r.lastSlot)),oggi:{t,data:isoOf(t)}}; }
 // ---------- calendario (tempo.md §3): G.cal = {v, t0, r:[[dt, d0, f]]}, f: 1 visitato · 2 letargo · 4 salto · 8 risveglio · 16 nuovo vaso ----------
 const CAL_MAX=400;
@@ -268,7 +268,7 @@ function archiviaVaso(r){ const v=sim.view(), fam=(T.FINALI[r.k]||{}).fam||'Quie
   const er={fam,testo:(S.TEMPO&&S.TEMPO.eredita&&S.TEMPO.eredita[fam])||''}; if(fam==='Quiete') er.um=.3; else if(fam==='Mostri') er.E=40; else if(fam==='Società'){ const sc=v.sp.find(x=>x.society); er.oggetto=(sc&&CULTOGG[sc.society.cult])||null; } else if(fam==='Conflitti') er.anticipo=1;
   const seed=1+Math.floor(Math.random()*99999); G.seed=seed; const setup={luce:v.setup.luce,acqua:v.setup.acqua,meteorite:v.setup.meteorite,piante:[],insetti:[],oggetti:[]};
   sim=T.createSim(setup,{seed,game:true,decisions:true,needs:true,capitolo:v.chapter,eredita:{E:er.E,um:er.um,ultimo:r.k}}); sim.setNeeds({um:er.um||0,ter:0});
-  G.ui.vasoN=n+1; G.ui.vasoDal=t; G.ui.fase=0; G.ui.d3=null; G.ui.storyN=0; G.ui.snoozeFinale=0; G.ui.eredita=er; G.ui.nightLog=[]; G.ui.nextBiscotto=sim.d+14; G.arrivi={list:[],n:0}; powerEnsure().resto=0; G.real.owed=0; G.real.leth=0; G.letargo=null;
+  G.ui.vasoN=n+1; G.ui.vasoDal=t; G.ui.fase=0; G.ui.d3=null; G.ui.storyN=0; G.ui.snoozeFinale=0; G.ui.eredita=er; G.ui.nightLog=[]; G.ui.nextBiscotto=sim.d+14; G.arrivi={list:[],n:0}; powerEnsure().resto=0; if(G.miss) G.miss.att=[]; G.real.owed=0; G.real.leth=0; G.letargo=null;
   G.tree={nodes:[],snap:treeState(sim.view())}; pushNode({k:'inizio',lane:'vaso',t:S.TEMPO.nuovoVasoTitolo,major:true}); G.req=makeRequest();
   const c=calEnsure(); c.r.push([t-c.t0,0,16|1]); if(c.r.length>CAL_MAX) c.r.splice(0,c.r.length-CAL_MAX);
   addPage('vaso-'+(n+1),S.TEMPO.nuovoVasoTitolo,S.TEMPO.nuovoVaso(n+1)+(er.testo?' '+er.testo:''),false);
@@ -283,7 +283,46 @@ function resolveDecision0(id,choice){ const p=sim.pending.find(x=>x.id===id); if
 function closeChapter(){ try{ treeDiff(); }catch(e){} const r=closeChapter0(); try{ treeNode({k:'capitolo',lane:'vaso',t:'Fine del capitolo: '+((T.FINALI[r.k]||{}).nome||r.k),major:true}); }catch(e){} r.vaso=archiviaVaso(r); return r; }
 function closeChapter0(){ const fp=sim.closeChapter(); const k=fp.finale; const first=!G.libro[k]; const v=sim.view(); const culto=(v.sp.find(x=>x.society)||{society:{}}).society.culto; G.libro[k]=G.libro[k]||{n:0,first:Date.now(),setup:v.setup,d:fp.d,chapter:fp.chapter}; G.libro[k].n++; addPage('fin-'+k+'-'+fp.chapter,T.FINALI[k].nome,S.epilogo(k,culto),false); giveXP(first?100:30); const dc=drawCard(k,'capitolo'); if(Object.keys(G.libro).length===1&&G.libro[k].n===1) ricordo('ric_finale'); persist(); return {k,first,culto,carta:dc.id,cartaNuova:dc.nuova}; }
 function newGame(name,setup){ const seed=1+Math.floor(Math.random()*99999); G=fresh(name,setup,seed); sim=T.createSim(setup,{seed,game:true,decisions:true,needs:true}); const pieno=setup.piante.length||setup.insetti.length; G.ui.fase=pieno?5:0; if(pieno) planArrivals(0); else sim.setNeeds({um:0,ter:0}); G.real.lastDay=todayIdx(); G.real.lastSlot=slotIdx(); G.ui.vasoN=1; G.ui.vasoDal=todayIdx(); G.vasi=[]; calEnsure(); calRow(todayIdx())[2]|=1; G.req=makeRequest(); updateCodex(); addPage('inizio',S.PAG.inizio[0],S.PAG.inizio[1],false); G.ui.nextBiscotto=sim.d+14; donoPower(); persist(); }
-window.__app={AVANZA,donoNonna,avanzaNotte,avanzaInfo,POWER,powerCards,usaSalto,riprendiSalto,donoPower,wipeGlass,treeDiff,nightFx,gattoChoice,nightCtx,pickNight,bumpNeeds,skipStart,forceArrival,passaNotte,catchUp,autoCare,demoDay,CARTE,SET_CARTE,mazzoTot,drawCard,giveCard,cardOdds,cardImg,canPlay,playCard,regen,mani,maniMax,donoSalti,orologio,calendario,calRow,calEnsure,archiviaVaso,diarioDay,pullArrival,refreshReq,nowMs,slotIdx,localMs,isoOf,SLOT_MS,NOTTI_GIORNO,T,S,esc,XPT,lvlOf,LIM,CULTICON,store,todayIdx,lvl,rank,fresh,persist,loadSave,newGame,giveXP,addPage,updateCodex,makeRequest,reqCheck,dueArrivals,takeArrival,inbox,toast,doAct,osserva,queueDecisions,checkNewDay,biscottoOutcome,resolveDecision,closeChapter,lastN,
+// ---------- Missioni e gocce (docs/CONTRATTI.md «Missioni e gocce»): 3 missioni dal vaso reale → gocce → notti e salti in più ----------
+// Nessuna scadenza, nessuna serie: una missione che diventa impossibile (specie estinta, pianta sparita) si cambia da sola, in silenzio.
+const MISS={costo:{avanza:3,salto:6},tetti:{avanza:3,salto:8},quante:3,alGiorno:2,recenti:2,curaGoccia:1,faseMin:4};
+function missEnsure(){ return G.miss||(G.miss={gocce:0,tot:0,fatte:0,cambiate:0,n:0,att:[],recenti:[],pronte:0,compri:{avanza:0,salto:0},vista:true}); }
+const mAl=(v,id)=>v.sp.some(s=>s.id===id&&s.alive), mPl=(v,id)=>v.plants.some(p=>p.id===id);
+const mMut=v=>v.sp.reduce((a,s)=>a+(s.alive?(s.mut||[]).length:0),0)+v.plants.filter(p=>p.mut).length;
+const mArr=()=>!!(G.arrivi&&G.arrivi.list.some(a=>a.state==='nuovo'||a.state==='futuro'));
+const mVivi=v=>v.sp.filter(s=>s.alive).map(s=>s.id);
+const MDEF={
+  vivi:{n:3,g:2,xs:mVivi,morta:(v,m)=>!mAl(v,m.x),on:(e,a,v,m)=>{ if(e!=='notte'||m.u===todayIdx()||!mAl(v,m.x)) return null; m.u=todayIdx(); return m.p+1; }},
+  pota:{n:1,g:2,puo:v=>mPl(v,'felce')&&mPl(v,'muschio'),morta:v=>!mPl(v,'felce')||!mPl(v,'muschio'),on:(e,a)=>e==='pota'&&a&&a.ok?1:null},
+  osserva:{n:1,g:1,xs:mVivi,morta:(v,m)=>!mAl(v,m.x),on:(e,a,v,m)=>e==='osserva'&&mAl(v,m.x)?1:null},
+  umidita:{n:2,g:2,puo:()=>true,morta:()=>false,on:(e,a,v,m)=>{ if(e!=='notte'||m.u===todayIdx()||v.needs.um<.4||v.needs.um>.85) return null; m.u=todayIdx(); return m.p+1; }},
+  fungo:{n:1,g:2,puo:v=>mPl(v,'fungo')||mArr(),morta:v=>!mPl(v,'fungo')&&!mArr(),on:(e,a,v)=>{ const f=v.plants.find(p=>p.id==='fungo'); return f&&f.v>=.4?1:null; }},
+  muta:{n:1,g:3,puo:v=>mVivi(v).length>0,base:mMut,morta:v=>mVivi(v).length===0,on:(e,a,v,m)=>e==='notte'&&mMut(v)>m.base?1:null},
+  cure:{n:3,g:1,puo:()=>true,morta:()=>false,on:(e,a,v,m)=>e==='cura'?m.p+1:null},
+  arrivo:{n:1,g:2,puo:()=>mArr(),morta:()=>!mArr(),on:(e)=>e==='arrivo'?1:null}
+};
+function missTitolo(m,v){ const T0=S.MISS[m.k]||{}, sp=m.x&&(v||sim.view()).sp.find(s=>s.id===m.x), nome=sp?String(sp.nome).toLowerCase():'', art=S.MISS.art[m.x]||'le'; return {titolo:typeof T0.t==='function'?T0.t(nome,art):T0.t||m.k, sotto:T0.s||''}; }
+function missOggi(){ const M=missEnsure(), t=todayIdx(); if(!M.oggi||M.oggi.t!==t) M.oggi={t,n:0}; return M.oggi; }
+function missFill(v){ const M=missEnsure(); let guard=6;
+  while(M.att.length<MISS.quante&&guard--&&missOggi().n<MISS.alGiorno){ const usati=M.att.map(m=>m.k), cand=[];
+    for(const relax of [0,1]){ Object.keys(MDEF).forEach(k=>{ if(usati.includes(k)||(!relax&&M.recenti.includes(k))) return; const d=MDEF[k]; if(d.xs) d.xs(v).forEach(x=>cand.push({k,x})); else if(d.puo(v)) cand.push({k}); }); if(cand.length) break; }
+    if(!cand.length) break; const c=cand[(((G.seed||0)*7+M.n*13+sim.d)%cand.length+cand.length)%cand.length]; M.n++; const d=MDEF[c.k];
+    M.att.push({k:c.k,x:c.x||null,p:0,n:d.n,g:d.g,base:d.base?d.base(v):0,nuova:1}); M.vista=false; } }
+function missRev(v){ const M=missEnsure(); let cambia=false;
+  M.att=M.att.filter(m=>{ const d=MDEF[m.k]; if(!d) return false; if(m.p>=m.n){ const t=missTitolo(m,v); M.gocce+=m.g; M.tot+=m.g; M.fatte++; missOggi().n++; M.recenti.unshift(m.k); M.recenti.length=Math.min(M.recenti.length,MISS.recenti); giveXP(5); popups.push({t:'missione',titolo:t.titolo,g:m.g}); cambia=true; return false; }
+    if(d.morta(v,m)){ M.cambiate++; cambia=true; return false; } return true; });
+  missFill(v); return cambia; }
+function missEv(ev,arg){ if(!G||!sim||(G.ui.fase==null?5:G.ui.fase)<MISS.faseMin) return; const M=missEnsure(), v=sim.view();
+  M.att.forEach(m=>{ const d=MDEF[m.k]; if(!d||!d.on) return; const np=d.on(ev,arg,v,m); if(np!=null&&np>m.p) m.p=Math.min(m.n,np); }); missRev(v); }
+function missGoccia(n){ if(!G||(G.ui.fase==null?5:G.ui.fase)<MISS.faseMin) return; const M=missEnsure(); M.gocce+=n; M.tot+=n; }
+function missioni(){ const M=missEnsure(); if(sim&&(G.ui.fase==null?5:G.ui.fase)>=MISS.faseMin) missRev(sim.view()); const v=sim.view();
+  return {gocce:M.gocce,tot:M.tot,fatte:M.fatte,riposo:M.att.length<MISS.quante&&missOggi().n>=MISS.alGiorno,pronte:M.pronte||0,costo:MISS.costo,tetti:MISS.tetti,vista:M.vista,att:M.att.map(m=>{ const t=missTitolo(m,v); return {k:m.k,titolo:t.titolo,sotto:t.sotto,p:m.p,n:m.n,g:m.g,pct:Math.min(1,m.p/m.n)}; })}; }
+function missSpendi(cosa){ const M=missEnsure(); if((G.ui.fase==null?5:G.ui.fase)<3) return {ok:false,why:'inizio'}; const c=MISS.costo[cosa]; if(c==null) return {ok:false,why:'tetto'};
+  if(cosa==='avanza'&&(M.pronte||0)>=MISS.tetti.avanza) return {ok:false,why:'tetto'}; if(cosa==='salto'&&powerEnsure().salto>=MISS.tetti.salto) return {ok:false,why:'tetto'};
+  if(M.gocce<c) return {ok:false,why:'gocce'}; M.gocce-=c; M.compri[cosa]=(M.compri[cosa]||0)+1; if(cosa==='avanza') M.pronte=(M.pronte||0)+1; else powerEnsure().salto++; persist(); return {ok:true}; }
+function missCambia(i){ const M=missEnsure(); if(!M.att[i]) return false; const k=M.att[i].k; M.att.splice(i,1); M.recenti.unshift(k); M.recenti.length=Math.min(M.recenti.length,MISS.recenti); M.cambiate++; missFill(sim.view()); persist(); return true; }
+function missVista(){ const M=missEnsure(); if(!M.vista||M.att.some(m=>m.nuova)){ M.vista=true; M.att.forEach(m=>{ m.nuova=0; }); persist(); } }
+window.__app={MISS,missioni,missSpendi,missCambia,missVista,missEv,AVANZA,donoNonna,avanzaNotte,avanzaInfo,POWER,powerCards,usaSalto,riprendiSalto,donoPower,wipeGlass,treeDiff,nightFx,gattoChoice,nightCtx,pickNight,bumpNeeds,skipStart,forceArrival,passaNotte,catchUp,autoCare,demoDay,CARTE,SET_CARTE,mazzoTot,drawCard,giveCard,cardOdds,cardImg,canPlay,playCard,regen,mani,maniMax,donoSalti,orologio,calendario,calRow,calEnsure,archiviaVaso,diarioDay,pullArrival,refreshReq,nowMs,slotIdx,localMs,isoOf,SLOT_MS,NOTTI_GIORNO,T,S,esc,XPT,lvlOf,LIM,CULTICON,store,todayIdx,lvl,rank,fresh,persist,loadSave,newGame,giveXP,addPage,updateCodex,makeRequest,reqCheck,dueArrivals,takeArrival,inbox,toast,doAct,osserva,queueDecisions,checkNewDay,biscottoOutcome,resolveDecision,closeChapter,lastN,
  get G(){return G;},get sim(){return sim;},get popups(){return popups;},set popups(v){popups=v;}};
 // ===== Microclima (ecologo, docs/ecologia/modello.md §8). Blocco unico: avvolge le funzioni sopra senza cambiarle. =====
 // G.micro = micro.save() (+ ofs: ora reale del primo passo); un passo di 6 ore reali per ogni giorno del vaso; cure → bagna/nutri/terra/pulisci; vetro → asciuga.
@@ -303,7 +342,7 @@ function avvisiGiungla(){ if(!micro||inLetargo()) return; const m=micro.view(), 
 function pota(){ if(!micro||!sim) return {ok:false,motivo:'vuoto',text:''}; regen(); micro.act('pota'); const m=micro.view(), u=m.pota&&m.pota.ultima||{ok:false,motivo:'vuoto'};
   const nome=u.pianta&&(sim.view().plants.find(p=>p.id===u.pianta)||{}).nome||u.pianta;
   const text=u.ok?'Tagli '+(u.pianta==='felce'?'la felce che copriva il muschio.':''+(nome?'la pianta più invadente ('+nome+').':'le foglie di troppo.')):u.motivo==='riposo'?'Le piante hanno bisogno di un giorno per riprendersi.':'Non c’è niente da tagliare.';
-  if(u.ok) persist(); return {ok:u.ok,motivo:u.motivo,pianta:u.pianta,tagliato:u.tagliato,text}; }
+  if(u.ok){ try{ missEv('pota',{ok:true}); }catch(e){} persist(); } return {ok:u.ok,motivo:u.motivo,pianta:u.pianta,tagliato:u.tagliato,text}; }
 function microInit(){ micro=null; if(!MC||!sim) return; try{ const v=sim.view(); micro=MC.create({piante:v.plants.map(p=>p.id),posizione:POSIZ[v.setup.luce]||'mezza'});
     if(G.micro&&G.micro.S) micro.load(G.micro); else G.micro={ofs:new Date(nowMs()).getHours()};   // salvataggi vecchi: il microclima nasce allineato al vaso
     microSync(); const st=sim.step; if(!sim.__micro){ sim.__micro=1; sim.step=function(){ const r=st.apply(sim,arguments); if(r&&!r.paused) microStep(); return r; }; } }catch(e){ console.error('microclima',e); micro=null; } }

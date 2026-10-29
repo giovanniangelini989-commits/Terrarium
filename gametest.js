@@ -157,4 +157,29 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   t('carta di cura: 14 giorni con cure → 2 pesche (7° e 14°)',carte===2&&P.G.carte.giorniCura===14,carte+' '+JSON.stringify(P.G.carte));
   P.G.dev.offset+=1; P.checkNewDay(); P.popups.length=0; P.G.dev.offset+=1; P.checkNewDay(); t('i giorni senza cure non contano',P.G.carte.giorniCura===14);
 }
+// 10) missioni e gocce: 3 attive, mai impossibili, si sostituiscono, le gocce comprano notti e salti
+{ const P=window.__app, S2=window.__story; P.newGame('M',JSON.parse(JSON.stringify(su))); P.popups.length=0; P.G.ui.fase=5; P.G.arrivi={list:[],n:0};
+  let m=P.missioni(); t('missioni: 3 attive, con titolo e premio',m.att.length===3&&m.att.every(a=>a.titolo.length>8&&a.g>=2&&a.n>=1),JSON.stringify(m.att.map(a=>a.k)));
+  t('missioni: tipi diversi tra loro',new Set(m.att.map(a=>a.k)).size===3);
+  P.G.ui.fase=3; P.G.miss=null; t('missioni: prima della fase 4 non ce ne sono',P.missioni().att.length===0); P.G.ui.fase=5;
+  // una missione impossibile si cambia da sola, in silenzio, senza perdere gocce
+  P.G.miss=null; P.G.miss=null; let M=P.missioni(); const vivi=M.att.find(a=>a.k==='vivi'||a.k==='osserva'); P.G.miss.att[0]={k:'vivi',x:'termiti',p:1,n:3,g:3,base:0}; const g0=P.G.miss.gocce; P.missioni();
+  t('missioni: specie estinta → missione sostituita da sola, gocce intatte',P.G.miss.att.length===3&&!P.G.miss.att.some(a=>a.x==='termiti')&&P.G.miss.gocce===g0&&P.G.miss.cambiate>=1);
+  // completamento: cure x3 → gocce, popup, sostituzione, cooldown
+  P.G.miss.att[0]={k:'cure',x:null,p:0,n:3,g:2,base:0}; P.G.miss.att=P.G.miss.att.slice(0,1); P.G.real.cure=9; const gg=P.G.miss.gocce; for(let i=0;i<3;i++) P.doAct('acqua');
+  t('missioni: 3 cure completano la missione (+2 gocce, popup, nuova missione)',P.G.miss.gocce>=gg+2&&P.popups.some(p=>p.t==='missione')&&P.G.miss.att.length===3&&P.G.miss.fatte>=1&&P.G.miss.recenti[0]==='cure',JSON.stringify(P.G.miss));
+  t('missioni: la stessa non ricompare subito',!P.G.miss.att.some(a=>a.k==='cure'));
+  // le missioni non hanno scadenza: dopo 20 giorni di assenza sono ancora lì
+  const ids=P.G.miss.att.map(a=>a.k+a.x).join(); P.G.dev.offset+=20; P.checkNewDay(); P.popups.length=0; P.G.letargo=null; const m2=P.missioni(); t('missioni: nessuna scadenza né perdita dopo l’assenza',m2.att.length===3&&m2.gocce>=gg+2);
+  // il progresso nasce dal vaso: notti con l'umidità giusta
+  P.G.miss.oggi=null; P.G.miss.att[0]={k:'umidita',x:null,p:0,n:3,g:3,base:0}; P.sim.setNeeds({um:.6}); P.passaNotte(); P.sim.pending.length=0; P.passaNotte(); P.sim.pending.length=0; t('missioni: più notti nello stesso giorno contano una volta sola',P.G.miss.att[0].p===1); for(let i=0;i<4;i++){ P.G.dev.offset+=1; P.sim.setNeeds({um:.6}); P.passaNotte(); P.sim.pending.length=0; } t('missioni: 3 giorni con umidità giusta completano «umidità»',P.G.miss.recenti.includes('umidita'),JSON.stringify(P.G.miss.att.map(a=>[a.k,a.p])));
+  { const Q=P.G.miss; Q.oggi={t:P.todayIdx(),n:P.MISS.alGiorno}; Q.att.pop(); P.missioni(); t('missioni: al massimo '+P.MISS.alGiorno+' al giorno, poi il posto resta libero fino a domani',Q.att.length===2&&P.missioni().riposo); P.G.dev.offset+=1; t('missioni: il giorno dopo il posto si riempie',P.missioni().att.length===3); }
+  // spesa
+  P.G.miss.gocce=2; t('spesa: poche gocce → rifiuto, nulla cambia',P.missSpendi('avanza').why==='gocce'&&P.G.miss.gocce===2);
+  P.G.miss.gocce=20; P.G.power.salto=0; P.G.miss.pronte=0; const r1=P.missSpendi('avanza'), r2=P.missSpendi('salto'); t('spesa: notte e salto in più, gocce scalate',r1.ok&&r2.ok&&P.G.power.salto===1&&P.G.miss.pronte===1&&P.G.miss.gocce===20-P.MISS.costo.avanza-P.MISS.costo.salto);
+  P.G.power.salto=P.MISS.tetti.salto; t('spesa: tetto dei salti',P.missSpendi('salto').why==='tetto');
+  P.G.miss.pronte=0; P.G.dev.offset+=1; P.checkNewDay(); P.popups.length=0; P.sim.pending.length=0; P.G.real.owed=0; P.G.power.resto=0; P.G.letargo=null; P.G.ui.avanza={n:P.AVANZA.max,visto:P.nowMs()}; t('avanza: tetto raggiunto senza notti comprate',P.avanzaInfo().why==='tetto');
+  P.G.miss.gocce=10; P.missSpendi('avanza'); const n0=P.G.ui.avanza.n; const ra=P.avanzaNotte(); t('avanza: una notte comprata supera il tetto, senza cambiare il contatore di visita',ra.ok&&P.G.ui.avanza.n===n0&&P.G.miss.pronte===0,JSON.stringify(ra)+P.G.miss.pronte);
+  t('missioni: salvataggio leggero',JSON.stringify(P.G.miss).length<700,JSON.stringify(P.G.miss).length);
+}
 console.log(ok,'ok',bad,'falliti');
