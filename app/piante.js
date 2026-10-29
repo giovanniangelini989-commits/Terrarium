@@ -31,7 +31,7 @@ window.__PIANTE=function(THREE,env){
 
   // ---------- shader comune ----------
   const GLSL_ROT='vec3 rotA(vec3 v,vec3 a,float t){ float c=cos(t),s=sin(t); return v*c+cross(a,v)*s+a*dot(a,v)*(1.-c); }\n';
-  const HEAD_ORG=`uniform float uGrow,uTurgor,uDroop,uDry,uRot,uDew,uWind,uTime,uPress,uOver;
+  const HEAD_ORG=`uniform float uGrow,uTurgor,uDroop,uDry,uRot,uDew,uWind,uTime,uPress,uOver,uLean,uSwell,uNight; uniform vec2 uLight;
 attribute vec3 aP0,aP1,aPivot,aAxis,aSpine; attribute float aGrow,aSway,aPhase,aType;
 varying float vDry,vRot,vShade; varying vec3 vMW;
 ${GLSL_ROT}
@@ -47,6 +47,8 @@ Org org(){ Org o; o.wilt=0.;
   float u=uGrow-aPhase; u=uGrow<1.?max(0.,u):fract(u);
   o.open=smoothstep(.12,.5,u); float w=max(smoothstep(.62,.95,u),uDroop); o.sc=smoothstep(0.,.32,u)*(1.-.4*w); o.bend=-w*aSway*1.1; o.wilt=w;
 #endif
+  if(KIND==1||KIND==2) o.bend-=uNight*aSway*(KIND==1?.22:.12);
+  if(KIND==2) o.sc*=1.+.2*uSwell;
   o.bend-=uPress*aSway*(KIND==4?.22:.55); o.sc*=1.+.17*uOver*(KIND==4?.5:1.);
   return o; }
 // vetro: la fronda che arriva alla parete si schiaccia e risale lungo il vetro (curva morbida, niente spigoli); vale anche sotto la spalla che si stringe
@@ -57,6 +59,7 @@ vec3 glassP(vec3 p,out float k,out vec2 dir){ vec4 wp=modelMatrix*vec4(p,1.); ve
 vec3 plantPos(Org o){ vec3 p=o.open<.5?mix(aP0,aP1,o.open*2.):mix(aP1,position,o.open*2.-1.);
   float ap=smoothstep(.7,1.,o.open); float lat=mix(1.,1.-.45*uDroop,ap); if(aType==3.) lat=uDew*ap;
   p=aSpine+(p-aSpine)*lat; p=aPivot+(p-aPivot)*o.sc; p=aPivot+rotA(p-aPivot,aAxis,o.bend);
+  { vec3 ld_=(vec4(uLight.x,0.,uLight.y,0.)*modelMatrix).xyz; float ll_=length(ld_.xz); if(ll_>1e-4) ld_/=ll_; p+=ld_*uLean*max(p.y,0.)*(.6+.4*min(aSway,1.)); }
   float w=uWind*aSway*aSway*.011*o.sc; p+=aAxis*w*(sin(uTime*1.6+aPhase*6.28+aSway*2.)+.5*sin(uTime*2.7+aPhase*3.1))+vec3(0.,1.,0.)*w*.35*sin(uTime*2.1+aPhase*5.);
   return p; }
 `;
@@ -66,11 +69,12 @@ vec3 glassW(vec3 w,out float k,out vec2 dir){ float r=length(w.xz); dir=r>1e-4?w
   if(e<=0.) return w; float r2=R-s+s*(1.-exp(-e/s)); k=smoothstep(0.,.12,e); float lift=min((r-r2)*.55,.28); w.xz=dir*r2; w.y+=lift; return w; }
 vec3 glassP_(vec3 w,out float k,out vec2 dir){ return glassW(w,k,dir); }
 `;
-  const HEAD_INST=GLASS_FN+`uniform float uGrow,uTurgor,uDry,uRot,uWind,uTime,uPress,uOver; attribute float iGrow,iPhase; varying float vDry,vRot,vShade; varying vec3 vMW;\n`;
-  const FRAG_HEAD='uniform float uGloss,uTrans,uMut,uCharge,uTime,uFung,uBite; varying float vDry,vRot,vShade; varying vec3 vMW;\n';
+  const HEAD_INST=GLASS_FN+`uniform float uGrow,uTurgor,uDry,uRot,uWind,uTime,uPress,uOver,uLean,uNight; uniform vec2 uLight; attribute float iGrow,iPhase; varying float vDry,vRot,vShade; varying vec3 vMW;\n`;
+  const FRAG_HEAD='uniform float uGloss,uTrans,uMut,uCharge,uTime,uFung,uBite,uPale,uSwell; varying float vDry,vRot,vShade; varying vec3 vMW;\n';
   const FRAG_COL=`#include <color_fragment>
 if(uBite>.001){ vec3 bq_=vMW*15.; vec2 bc_=floor(bq_.xz+bq_.y*.7); float bh_=fract(sin(dot(bc_,vec2(12.9898,78.233)))*43758.5453); vec2 bo_=vec2(fract(bh_*7.3),fract(bh_*3.7))*.5+.25; float bd_=length(fract(bq_.xz+bq_.y*.7)-bo_); if(bh_<uBite*.55&&bd_<.2+.14*fract(bh_*11.)) discard; }
 diffuseColor.rgb*=vShade;
+{ float l0_=dot(diffuseColor.rgb,vec3(.3,.59,.11)); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(l0_*1.12+.05,l0_*1.2+.07,l0_*.7+.01),uPale*.4); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(l0_*.85+.07,l0_*1.15+.1,l0_*1.02+.08),uSwell*.5*(1.-clamp(vRot,0.,1.))); }
 { float d=clamp(vDry,0.,1.); vec3 g=vec3(dot(diffuseColor.rgb,vec3(.3,.59,.11))); diffuseColor.rgb=mix(diffuseColor.rgb,mix(g,diffuseColor.rgb,.3)*vec3(1.5,1.14,.4)+vec3(.12,.08,0.),d); }
 diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.32,.28,.2),clamp(vRot,0.,1.));
 { float nr=exp(-length(vMW.xz)*1.5); float l_=dot(diffuseColor.rgb,vec3(.3,.59,.11)); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.5,.4,.95)*(.25+l_*1.1),clamp(uMut*(.05+.2*nr),0.,.22)); }`;
@@ -96,13 +100,13 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     const begin=inst?(kind===CURL_SPK
       ?`float op=smoothstep(iGrow-.12,iGrow+.08,uGrow); float sc=op*(.6+.4*min(uGrow,1.)); vec3 transformed=position*sc; transformed.xz*=(.35+.65*uTurgor); transformed.y*=(.55+.45*uTurgor); transformed.x+=uWind*.0025*sin(uTime*2.2+iPhase*6.28)*position.y*25.; vDry=uDry; vRot=uRot; vShade=1.;`
       :`float op=smoothstep(iGrow-.12,iGrow+.08,uGrow); float sc=op*(.6+.4*min(uGrow,1.)); vec3 transformed=position*sc; transformed.y*=(.42+.58*uTurgor); vDry=uDry; vRot=uRot; vShade=.45+.55*clamp(position.y*.75+.45,0.,1.);`)
-      :`Org o_=org(); vec3 transformed=plantPos(o_); vDry=uDry+o_.wilt*.55; vRot=uRot+o_.wilt*.6; vShade=1.; { float gk_; vec2 gd_; transformed=glassP(transformed,gk_,gd_); vShade*=1.-.32*gk_; }`;
+      :`Org o_=org(); vec3 transformed=plantPos(o_); vDry=uDry+o_.wilt*.55; vRot=uRot+o_.wilt*.6; if(KIND==2) vRot=uRot*(.3+.7*(1.-smoothstep(.02,.18,aPivot.y))); vShade=1.; { float gk_; vec2 gd_; transformed=glassP(transformed,gk_,gd_); vShade*=1.-.32*gk_; }`;
     mat.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,U); const SC=mat.userData.secco; if(SC){ sh.uniforms.mapSecco=SC; sh.uniforms.uSeccoOn=mat.userData.seccoOn; }
       sh.vertexShader=sh.vertexShader.replace('void main() {','#define KIND '+kind+'\n'+head+'void main() {').replace('#include <begin_vertex>',begin+(inst&&!noPl?UV_PLANAR:'')).replace('#include <project_vertex>',inst?'vec4 mvPosition=vec4(transformed,1.); mvPosition=instanceMatrix*mvPosition; { float gk_; vec2 gd_; vec3 gw_=glassW((modelMatrix*mvPosition).xyz,gk_,gd_); mvPosition=viewMatrix*vec4(gw_,1.); vMW=gw_; vShade*=1.-.32*gk_; } gl_Position=projectionMatrix*mvPosition;':'#include <project_vertex>\nvMW=(modelMatrix*vec4(transformed,1.)).xyz;');
       if(!inst) sh.vertexShader=sh.vertexShader.replace('#include <beginnormal_vertex>','Org on_=org(); vec3 objectNormal=rotA(normal,aAxis,on_.bend); { float gk_; vec2 gd_; glassP(plantPos(on_),gk_,gd_); objectNormal=normalize(mix(objectNormal,-vec3(gd_.x,.25,gd_.y),gk_*.7)); }');
       sh.fragmentShader=sh.fragmentShader.replace('void main() {',FRAG_HEAD+'void main() {'); if(SC) sh.fragmentShader=sh.fragmentShader.replace('void main() {','uniform sampler2D mapSecco; uniform float uSeccoOn;\nvoid main() {').replace('vec4 sampledDiffuseColor = texture2D( map, vMapUv );','vec4 sampledDiffuseColor = texture2D(map,vMapUv); if(uSeccoOn>.5) sampledDiffuseColor=mix(sampledDiffuseColor,texture2D(mapSecco,vMapUv),smoothstep(.12,.65,vDry));'); sh.fragmentShader=sh.fragmentShader.replace('#include <color_fragment>',FRAG_COL).replace('#include <roughnessmap_fragment>',FRAG_ROUGH).replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n'+FRAG_MUT).replace('#include <lights_fragment_end>',FRAG_TRANS); };
     mat.customProgramCacheKey=()=>'pianta'+kind+(inst?'i':'o')+(mat.userData.secco?'s':'')+(noPl?'n':'')+(mat.isMeshDepthMaterial?'d':'m'); return mat; }
-  function uniforms(){ return {uGrow:{value:0},uTurgor:{value:1},uDroop:{value:0},uDry:{value:0},uRot:{value:0},uDew:{value:0},uWind:{value:0},uTime:{value:0},uGloss:{value:0},uTrans:{value:0},uMut:{value:0},uCharge:{value:0},uFung:{value:0},uBite:{value:0},uPress:{value:0},uOver:{value:0}}; }
+  function uniforms(){ return {uGrow:{value:0},uTurgor:{value:1},uDroop:{value:0},uDry:{value:0},uRot:{value:0},uDew:{value:0},uWind:{value:0},uTime:{value:0},uGloss:{value:0},uTrans:{value:0},uMut:{value:0},uCharge:{value:0},uFung:{value:0},uBite:{value:0},uPress:{value:0},uOver:{value:0},uLean:{value:0},uSwell:{value:0},uNight:{value:0},uPale:{value:0},uLight:{value:new THREE.Vector2(.68,.73)}}; }
   function shadowed(mesh,U,kind,inst){ mesh.customDepthMaterial=patch(new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking}),U,kind,inst); mesh.castShadow=true; mesh.receiveShadow=true; return mesh; }
 
   // ---------- costruttore di geometria con attributi ----------
@@ -273,25 +277,27 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     let tur; if(id==='muschio') tur=.3*vig+.7*clamp((wetS-.08)/.45); else if(id==='felce') tur=.45*vig+.55*clamp((wetT-.3)/.4); else if(id==='carnivora') tur=.5*vig+.5*clamp((wetT-.4)/.4); else tur=vig;
     const droop=Math.max(clamp((.55-vig)/.4),clamp((.5-tur)/.5)*.8), dry=clamp((.55-tur)/.45)*(1-clamp(rist-.3)*2);
     const rotC=id==='succulenta'?(rist>.3||rh>.8?1:0):clamp((rist-.3)/.5), rot=rotC*clamp((.85-vig)/.6);
-    const dew=id==='carnivora'?clamp((rh-.6)/.3)*tur:0, gloss=clamp((vig-.65)/.25)*clamp(tur), wind=aperto?1:.12;
+    const dew=id==='carnivora'?clamp((rh-.6)/.3)*tur:0, gloss=clamp((vig-.65)/.25)*clamp(tur), wind=aperto?1:.03;
     // giungla (modello §9): biomassa → volume e numero di organi; ombra → giallo e afflosciamento; morsi
     const mg=m&&m.piante?m:null, bio0=f.biomassa!=null?f.biomassa:q&&q.biomassa!=null?q.biomassa:null, rel=bio0==null?.5:clamp(bio0/(BREF[id]||.4)), ombra=f.ombra!=null?f.ombra:q&&q.ombra!=null?q.ombra:0;
     const gg=forced&&forced.giungla!=null?forced.giungla:mg&&mg.giungla!=null?mg.giungla:0, sof=forced&&forced.soffocato!=null?forced.soffocato:mg?!!mg.soffocato:false;
     const bite=f.bite!=null?f.bite:mg&&mg.mangiatoUltimo>0?clamp(mg.mangiatoUltimo*40+.25):0;
     // crescita continua: ore buone oltre l'adulto (non satura) + giungla del microclima → pressione
     const ov=Math.min(OVMAX,Math.log(1+2*Math.max(0,cre/(AD[id]||200)-.7))), press=clamp(Math.max(gg*.9,ov/1.8));
-    const growV=Math.min(1.35,grow*(.6+.55*Math.sqrt(rel))*(1+.12*gg))+(id==='muschio'?.8*ov:0), etio=id==='fungo'?0:clamp(ombra*1.2), volY=(.62+.62*rel+.6*gg+.3*ov)*(BALT[id]||1)*(1+.22*etio), volX=(.72+.4*rel+.12*gg+.05*ov)*(1-.1*etio);   // etiolamento (audit): all'ombra fusti più lunghi e sottili
+    const growV=Math.min(1.35,grow*(.6+.55*Math.sqrt(rel))*(1+.12*gg))+(id==='muschio'?.8*ov:0), etio=id==='fungo'?0:clamp(ombra*1.2), volY=(.62+.62*rel+.6*gg+.3*ov)*(BALT[id]||1)*(1+.4*etio), volX=(.72+.4*rel+.12*gg+.05*ov)*(1-.2*etio);   // etiolamento (audit): all'ombra fusti più lunghi e sottili
     const sh=clamp(ombra*1.2), dryO=id==='muschio'&&(sof||ombra>.55)?clamp((ombra-.25)/.4):clamp(sh*1.6);
-    return {grow:growV,vig,tur:tur*(1-.35*sh),droop:Math.max(droop,sh*.6),dry:Math.max(dry,dryO),rot,dew,gloss:gloss*(1-sh),wind,mut:forced&&forced.mut!=null?forced.mut:clamp((v.R-.12)/.6),E:clamp((v.E||0)/100),volY,volX,rel,gg,bite,ombra,ov,press}; }
+    return {grow:growV,vig,tur:tur*(1-.35*sh),droop:Math.max(droop,sh*.6),dry:Math.max(dry,dryO),rot,dew,gloss:gloss*(1-sh),wind,mut:forced&&forced.mut!=null?forced.mut:clamp((v.R-.12)/.6),E:clamp((v.E||0)/100),volY,volX,rel,gg,bite,ombra,ov,press,lean:(id==='fungo'||id==='muschio')?0:(.09+.08*clamp(ombra*1.2))*clamp(growV),pale:id==='fungo'?0:clamp(ombra*1.3),swell:id==='succulenta'?clamp((rh-.72)/.2)*(1-rot):0}; }
+  let nightK=0;
   const ease=(a,b,k)=>a+(b-a)*Math.min(1,k);
   function tick(dt,t,v,plantObjs){
     if(t-lastPull>.5){ lastPull=t; try{ micro=A.micro?A.micro():null; }catch(e){ micro=null; } }
     Object.keys(objs).forEach(id=>{ if(!plantObjs[id]||plantObjs[id]!==objs[id]){ objs[id].dispose(); delete objs[id]; } });
     if(litG){ const gg=forced&&forced.giungla!=null?forced.giungla:micro&&micro.giungla||0, de=forced&&forced.detrito!=null?forced.detrito:micro&&micro.detrito||0, want=Math.round(litG.userData.N*clamp(de*1.3+gg*.7)); litN=ease(litN,want,dt*3); litG.userData.im.count=Math.round(litN); }
+    { let nt=0; try{ nt=window.__vase&&window.__vase.isNight&&window.__vase.isNight()?1:0; }catch(e){} nightK=ease(nightK,nt,dt*.15); }
     v.plants.forEach(p=>{ const o=objs[p.id]; if(!o) return; o.g.position.y=S.soilTop; const T=target(p.id,p,v,micro); let s=o.st;
       if(!s){ s=o.st=Object.assign({},T); }
-      else { s.grow=ease(s.grow,T.grow,T.grow>s.grow+.03?dt*1.6:dt*.6); s.vig=ease(s.vig,T.vig,dt*.5); s.tur=ease(s.tur,T.tur,T.tur>s.tur?dt*.45:dt*.07); s.droop=ease(s.droop,T.droop,T.droop<s.droop?dt*.4:dt*.08); s.dry=ease(s.dry,T.dry,T.dry<s.dry?dt*.35:dt*.06); s.rot=ease(s.rot,T.rot,dt*.08); s.dew=ease(s.dew,T.dew,dt*.3); s.gloss=ease(s.gloss,T.gloss,dt*.4); s.wind=ease(s.wind,T.wind,dt*.5); s.mut=ease(s.mut,T.mut,dt*.5); s.E=ease(s.E,T.E,dt*.8); s.volY=ease(s.volY,T.volY,T.volY<s.volY-.03?dt*9:dt*.5); s.volX=ease(s.volX,T.volX,T.volX<s.volX-.03?dt*9:dt*.5); s.rel=T.rel; s.ov=ease(s.ov||0,T.ov,dt*.4); s.press=ease(s.press||0,T.press,dt*.4); s.gg=ease(s.gg,T.gg,dt*.5); s.ombra=T.ombra; s.bite=ease(s.bite||0,T.bite,T.bite>(s.bite||0)?dt*3:dt*.05); }
-      const U=o.U; U.uGrow.value=s.grow; U.uTurgor.value=s.tur; U.uDroop.value=s.droop; U.uDry.value=s.dry; U.uRot.value=s.rot; U.uDew.value=s.dew; U.uGloss.value=s.gloss; U.uWind.value=s.wind; U.uTime.value=t; U.uMut.value=s.mut; U.uCharge.value=s.E; U.uPress.value=s.press||0; U.uOver.value=(s.ov||0)*(o.id==='succulenta'?.35:o.id==='carnivora'?.6:o.id==='fungo'?.8:1); U.uBite.value=(o.id==='muschio'||o.id==='fungo')?0:s.bite||0; o.g.scale.set(s.volX,s.volY,s.volX);
+      else { s.grow=ease(s.grow,T.grow,T.grow>s.grow+.03?dt*1.6:dt*.6); s.vig=ease(s.vig,T.vig,dt*.5); s.tur=ease(s.tur,T.tur,T.tur>s.tur?dt*.45:dt*.07); s.droop=ease(s.droop,T.droop,T.droop<s.droop?dt*.4:dt*.08); s.dry=ease(s.dry,T.dry,T.dry<s.dry?dt*.35:dt*.06); s.rot=ease(s.rot,T.rot,dt*.08); s.dew=ease(s.dew,T.dew,dt*.3); s.gloss=ease(s.gloss,T.gloss,dt*.4); s.wind=ease(s.wind,T.wind,dt*.5); s.mut=ease(s.mut,T.mut,dt*.5); s.E=ease(s.E,T.E,dt*.8); s.volY=ease(s.volY,T.volY,T.volY<s.volY-.03?dt*9:dt*.5); s.volX=ease(s.volX,T.volX,T.volX<s.volX-.03?dt*9:dt*.5); s.rel=T.rel; s.ov=ease(s.ov||0,T.ov,dt*.4); s.press=ease(s.press||0,T.press,dt*.4); s.gg=ease(s.gg,T.gg,dt*.5); s.ombra=T.ombra; s.pale=ease(s.pale||0,T.pale,dt*.05); s.swell=ease(s.swell||0,T.swell,dt*.08); s.lean=ease(s.lean||0,T.lean,dt*.02); s.bite=ease(s.bite||0,T.bite,T.bite>(s.bite||0)?dt*3:dt*.05); }
+      const U=o.U; U.uGrow.value=s.grow; U.uTurgor.value=s.tur; U.uDroop.value=s.droop; U.uDry.value=s.dry; U.uRot.value=s.rot; U.uDew.value=s.dew; U.uGloss.value=s.gloss; U.uWind.value=s.wind; U.uTime.value=t; U.uLean.value=s.lean||0; U.uPale.value=s.pale||0; U.uSwell.value=s.swell||0; U.uNight.value=nightK; U.uMut.value=s.mut; U.uCharge.value=s.E; U.uPress.value=s.press||0; U.uOver.value=(s.ov||0)*(o.id==='succulenta'?.35:o.id==='carnivora'?.6:o.id==='fungo'?.8:1); U.uBite.value=(o.id==='muschio'||o.id==='fungo')?0:s.bite||0; o.g.scale.set(s.volX,s.volY,s.volX);
       if(o.mag) o.mag.forEach(c=>{ const need=(id_(o)==='muschio'?.4:id_(o)==='succulenta'?.35:id_(o)==='fungo'?.15:id_(o)==='carnivora'?.25:.45)-.22*(s.gg||0), k=clamp((s.mut-need)/.25)*clamp(s.grow*1.2); c.visible=k>.02&&s.vig>.15; if(c.visible){ c.scale.setScalar(.35+.65*k); c.userData.m.emissiveIntensity=(1.4+1.8*s.E)*(1+.15*Math.sin(t*2.1+o.g.position.x*9)); } });
       if(o.sat){ const far=camDist>FARD; let nc=0; o.sat.forEach(q=>{ const ex=q.userData.ex, ok=ex?(s.ov||0)>=.22*ex&&s.grow>=.5&&s.vig>.1:(s.rel>=q.userData.rel||(q.userData.gj&&s.gg>.35))&&s.grow>=.5&&s.vig>.12, cd=q.userData.card;
         q.visible=ok&&!(far&&cd); if(cd&&ok&&far) nc=Math.max(nc,ex); }); if(o.cards){ o.cards.count=nc; o.cards.visible=nc>0; } }
