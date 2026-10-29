@@ -17,12 +17,15 @@ window.__PIANTE=function(THREE,env){
   function level(l){ l=Math.max(0,Math.min(2,l|0)); if(l===fotoLvl) return; fotoLvl=l; FOTOMATS.forEach(b=>{ if(b.F.ready) fotoApply(b.mat,b.F,b.depth); }); MAGICMATS.forEach(m=>{ if(m.userData.F&&m.userData.F.ready) magApply(m); }); if(FMS&&FMS.ready) SECCOMATS.forEach(seccoApply); } const V3=THREE.Vector3, Col=THREE.Color, M4=THREE.Matrix4;
   const Y=new V3(0,1,0);
   // ---------- stati visivi e mappe di crescita ----------
-  // crescita = ore «buone» accumulate dal microclima (≈ 12–19 al giorno reale con vigore alto)
-  const GROW={muschio:c=>Math.min(1.3,c/190), felce:c=>Math.min(1.25,c/260), succulenta:c=>Math.min(1.2,c/600), carnivora:c=>Math.min(1.2,c/300), fungo:c=>c/60};
+  // crescita = ore «buone» accumulate dal microclima (≈ 1 per notte del vaso in mezz'ombra, fino a 3 con luce e acqua giuste).
+  // Curva ease-out (29 ott: «le piante non crescono abbastanza»): parte dal germoglio GMIN e sale in fretta, poi si assesta al tetto CAP: tau = ore buone per arrivare al 63 %.
+  // dopo 1 notte ≈ +60 % del germoglio, dopo 4 notti giovane ben riconoscibile (~70 %), dopo ~12 notti adulta.
   const GMIN={muschio:.2, felce:.14, succulenta:.14, carnivora:.12, fungo:0};
-  const BREF={muschio:.35,felce:.45,succulenta:.2,carnivora:.25,fungo:.15}, BALT={muschio:.6,felce:1.15,succulenta:.85,carnivora:.95,fungo:.8};
+  const CAP={muschio:1.3,felce:1.25,succulenta:1.2,carnivora:1.2}, TAU={muschio:4,felce:5,succulenta:12,carnivora:8};
+  const GROW={}; Object.keys(CAP).forEach(k=>{ GROW[k]=c=>{ const g=GMIN[k]; return g+(CAP[k]-g)*(1-Math.exp(-Math.max(0,c)/TAU[k])); }; }); GROW.fungo=c=>c/60;
+  const BREF={muschio:.25,felce:.3,succulenta:.15,carnivora:.2,fungo:.12}, BALT={muschio:.6,felce:1.15,succulenta:.85,carnivora:.95,fungo:.8};
   // crescita continua: AD = ore «buone» a cui la specie è adulta; oltre, `over` cresce senza tetto (logaritmico) e porta più organi, fronde più lunghe, pressione contro il vetro
-  const AD={muschio:150,felce:200,succulenta:350,carnivora:220,fungo:40}, OVMAX=3, NEXTRA=4, TRIBUD=9000;
+  const AD={muschio:30,felce:40,succulenta:70,carnivora:50,fungo:40}, OVMAX=3, NEXTRA=4, TRIBUD=9000;
   const KIND={felce:1,succulenta:2,carnivora:3,fungo:4};
   const CURL_FUN=5, CURL_MUS=5, CURL_SPK=6;
 
@@ -277,7 +280,7 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     const bite=f.bite!=null?f.bite:mg&&mg.mangiatoUltimo>0?clamp(mg.mangiatoUltimo*40+.25):0;
     // crescita continua: ore buone oltre l'adulto (non satura) + giungla del microclima → pressione
     const ov=Math.min(OVMAX,Math.log(1+2*Math.max(0,cre/(AD[id]||200)-.7))), press=clamp(Math.max(gg*.9,ov/1.8));
-    const growV=Math.min(1.35,grow*(.6+.55*rel)*(1+.12*gg))+(id==='muschio'?.8*ov:0), volY=(.62+.62*rel+.6*gg+.3*ov)*(BALT[id]||1), volX=.72+.4*rel+.12*gg+.05*ov;
+    const growV=Math.min(1.35,grow*(.6+.55*Math.sqrt(rel))*(1+.12*gg))+(id==='muschio'?.8*ov:0), etio=id==='fungo'?0:clamp(ombra*1.2), volY=(.62+.62*rel+.6*gg+.3*ov)*(BALT[id]||1)*(1+.22*etio), volX=(.72+.4*rel+.12*gg+.05*ov)*(1-.1*etio);   // etiolamento (audit): all'ombra fusti più lunghi e sottili
     const sh=clamp(ombra*1.2), dryO=id==='muschio'&&(sof||ombra>.55)?clamp((ombra-.25)/.4):clamp(sh*1.6);
     return {grow:growV,vig,tur:tur*(1-.35*sh),droop:Math.max(droop,sh*.6),dry:Math.max(dry,dryO),rot,dew,gloss:gloss*(1-sh),wind,mut:forced&&forced.mut!=null?forced.mut:clamp((v.R-.12)/.6),E:clamp((v.E||0)/100),volY,volX,rel,gg,bite,ombra,ov,press}; }
   const ease=(a,b,k)=>a+(b-a)*Math.min(1,k);
@@ -287,7 +290,7 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     if(litG){ const gg=forced&&forced.giungla!=null?forced.giungla:micro&&micro.giungla||0, de=forced&&forced.detrito!=null?forced.detrito:micro&&micro.detrito||0, want=Math.round(litG.userData.N*clamp(de*1.3+gg*.7)); litN=ease(litN,want,dt*3); litG.userData.im.count=Math.round(litN); }
     v.plants.forEach(p=>{ const o=objs[p.id]; if(!o) return; o.g.position.y=S.soilTop; const T=target(p.id,p,v,micro); let s=o.st;
       if(!s){ s=o.st=Object.assign({},T); }
-      else { s.grow=ease(s.grow,T.grow,dt*.6); s.vig=ease(s.vig,T.vig,dt*.5); s.tur=ease(s.tur,T.tur,T.tur>s.tur?dt*.45:dt*.07); s.droop=ease(s.droop,T.droop,T.droop<s.droop?dt*.4:dt*.08); s.dry=ease(s.dry,T.dry,T.dry<s.dry?dt*.35:dt*.06); s.rot=ease(s.rot,T.rot,dt*.08); s.dew=ease(s.dew,T.dew,dt*.3); s.gloss=ease(s.gloss,T.gloss,dt*.4); s.wind=ease(s.wind,T.wind,dt*.5); s.mut=ease(s.mut,T.mut,dt*.5); s.E=ease(s.E,T.E,dt*.8); s.volY=ease(s.volY,T.volY,T.volY<s.volY-.03?dt*9:dt*.5); s.volX=ease(s.volX,T.volX,T.volX<s.volX-.03?dt*9:dt*.5); s.rel=T.rel; s.ov=ease(s.ov||0,T.ov,dt*.4); s.press=ease(s.press||0,T.press,dt*.4); s.gg=ease(s.gg,T.gg,dt*.5); s.ombra=T.ombra; s.bite=ease(s.bite||0,T.bite,T.bite>(s.bite||0)?dt*3:dt*.05); }
+      else { s.grow=ease(s.grow,T.grow,T.grow>s.grow+.03?dt*1.6:dt*.6); s.vig=ease(s.vig,T.vig,dt*.5); s.tur=ease(s.tur,T.tur,T.tur>s.tur?dt*.45:dt*.07); s.droop=ease(s.droop,T.droop,T.droop<s.droop?dt*.4:dt*.08); s.dry=ease(s.dry,T.dry,T.dry<s.dry?dt*.35:dt*.06); s.rot=ease(s.rot,T.rot,dt*.08); s.dew=ease(s.dew,T.dew,dt*.3); s.gloss=ease(s.gloss,T.gloss,dt*.4); s.wind=ease(s.wind,T.wind,dt*.5); s.mut=ease(s.mut,T.mut,dt*.5); s.E=ease(s.E,T.E,dt*.8); s.volY=ease(s.volY,T.volY,T.volY<s.volY-.03?dt*9:dt*.5); s.volX=ease(s.volX,T.volX,T.volX<s.volX-.03?dt*9:dt*.5); s.rel=T.rel; s.ov=ease(s.ov||0,T.ov,dt*.4); s.press=ease(s.press||0,T.press,dt*.4); s.gg=ease(s.gg,T.gg,dt*.5); s.ombra=T.ombra; s.bite=ease(s.bite||0,T.bite,T.bite>(s.bite||0)?dt*3:dt*.05); }
       const U=o.U; U.uGrow.value=s.grow; U.uTurgor.value=s.tur; U.uDroop.value=s.droop; U.uDry.value=s.dry; U.uRot.value=s.rot; U.uDew.value=s.dew; U.uGloss.value=s.gloss; U.uWind.value=s.wind; U.uTime.value=t; U.uMut.value=s.mut; U.uCharge.value=s.E; U.uPress.value=s.press||0; U.uOver.value=(s.ov||0)*(o.id==='succulenta'?.35:o.id==='carnivora'?.6:o.id==='fungo'?.8:1); U.uBite.value=(o.id==='muschio'||o.id==='fungo')?0:s.bite||0; o.g.scale.set(s.volX,s.volY,s.volX);
       if(o.mag) o.mag.forEach(c=>{ const need=(id_(o)==='muschio'?.4:id_(o)==='succulenta'?.35:id_(o)==='fungo'?.15:id_(o)==='carnivora'?.25:.45)-.22*(s.gg||0), k=clamp((s.mut-need)/.25)*clamp(s.grow*1.2); c.visible=k>.02&&s.vig>.15; if(c.visible){ c.scale.setScalar(.35+.65*k); c.userData.m.emissiveIntensity=(1.4+1.8*s.E)*(1+.15*Math.sin(t*2.1+o.g.position.x*9)); } });
       if(o.sat){ const far=camDist>FARD; let nc=0; o.sat.forEach(q=>{ const ex=q.userData.ex, ok=ex?(s.ov||0)>=.22*ex&&s.grow>=.5&&s.vig>.1:(s.rel>=q.userData.rel||(q.userData.gj&&s.gg>.35))&&s.grow>=.5&&s.vig>.12, cd=q.userData.card;
