@@ -40,3 +40,6 @@ Ogni creatura e pianta ha **un solo modello 3D**. La versione mutata usa la stes
 
 ## Suono: il battito del meteorite sempre presente (Giovanni, 29 ottobre 2026)
 Il battito e l'interferenza del meteorite di oggi restano **sempre presenti**, sotto qualsiasi musica: sono la firma sonora del gioco (bassi che «vibrano» il telefono). La colonna sonora futura si mette sopra, senza coprirli né sostituirli.
+
+## Ecosistema reale al 100% (Giovanni, 29 ottobre 2026)
+L'ambiente del vaso (acqua, luce, temperatura, umidità, condensa, terra, piante, muffa, decomposizione, creature, catene alimentari, comportamenti) deve seguire un ecosistema reale al 100%, verificato su fonti scientifiche. **Il meteorite è l'unico elemento fantastico**: aggiunge mutazioni (bagliore, gigantismo, ecc.) sopra un mondo che altrimenti è fedele alla biologia vera. Ogni regola nuova va confrontata con i dati reali prima di entrare nel gioco.
