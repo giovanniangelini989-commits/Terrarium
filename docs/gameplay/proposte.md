@@ -173,3 +173,12 @@ Vincoli che valgono per tutte (da `docs/ricerca/regole.md` e `docs/DECISIONI.md`
 | 11 | La mensola viva | medio-alto | medio-alto | basso |
 
 Ordine consigliato: il sistema «Tempo e calendario» è costruito (24 ottobre, logica e motore; manca l'interfaccia). Poi 8 (costa poco, chiude bene la fine del vaso), 3, 10, 1, 7, 9, 2, 11.
+
+
+## Proposte del motore (29 ottobre 2026, dopo la biologia reale)
+Ordinate per impatto. Concorrenti: vedi `docs/ricerca/`.
+1. **Il quaderno delle cause** (impatto alto, costo basso, interfaccia). Ogni mutazione e ogni estinzione ha già una riga `why`; mostrarla come «Perché?» con una icona del fattore (buio, secco, predatore, affollamento). Funziona perché insegna l'ecologia vera (feedback chiaro, come nei giochi di gestione). Rischio etico: nessuno. Costo: 1 giorno.
+2. **Il costo scelto** (alto, medio, motore+carte). Alla mutazione proponi «proteggi» o «lascia» già ora; aggiungere una carta che sposta la pressione (es. «tappo aperto» = secco = cuticola) per guidare l'evoluzione con le cure. Rischio: manipolazione se obbliga; resta facoltativa.
+3. **Ritorno gentile dopo i digiuni** (alto, basso, motore). Il digiuno lungo dei ragni è ora realistico: un evento «i ragni sono magri ma vivi» dopo 10 giorni dà una ragione per tornare e dare un grillo, senza punire l'assenza.
+4. **Obiettivi di medio termine «ospita»** (medio, basso, storia/carte): «un vaso con collemboli visibili», «formiche e termiti in pace» (la guerra è ora rara e leggibile). Ricompensa: texture del vaso (condensa, puntini bianchi).
+5. **Legno morto come oggetto** (medio, medio, motore+interfaccia+tre-d): permette alle termiti di vivere (oggi capacità ×0,8) e dà una scelta di setup sensata. Rischio: nessuno.
