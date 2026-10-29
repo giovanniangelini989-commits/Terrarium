@@ -72,6 +72,7 @@ MAN_URI='data:application/manifest+json;base64,'+base64.b64encode(json.dumps(MAN
 MARCHIO=open('assets/brand/marchio.svg').read().split('?>',1)[-1]
 MARCHIO=__import__('re').sub(r'<!--.*?-->','',MARCHIO,flags=__import__('re').S).strip().replace('<svg ','<svg class="mk" aria-hidden="true" ',1)
 print('manifest',len(MAN_URI),'byte')
+SPLASH=base64.b64encode(open('assets/brand/splash.webp','rb').read()).decode()
 # marchio e icona dell'app (assets/brand, da Giovanni): incorporati, così «Aggiungi a Home» mostra l'icona vera
 ICO180=base64.b64encode(open('assets/brand/icona-180.png','rb').read()).decode(); FAV=base64.b64encode(open('assets/brand/favicon-64.png','rb').read()).decode()
 html=f'''<!doctype html>
@@ -97,7 +98,7 @@ html=f'''<!doctype html>
 <body>
 <div id="app"><div id="screen" class="screen"></div><nav id="tabbar" class="glass" hidden aria-label="Sezioni"></nav></div>
 <div id="layer"></div>
-<div id="splash" class="splash" role="status" aria-label="Terrario si sta caricando">{MARCHIO}<div class="sname">Terrario</div></div>
+<div id="splash" class="splash" role="status" aria-label="Terrario si sta caricando"><img class="bg" alt="" src="data:image/webp;base64,{SPLASH}">{MARCHIO}<div class="sname">Terrario</div></div>
 <script>
 {icone_js}
 </script>
