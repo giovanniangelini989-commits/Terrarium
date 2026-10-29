@@ -58,21 +58,46 @@ const VBEGIN=`#ifndef ANT_POSED
 vec3 antP; mat3 antR; antPose(antP,antR);
 #endif
 vec3 transformed=antP;`;
-const uni={uTime:{value:0},uDry:{value:0}};
+const uni={uTime:{value:0},uDry:{value:0},uCharge:{value:0}};
 function patch(mat,depth){ mat.onBeforeCompile=sh=>{ sh.uniforms.uTime=uni.uTime; sh.uniforms.uDry=uni.uDry;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\n'+VHEAD).replace('#include <beginnormal_vertex>',VNORMAL).replace('#include <begin_vertex>',VBEGIN);
     if(!depth) sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vEmit; uniform float uTime;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=vec3('+EMIT_COL.join(',')+')*vEmit*(2.6+.8*sin(uTime*3.+vEmit*7.))*vec3(1.,.8+.2*sin(uTime+vEmit*5.),1.);'); };
   mat.customProgramCacheKey=()=>depth?'antDepth':'antStd'; return mat; }
+
+// ---------- lumaca (modello statico, niente rig): ondulazione del corpo nel vertex shader, guscio fermo ----------
+// Pelle mutata = stessa UV, seconda texture (mutata_*.webp) mescolata col valore di mutazione; bagliore viola dalla maschera ripulita (build_app.py)
+const SN_VHEAD=`
+attribute float aEmit; attribute vec4 iAnim; attribute float iMut;
+uniform float uTime;
+varying float vMut; varying float vShell;`;
+const SN_VBEGIN=`vec3 transformed=vec3(position);
+vMut=iMut; vShell=aEmit;
+{ float ph=iAnim.x*6.2832, spd=iAnim.y, body=1.-step(.5,aEmit);
+  float low=1.-smoothstep(.04,.09,position.y), amp=.5+.5*spd;
+  float ar=uTime*(.9+1.3*spd)-position.x*34.+ph;
+  transformed.y+=body*low*amp*.0035*sin(ar);
+  transformed.x+=body*low*amp*.005*cos(ar);
+  float tent=body*smoothstep(.085,.115,position.y)*step(.09,position.x);
+  transformed.z+=tent*(position.y-.085)*.9*sin(uTime*1.1+ph+position.y*16.);
+  transformed.x+=tent*(position.y-.085)*.5*sin(uTime*.8+ph*1.7); }`;
+function patchSnail(mat,tier,tx){ mat.onBeforeCompile=sh=>{ sh.uniforms.uTime=uni.uTime; sh.uniforms.uMutMap={value:tx.mut}; sh.uniforms.uGlow={value:tx.glow}; sh.uniforms.uCharge=uni.uCharge;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\n'+SN_VHEAD).replace('#include <begin_vertex>',SN_VBEGIN);
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vMut; varying float vShell; uniform float uTime,uCharge; uniform sampler2D uMutMap,uGlow;')
+      .replace('#include <map_fragment>','#include <map_fragment>\n{ float mk=smoothstep(0.,1.,clamp(vMut,0.,1.)); diffuseColor.rgb=mix(diffuseColor.rgb,texture2D(uMutMap,vMapUv).rgb*vec3(.6,.46,.95),mk); }')
+.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{ float k=clamp(vMut,0.,1.3), mk=k*k, g=texture2D(uGlow,vMapUv).r*step(.5,vShell); float fr=pow(1.-abs(dot(normalize(normal),normalize(vViewPosition))),2.2); float pl=.85+.15*sin(uTime*1.6+vMapUv.x*9.); vec3 V=vec3(.5,.26,1.), hue=mix(V,mix(vec3(.95,.25,.75),vec3(.25,.6,1.),.5+.5*sin(vMapUv.x*14.+vMapUv.y*9.+uTime*.7)),.4*(g+fr)); float ch=.5+.7*uCharge; float sh=step(.5,vShell); totalEmissiveRadiance+=hue*(g*pl*mk*(.7+1.5*ch)+sh*mk*(.12+.5*fr)*ch+(1.-sh)*fr*mk*.6*ch); }'); };
+  mat.customProgramCacheKey=()=>'snail_'+tier; return mat; }
+function loadTex(b64,srgb){ const t=new THREE.TextureLoader().load('data:image/webp;base64,'+b64); t.flipY=false; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; if(srgb) t.colorSpace=THREE.SRGBColorSpace; return t; }
 const depthMat=patch(new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking}),true);
 // ---------- caricamento dei GLB incorporati ----------
-const GLB=window.__GLB||{}; const models={}; let loaded=false;
+const GLB=window.__GLB||{}, GLBX=window.__GLBX||{}; const models={}; let loaded=false;
 function b64buf(s){ const bin=atob(s), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u.buffer; }
 function takeMesh(gltf){ let m=null; gltf.scene.traverse(o=>{ if(o.isMesh&&!m) m=o; }); const g=m.geometry; [['_anim','aAnim'],['_pivot','aPivot'],['_emit','aEmit'],['_ANIM','aAnim'],['_PIVOT','aPivot'],['_EMIT','aEmit']].forEach(([a,b])=>{ if(g.attributes[a]){ g.setAttribute(b,g.attributes[a]); g.deleteAttribute(a); } }); g.computeBoundingSphere(); return m; }
 const tris=g=>g.index?g.index.count/3:g.attributes.position.count/3;
 const ready=(async()=>{ const ids=Object.keys(GLB); if(!ids.length) return; let GL; try{ GL=(await import(LOADER_URL)).GLTFLoader; }catch(e){ console.warn('GLTFLoader non disponibile',e&&e.message); return; }
   const loader=new GL(); const parse=buf=>new Promise((res,rej)=>loader.parse(buf,'',res,rej));
   for(const id of ids){ try{ const set=GLB[id], out={tiers:[]}; let swarmMat=null;
-      for(const tier of ['close','swarm','lod1','lod2']){ if(!set[tier]) continue; const m=takeMesh(await parse(b64buf(set[tier]))); let mat=m.material&&m.material.map?m.material:null; const anim=!!m.geometry.attributes.aAnim; if(!anim) out.object=true; if(mat){ mat.side=THREE.FrontSide; if(anim) patch(mat); if(tier==='swarm') swarmMat=mat; } out.tiers.push({name:tier,geo:m.geometry,mat,tris:tris(m.geometry),shadow:false,px:PX[tier]||0}); }
+      for(const tier of ['close','swarm','lod1','lod2']){ if(!set[tier]) continue; const m=takeMesh(await parse(b64buf(set[tier]))); let mat=m.material&&m.material.map?m.material:null; const anim=!!m.geometry.attributes.aAnim; if(!anim) out.object=true; const sx=GLBX[id]; const snail=!!(sx&&sx['mut_'+tier]&&sx['glow_'+tier]); if(snail&&mat){ mat=mat.clone(); mat.side=THREE.FrontSide; patchSnail(mat,tier,{mut:loadTex(sx['mut_'+tier],true),glow:loadTex(sx['glow_'+tier],false)}); out.object=false; if(tier==='swarm') swarmMat=mat; out.tiers.push({name:tier,geo:m.geometry,mat,tris:tris(m.geometry),shadow:tier==='close',snail:true,px:PX[tier]||0}); continue; }
+        if(mat){ mat.side=THREE.FrontSide; if(anim) patch(mat); if(tier==='swarm') swarmMat=mat; } out.tiers.push({name:tier,geo:m.geometry,mat,tris:tris(m.geometry),shadow:false,px:PX[tier]||0}); }
       out.tiers.forEach(t=>{ if(!t.mat) t.mat=swarmMat||out.tiers.find(q=>q.mat).mat; }); if(!out.tiers.length) continue; models[id]=out; }catch(e){ console.warn('modello Kimi',id,e&&e.message); } }
   loaded=true; })();
 // ---------- istanze per specie ----------
@@ -80,7 +105,7 @@ const crt={}; const crumbCap=1024, crumbs=new THREE.InstancedMesh(new THREE.Sphe
 function mkTier(t,shared){ const g=t.geo.clone(); g.setAttribute('iAnim',new THREE.InstancedBufferAttribute(new Float32Array(CAP*4),4).setUsage(THREE.DynamicDrawUsage)); g.setAttribute('iMut',new THREE.InstancedBufferAttribute(new Float32Array(CAP),1).setUsage(THREE.DynamicDrawUsage));
   const im=new THREE.InstancedMesh(g,t.mat,CAP); im.count=0; im.frustumCulled=false; im.castShadow=!!t.shadow; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); if(t.shadow&&t.anim) im.customDepthMaterial=depthMat; im.setColorAt(0,new Col(1,1,1)); critG.add(im); return {name:t.name,im,tris:t.tris,px:t.px,ia:g.attributes.iAnim,imu:g.attributes.iMut,anim:!!t.anim}; }
 function ensure(x){ let c=crt[x.id]; if(c&&(c.kind==='glb'||!models[x.id])) return c; const items=c?c.items:[]; if(c) drop(c);
-  let tiers, kind; if(models[x.id]){ kind='glb'; tiers=models[x.id].tiers.map(t=>mkTier({...t,anim:true})); }
+  let tiers, kind; if(models[x.id]){ kind='glb'; tiers=models[x.id].tiers.map(t=>mkTier({...t,anim:!t.snail})); }
   else { kind='pass1'; const geo=kimiGeo(x.id)||fallbackGeo(x.id), glossy=x.id==='coleotteri', wing=x.id==='mosche'; if(!geo.userData.final){ geo.computeBoundingBox(); const ex=geo.boundingBox.max.x-geo.boundingBox.min.x, f=(KLEN[x.id]||.2)/Math.max(.1,ex); geo.scale(f,f,f); geo.userData.final=true; } /* scala reale: lunghezza = KLEN */ tiers=[mkTier({name:'pass1',geo,mat:new THREE.MeshStandardMaterial({vertexColors:true,roughness:glossy?.42:.88,metalness:glossy?.4:.02,transparent:wing,depthWrite:!wing}),tris:tris(geo),shadow:false,px:0})]; tiers[0].final=!!geo.userData.final; }
   return crt[x.id]={id:x.id,kind,tiers,items,x,tint:'',final:kind==='glb'||tiers[0].final,len:KLEN[x.id]||.2,dying:0}; }
 function drop(c){ c.tiers.forEach(t=>{ critG.remove(t.im); t.im.geometry.dispose(); if(c.kind==='pass1') t.im.material.dispose(); }); delete crt[c.id]; }
@@ -92,9 +117,9 @@ function sync(v){ const seen=new Set(); v.sp.forEach(x=>{ seen.add(x.id); if(!x.
   Object.keys(crt).forEach(id=>{ const c=crt[id]; if(!seen.has(id)||(c.dying&&S.t-c.dying>3)) drop(c); }); }
 // ---------- movimento, stati, livelli di dettaglio ----------
 const _m=new THREE.Matrix4(), _q=new THREE.Quaternion(), _p=new V3(), _s=new V3(), _e=new THREE.Euler(), _c=new V3(), cands=[];
-function move(dt,t,v,dry){ uni.uTime.value=t; uni.uDry.value=dry||0; const lv=Math.min(2,level()||0); let budget=BUDGET[lv]; cands.length=0; let crumbN=0;
+function move(dt,t,v,dry){ uni.uTime.value=t; uni.uDry.value=dry||0; uni.uCharge.value=Math.max(0,Math.min(1,(v.E||0)/100)); const lv=Math.min(2,level()||0); let budget=BUDGET[lv]; cands.length=0; let crumbN=0;
   const H=viewH()||300, kpx=H/(2*Math.tan(camera.fov*Math.PI/360)); _c.copy(camera.position);
-  Object.values(crt).forEach(c=>{ const x=c.x, id=c.id, fly=id==='mosche', soc=!!x.society&&!fly, an=soc?anchorOf(id):null, war=!c.dying&&v.wars.find(w=>w.includes(id)), wi=war?war.indexOf(id):0, sp=(fly?.55:.28)*(war?2:1), mut=x.mut||[], mutK=mut.length?Math.min(1.3,.7+.2*mut.length):0, glb=c.kind==='glb';
+  Object.values(crt).forEach(c=>{ const x=c.x, id=c.id, fly=id==='mosche', soc=!!x.society&&!fly, an=soc?anchorOf(id):null, war=!c.dying&&v.wars.find(w=>w.includes(id)), wi=war?war.indexOf(id):0, sp=(fly?.55:id==='lumache'?.06:.28)*(war?2:1), mut=x.mut||[], mutK=mut.length?Math.min(1.3,.7+.2*mut.length):0, glb=c.kind==='glb';
     const tint=(x.monster?'m':'')+(glb?'':mut.join(',')); if(tint!==c.tint){ c.tint=tint; const col=new Col(1,1,1); if(x.monster) col.multiply(new Col(1,.55,.55)); if(!glb){ if(mut.includes('radioattivo')) col.multiply(new Col(.7,1.2,.7)); if(mut.includes('bioluminescenza')) col.multiply(new Col(.7,1,1.25)); if(mut.includes('velenoso')) col.multiply(new Col(1.1,.7,1.25)); } c.tiers.forEach(tr=>{ for(let i=0;i<CAP;i++) tr.im.setColorAt(i,col); tr.im.instanceColor.needsUpdate=true; }); }
     const lim=glb?24:12; const sz=(c.final?(1+Math.min(.5,.12*Math.max(0,(x.size||1)-1))):SIZE(x))*(x.monster?1.7:1), vis=c.final?c.len*sz:sz;
     c.items.forEach((it,ix)=>{ if(ix>=lim){ it.hid=1; return; } it.hid=0; const dead=it.st===5;
