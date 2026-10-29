@@ -33,7 +33,7 @@ with sync_playwright() as p:
     t('le voci grigie dicono perché',pg.evaluate("[...document.querySelectorAll('#tst-pan .it[disabled]')].every(b=>b.querySelector('small')&&b.querySelector('small').textContent.length>3)"))
     for sec in ['Microclima','Tempo','Carte','Fine del vaso','Vista','Prova tutto']:
         t('sezione '+sec,pg.evaluate("[...document.querySelectorAll('#tst-pan .k')].some(k=>k.textContent==%r)"%sec))
-    ordine=[i for i,d in ids if not d and i not in('video','esporta','importa','azzera','tutto')]+['tutto','esporta','importa','azzera','video']
+    ordine=[i for i,d in ids if i and not d and i not in('video','esporta','importa','azzera','tutto')]+['tutto','esporta','importa','azzera','video']
     def pulisci():
         pg.evaluate("(()=>{ try{__ui.closeSheet()}catch(e){}; ['cine','cardrev','reveal','hand','cardview'].forEach(i=>{const e=document.getElementById(i); if(e) e.remove();}); __app.popups.length=0; })()")
     for sid in ordine:
@@ -69,7 +69,9 @@ with sync_playwright() as p:
             pg.wait_for_load_state('load'); pg.wait_for_function("window.__app && !!__app.G",timeout=15000)
             t('importa ricarica con una partita',pg.evaluate("!!__app.G"))
         if sid=='azzera':
-            t('azzera: nessun salvataggio',pg.evaluate("__app.store.get()")is None or pg.evaluate("__ui.mode")=='film')
+            try: pg.wait_for_function("__app.store.get()==null || __ui.mode==='film'",timeout=6000)
+            except Exception: pass
+            t('azzera: nessun salvataggio',pg.evaluate("__app.store.get()")is None or pg.evaluate("__ui.mode")=='film',pg.evaluate("[__ui.mode, !!__app.store.get()]"))
     t('console senza errori',not errs,errs[:5])
     b.close()
 print('ok',ok,'ko',bad)

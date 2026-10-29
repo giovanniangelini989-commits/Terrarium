@@ -4200,7 +4200,7 @@ let lastTouch=0; ['pointerdown','touchstart','click'].forEach(ev=>document.addEv
 setInterval(()=>{ if(mode!=='game'||!A.G) return; if(Date.now()-lastTouch<2500||busy()) return; const ch=A.checkNewDay(); const rr=A.refreshReq(); if((ch||rr)&&tab==='vaso') render(); showNextPopup(); },15000);
 document.addEventListener('click',e=>{ if(e.target!==V.cv||mode!=='game'||tab!=='vaso'||cine||sheetOpen()) return; const id=V.hit(e.clientX,e.clientY); if(id) groupSheet(id); });
 // ---------------- avvio ----------------
-function boot(){ const has=A.loadSave(); requestAnimationFrame(()=>setTimeout(()=>{ const s=$('#splash'); if(s){ s.style.opacity=0; setTimeout(()=>s.remove(),250); } if(has){ mode='game'; try3d(); A.checkNewDay(); A.queueDecisions(); render(); setTimeout(showNextPopup,300); setTimeout(donoToast,1600); } else startFilm(false); },0)); }
+function boot(){ const has=A.loadSave(); requestAnimationFrame(()=>setTimeout(()=>{ const s=$('#splash'); if(s){ let vista=false; try{ vista=sessionStorage.getItem('terrario-splash')==='1'; sessionStorage.setItem('terrario-splash','1'); }catch(e){} const resta=vista?0:Math.max(0,1400-performance.now()); setTimeout(()=>{ s.style.opacity=0; setTimeout(()=>s.remove(),250); },resta); } if(has){ mode='game'; try3d(); A.checkNewDay(); A.queueDecisions(); render(); setTimeout(showNextPopup,300); setTimeout(donoToast,1600); } else startFilm(false); },0)); }
 window.__ui.passaNotte=()=>H['notte-ui']();
 window.__ui.boot=boot; boot();
 // aggancio alla guardia prestazioni di v3d.js: quando avvisa che il 3D e' lento, spegne i vetri sfocati
@@ -4398,6 +4398,7 @@ const css=document.createElement('style'); css.textContent=
 '#tst-pan .k{margin:20px 0 8px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#A88BFF}#tst-pan .k2{margin:12px 0 6px;font-size:12px;font-weight:700;color:#9AACB8}'+
 '#tst-pan .it{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:46px;margin:0 0 6px;padding:8px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#EAF1F5;font:600 14px Manrope,sans-serif;text-align:left;cursor:pointer;transition:transform .15s ease,border-color .15s ease}'+
 '#tst-pan .it:active{transform:scale(.98);border-color:#7CF5C8}#tst-pan .it[disabled]{opacity:.38;cursor:default}#tst-pan .it small{font-size:11px;font-weight:700;color:#9AACB8;white-space:nowrap}'+
+'#tst-pan .cmp-n{display:flex;align-items:center;gap:10px}#tst-pan .cmp-n b{min-width:26px;text-align:center;font-size:16px}#tst-pan .cmp-b{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#EAF1F5;font-size:22px;cursor:pointer;transition:transform .12s ease}#tst-pan .cmp-b:active{transform:scale(.94)}#tst-pan .cmp-p[aria-pressed=true]{border-color:#7CF5C8;background:rgba(124,245,200,.12)}#tst-pan .cmp-s{cursor:default}#tst-pan .cmp-s input{flex:1;min-width:0;height:44px;accent-color:#A88BFF}#tst-pan .cmp-go{justify-content:center;margin-top:16px;min-height:52px;background:#A88BFF;color:#0F0D14;border-color:#A88BFF;font-weight:800;font-size:16px}#tst-pan .cmp-go:active{transform:scale(.94)}'+
 '#tst-run{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 8px);z-index:101;pointer-events:none;padding:6px 12px;border-radius:999px;background:rgba(10,15,21,.78);color:#A88BFF;font:700 12px Manrope,sans-serif;text-align:center}'+
 '#tst-stat{position:fixed;left:62px;bottom:calc(env(safe-area-inset-bottom) + 98px);z-index:94;pointer-events:none;padding:3px 9px;border-radius:999px;background:rgba(10,15,21,.6);color:#7CF5C8;font:700 11px/1.4 ui-monospace,Menlo,monospace}';
 document.head.appendChild(css);
@@ -4440,10 +4441,43 @@ function provaTutto(){ if(provaInCorso) return 'skip'; provaInCorso=true;
   chiudi(); setTimeout(avanti,200); return 'skip'; }
 function apri(){ chiudi(); var p=document.createElement('div'); p.id='tst-pan'; var in_=document.createElement('div'); in_.className='in';
   in_.innerHTML='<header><h2>Modalità test</h2><button class="x" type="button" aria-label="Chiudi" data-x>✕</button></header><div style="color:#9AACB8;font-size:12px">Un tocco applica lo scenario e chiude il pannello. Le voci grigie dipendono da funzioni non ancora presenti.</div>';
+  var cg=document.createElement('button'); cg.type='button'; cg.className='it'; cg.id='tst-open-comp'; cg.style.cssText='margin-top:14px;border-color:#A88BFF'; cg.innerHTML='<span>Componi il vaso</span><small>creature, piante, magia</small>'; cg.addEventListener('click',componi); in_.appendChild(cg);
   SEZ.forEach(function(sz){ var k=document.createElement('div'); k.className='k'; k.textContent=sz.t; in_.appendChild(k);
     sz.v.forEach(function(v){ if(v.grp){ if(v.sub){ var k2=document.createElement('div'); k2.className='k2'; k2.textContent=v.sub; in_.appendChild(k2); } v.grp().forEach(function(x){ voce(x,in_); }); } else voce(v,in_); }); });
   p.appendChild(in_); p.addEventListener('click',function(e){ if(e.target.closest('[data-x]')||e.target===p) chiudi(); }); document.body.appendChild(p); }
+/* ---------- Componi il vaso (editor) ---------- */
+var COMP={cr:{formiche:0,termiti:0,mosche:0,coleotteri:0,ragni:0,lumache:6},pi:{muschio:1,felce:1,succulenta:0,fungo:0,carnivora:0},mut:0,car:20,notte:0};
+var MUTL=['gigantismo','bioluminescenza','radioattivo','corazza','iperfertilita','intelligenza'];
+function componi(){ chiudi(); var p=document.createElement('div'); p.id='tst-pan'; var d=document.createElement('div'); d.className='in'; d.id='tst-comp';
+  var h='<header><h2>Componi il vaso</h2><button class="x" type="button" data-x aria-label="Chiudi">✕</button></header><div class="k">Creature</div>';
+  var NOM={formiche:'Formiche',termiti:'Termiti',mosche:'Mosche',coleotteri:'Coleotteri',ragni:'Ragni',lumache:'Lumache'};
+  Object.keys(COMP.cr).forEach(function(id){ h+='<div class="it cmp-r" data-cr="'+id+'"><span>'+NOM[id]+'</span><span class="cmp-n"><button type="button" class="cmp-b" data-d="-1" aria-label="Meno '+NOM[id]+'">−</button><b>'+COMP.cr[id]+'</b><button type="button" class="cmp-b" data-d="1" aria-label="Più '+NOM[id]+'">+</button></span></div>'; });
+  h+='<div class="k">Piante</div>';
+  Object.keys(COMP.pi).forEach(function(id){ h+='<button type="button" class="it cmp-p" data-pi="'+id+'" aria-pressed="'+(COMP.pi[id]?'true':'false')+'"><span>'+id.charAt(0).toUpperCase()+id.slice(1)+'</span><small>'+(COMP.pi[id]?'sì':'no')+'</small></button>'; });
+  h+='<div class="k">Magia</div>';
+  h+='<label class="it cmp-s"><span>Mutazione</span><input type="range" min="0" max="100" value="'+Math.round(COMP.mut*100)+'" data-k="mut"><small data-o="mut">'+COMP.mut.toFixed(2)+'</small></label>';
+  h+='<label class="it cmp-s"><span>Carica del sasso</span><input type="range" min="0" max="100" value="'+COMP.car+'" data-k="car"><small data-o="car">'+COMP.car+'</small></label>';
+  h+='<button type="button" class="it cmp-p" data-nt aria-pressed="'+(COMP.notte?'true':'false')+'"><span>Notte</span><small>'+(COMP.notte?'notte':'giorno')+'</small></button>';
+  h+='<button type="button" class="it cmp-go" data-go>Crea il vaso</button>';
+  d.innerHTML=h; p.appendChild(d);
+  d.addEventListener('click',function(e){ var t=e.target;
+    var b=t.closest('.cmp-b'); if(b){ var id=b.closest('[data-cr]').dataset.cr; COMP.cr[id]=Math.max(0,Math.min(30,COMP.cr[id]+(+b.dataset.d))); b.parentNode.querySelector('b').textContent=COMP.cr[id]; return; }
+    var q=t.closest('[data-pi]'); if(q){ var k=q.dataset.pi; COMP.pi[k]=COMP.pi[k]?0:1; q.setAttribute('aria-pressed',COMP.pi[k]?'true':'false'); q.querySelector('small').textContent=COMP.pi[k]?'sì':'no'; return; }
+    var n=t.closest('[data-nt]'); if(n){ COMP.notte=COMP.notte?0:1; n.setAttribute('aria-pressed',COMP.notte?'true':'false'); n.querySelector('small').textContent=COMP.notte?'notte':'giorno'; return; }
+    if(t.closest('[data-go]')){ creaComposto(); return; }
+    if(t.closest('[data-x]')||t===p) chiudi(); });
+  d.addEventListener('input',function(e){ var r=e.target; if(!r.dataset.k) return; var v=+r.value; COMP[r.dataset.k]=r.dataset.k==='mut'?v/100:v; d.querySelector('[data-o="'+r.dataset.k+'"]').textContent=r.dataset.k==='mut'?COMP[r.dataset.k].toFixed(2):v; });
+  document.body.appendChild(p); }
+function creaComposto(){ var ins=Object.keys(COMP.cr).filter(function(i){ return COMP.cr[i]>0; }), pia=Object.keys(COMP.pi).filter(function(i){ return COMP.pi[i]; });
+  chiudi(); pulisciPopup(); nuova(ins,pia,[]);
+  var s=A.sim, m=COMP.mut;
+  ins.forEach(function(id){ var x=sp(id); if(!x) return; x.pop=COMP.cr[id];
+    if(m>0){ var n=Math.max(1,Math.round(m*MUTL.length)); for(var i=0;i<n;i++){ if(x.mut.indexOf(MUTL[i])<0) x.mut.push(MUTL[i]); } if(x.mut.indexOf('gigantismo')>=0) x.size*=1+.8*m; x.gen=Math.max(x.gen||0,Math.round(2+m*6)); } });
+  try{ s.charge(COMP.car-s.view().E); }catch(e){}
+  A.G.settings.tempo=COMP.notte?'notte':'giorno';
+  try{ A.updateCodex(); }catch(e){} entra(); toast('vaso composto'); }
 btn.addEventListener('click',apri);
+window.__componi=componi;
 
 window.__scenari={SEZ:SEZ,apri:apri,chiudi:chiudi,provaTutto:provaTutto,voci:tutteLeVoci};
 }
