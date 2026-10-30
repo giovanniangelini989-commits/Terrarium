@@ -182,4 +182,25 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   P.G.miss.gocce=10; P.missSpendi('avanza'); const n0=P.G.ui.avanza.n; const ra=P.avanzaNotte(); t('avanza: una notte comprata supera il tetto, senza cambiare il contatore di visita',ra.ok&&P.G.ui.avanza.n===n0&&P.G.miss.pronte===0,JSON.stringify(ra)+P.G.miss.pronte);
   t('missioni: salvataggio leggero',JSON.stringify(P.G.miss).length<700,JSON.stringify(P.G.miss).length);
 }
+// biologia di fondo (motore): collemboli, regina e covata, sciame, larve di mosca
+{ const mk=(ins,o)=>S.createSim(Object.assign({luce:1,acqua:1,meteorite:1,piante:['muschio','felce'],insetti:ins,oggetti:[]},o||{}),{seed:4,game:true,needs:true});
+  const txt=(sim,re)=>sim.log.some(l=>re.test(l.text));
+  const A=mk(['formiche','mosche']); t('bio: view().bio ha collemboli, formiche, termiti, mosche',(()=>{ const b=A.view().bio; return b&&typeof b.collemboli==='number'&&b.formiche&&b.termiti===null; })());
+  A.steps(1); const b0=A.view().bio; t('bio: formiche con regina e covata, mosche con larve, termiti null',b0.formiche&&b0.formiche.regina===true&&b0.formiche.covata.uova>0&&b0.mosche&&b0.mosche.larve>0&&b0.termiti===null,JSON.stringify(b0));
+  const N=S.createSim({luce:1,acqua:1,piante:['muschio'],insetti:['formiche'],oggetti:[]},{seed:4,game:true}); N.steps(5); t('bio: senza needs view().bio è null',N.view().bio===null);
+  // collemboli: crescono con umido e muffa, calano col secco
+  const C=mk(['formiche']); for(let i=0;i<30;i++){ C.setNeeds({um:.9}); C.step(); } const c1=C.view().bio.collemboli; t('bio: i collemboli crescono nell’umido con la muffa',c1>=20&&txt(C,/collemboli/),c1);
+  C.setTappo(true); for(let i=0;i<40;i++){ C.setNeeds({um:.1,ter:.3}); C.step(); } t('bio: col secco i collemboli calano',C.view().bio.collemboli<c1/2,c1+'→'+C.view().bio.collemboli);
+  // regina: senza di lei la colonia non cresce e invecchia; con una nuova riparte
+  const Q=mk(['formiche']); const cura=(sim,n)=>{ for(let i=0;i<n;i++){ if(i%3===0){ sim.act('nutri'); sim.act('acqua'); } sim.step(); } }; cura(Q,10); const p0=Q.sp[0].pop; t('bio: setRegina(false) toglie la regina',Q.setRegina(false)&&Q.view().bio.formiche.regina===false);
+  cura(Q,8); const f1=Q.view().bio.formiche.covata; t('bio: senza regina la covata si esaurisce e la colonia cala',f1.uova<.2&&Q.sp[0].pop<p0,p0.toFixed(1)+'→'+Q.sp[0].pop.toFixed(1)+' '+JSON.stringify(f1));
+  Q.setRegina(true); cura(Q,10); t('bio: con la regina tornano le uova',Q.view().bio.formiche.covata.uova>0);
+  const Q2=mk(['formiche']); cura(Q2,5); Q2.setRegina(false); cura(Q2,45); t('bio: una regina nuova arriva da sola, con una riga nel quaderno',Q2.view().bio.formiche.regina===true&&txt(Q2,/regina alata/));
+  // termiti: sciame dopo umido con colonia grande
+  const T=mk(['termiti'],{acqua:2,piante:['fungo','muschio']}); let sciame=false; for(let i=0;i<150;i++){ if(i%3===0) T.act('acqua'); if(i%3===1) T.act('nutri'); T.step(); if(T.view().bio.termiti&&T.view().bio.termiti.sciame) sciame=true; } t('bio: le termiti sciamano dopo l’umido (evento in seconda persona)',sciame&&txt(T,/ti sbattono contro il vetro/),T.view().bio.termiti&&JSON.stringify(T.view().bio.termiti));
+  // mosche: le larve nutrono i predatori
+  const M=mk(['mosche','ragni'],{piante:['felce']}); for(let i=0;i<40;i++){ if(i%3===0){ M.act('nutri'); M.act('acqua'); } M.step(); } t('bio: larve di mosca, e una riga quando compaiono',M.view().bio.mosche&&txt(M,/larve bianche/),JSON.stringify(M.view().bio.mosche));
+  // salvataggio
+  const S1=JSON.stringify(Q.view().bio), Q3=mk([]); Q3.load(JSON.parse(JSON.stringify(Q.save()))); t('bio: la covata e la regina si salvano col vaso',JSON.stringify(Q3.view().bio)===S1);
+}
 console.log(ok,'ok',bad,'falliti');
