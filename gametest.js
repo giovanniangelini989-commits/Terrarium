@@ -146,20 +146,21 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   P.popups.length=0; P.checkNewDay(); P.donoNonna(); t('stesso giorno: nessun secondo dono',!P.popups.some(p=>p.t==='dono')&&P.G.nonna.n===1);
   P.G.dev.offset+=1; P.popups.length=0; P.checkNewDay(); t('il giorno dopo: un altro dono, senza serie',P.G.nonna.n===2&&P.popups.filter(p=>p.t==='dono').length===1&&P.G.nonna.serie===undefined);
   const ids=new Set(); for(let i=0;i<12;i++){ P.G.dev.offset+=1; P.popups.length=0; P.checkNewDay(); ids.add(P.G.nonna.id); P.doAct('pulisci'); } t('i doni variano (a chi cura il vaso)',ids.size>=3,[...ids].join());
-  // 3) Avanza di una notte
-  P.G.dev.offset+=1; P.checkNewDay(); P.popups.length=0; P.sim.pending.length=0; P.G.letargo=null; P.G.real.owed=0; P.G.power.resto=0; P.G.miss.gocce=0; P.G.power.salto=0; P.G.miss.pronte=0; let ai=P.avanzaInfo();
-  const d0=P.sim.d; let okN=0; for(let i=0;i<5;i++){ P.G.miss.gocce=0; const r=P.avanzaNotte(); if(r.ok) okN++; P.sim.pending.length=0; P.G.real.owed=0; }
-  t('avanza: tetto di '+P.AVANZA.max+' notti per apertura',okN===P.AVANZA.max&&P.sim.d-d0>=P.AVANZA.max&&(P.G.miss.gocce=0,P.avanzaInfo().why==='tetto'),okN+' '+JSON.stringify(P.avanzaInfo()));
-  { const clr=()=>{ P.sim.pending.length=0; P.G.real.owed=0; P.G.power.resto=0; P.G.letargo=null; };
-    P.G.power.salto=1; clr(); const d1=P.sim.d, rs=P.avanzaNotte(); t('notte oltre le gratis: usa prima una notte di scorta',rs.ok&&rs.fonti[0]==='scorta'&&P.G.power.salto===0&&P.sim.d>d1,JSON.stringify(rs.fonti));
-    P.G.miss.gocce=P.MISS.costo.avanza; clr(); const rg=P.avanzaNotte(); t('poi le gocce: ogni notte costa '+P.MISS.costo.avanza,rg.ok&&rg.fonti[0]==='gocce'&&P.G.miss.gocce===0,JSON.stringify(rg.fonti)); clr(); t('senza scorta né gocce: tetto',P.avanzaNotte().why==='tetto');
-    P.G.ui.avanza={n:0,visto:P.nowMs()}; clr(); const d2=P.sim.d, r2=P.avanzaNotte(2); t('tieni premuto: due notti di fila',r2.ok&&(r2.notti===2||r2.pausa)&&P.sim.d>=d2+(r2.pausa?1:2),JSON.stringify([r2.notti,r2.pausa,P.sim.d-d2]));
+  // 3) Salta (un solo pulsante del tempo): cariche, poi gocce, mai all'infinito
+  P.G.dev.offset+=1; P.checkNewDay(); P.popups.length=0; P.sim.pending.length=0; P.G.letargo=null; P.G.real.owed=0; P.G.power.resto=0; P.G.miss.gocce=0; P.G.power.salto=0;
+  t('niente Notte: AVANZA e avanzaNotte non esistono più',P.AVANZA===undefined&&P.avanzaNotte===undefined&&P.avanzaInfo===undefined);
+  { const clr=()=>{ P.sim.pending.length=0; P.G.real.owed=0; P.G.power.resto=0; P.G.letargo=null; P.popups.length=0; };
+    clr(); const d0=P.sim.d; t('senza cariche né gocce: non avanza',P.usaSalto().why==='carte'&&P.powerCards().why==='carte'&&P.sim.d===d0);
+    P.G.power.salto=1; clr(); const d1=P.sim.d, rs=P.usaSalto(); t('una carica: salta 2 giorni e la consuma',rs.ok&&rs.fonte==='carica'&&P.G.power.salto===0&&(P.sim.d===d1+2||rs.pausa),JSON.stringify([rs.fonte,P.sim.d-d1]));
+    P.G.miss.gocce=P.MISS.costo.salto; clr(); const d3=P.sim.d, rg=P.usaSalto(); t('finite le cariche: costo '+P.MISS.costo.salto+' gocce',rg.ok&&rg.fonte==='gocce'&&P.G.miss.gocce===0&&(P.sim.d===d3+2||rg.pausa),JSON.stringify([rg.fonte,P.sim.d-d3]));
+    clr(); t('di nuovo senza nulla: bloccato',P.usaSalto().ok===false&&P.G.miss.gocce===0);
+    P.G.miss.gocce=P.MISS.costo.salto-1; clr(); t('gocce insufficienti: bloccato, gocce intatte',P.usaSalto().why==='carte'&&P.G.miss.gocce===P.MISS.costo.salto-1);
+    P.G.power.salto=6; clr(); const dd=P.sim.d; P.usaSalto(); clr(); t('più salti di fila consumano una carica ciascuno',P.G.power.salto===5&&P.sim.d>dd);
     P.G.miss.gocce=20; const c0=P.G.miss.gocce, rc=P.missSpendi('carta'); t('gocce: pesca una carta (10), una al giorno',rc.ok&&P.G.miss.gocce===c0-P.MISS.costo.carta&&P.missSpendi('carta').why==='oggi');
     const n1=P.G.nonna.n, rn=P.missSpendi('nonna'); t('gocce: un altro dono della nonna',rn.ok&&P.G.nonna.n===n1+1);
     P.G.miss.gocce=5; P.G.miss.cambiOggi=null; P.missioni(); const ok1=P.missCambia(0); P.G.miss.gocce=1; t('cambio missione: il primo è gratis, il secondo costa e serve avere gocce',ok1&&P.missCambiaCosto()===P.MISS.costo.cambia&&!P.missCambia(0));
     const S3=window.__story; t('preposizioni articolate',S3.prep('di','l’acqua')==='dell’acqua'&&S3.prep('a','le formiche')==='alle formiche'&&S3.prep('a','i coleotteri')==='ai coleotteri'&&S3.prep('di','il terreno')==='del terreno'&&S3.prep('a','la statuina')==='alla statuina'); }
-  P.G.dev.offset+=40/1440; P.checkNewDay(); t('avanza: dopo 30 minuti di chiusura il tetto si ricarica',P.avanzaInfo().n===0&&P.avanzaInfo().why==='');
-  P.G.letargo={da:1,giorni:2}; t('avanza: bloccato in letargo',P.avanzaNotte().ok===false&&P.avanzaInfo().why==='letargo'); P.G.letargo=null;
+  P.G.letargo={da:1,giorni:2}; t('salta: bloccato in letargo',P.usaSalto().ok===false&&P.powerCards().why==='letargo'); P.G.letargo=null;
   // 4) carta di cura ogni 7 giorni reali con almeno una cura
   P.G.carte=null; P.G.album={}; P.popups.length=0; let carte=0; for(let g=0;g<14;g++){ P.G.dev.offset+=1; P.checkNewDay(); P.doAct('acqua'); P.doAct('pulisci'); carte+=P.popups.filter(p=>p.t==='carta'&&p.fonte==='cura').length; P.popups.length=0; }
   t('carta di cura: 14 giorni con cure → 2 pesche (7° e 14°)',carte===2&&P.G.carte.giorniCura===14,carte+' '+JSON.stringify(P.G.carte));
@@ -183,11 +184,9 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   P.G.miss.oggi=null; P.G.miss.att[0]={k:'umidita',x:null,p:0,n:3,g:3,base:0}; P.sim.setNeeds({um:.6}); P.passaNotte(); P.sim.pending.length=0; P.passaNotte(); P.sim.pending.length=0; t('missioni: più notti nello stesso giorno contano una volta sola',P.G.miss.att[0].p===1); for(let i=0;i<4;i++){ if(!P.G.miss.att.some(x=>x&&x.k==='umidita')&&!P.G.miss.recenti.includes('umidita')) P.G.miss.att[0]={k:'umidita',x:null,p:i>0?1:0,n:3,g:3,base:0}; P.G.dev.offset+=1; P.sim.setNeeds({um:.6}); P.passaNotte(); P.sim.pending.length=0; } /* se il vaso casuale la sostituisce, la si rimette: si prova la regola dei 3 giorni, non il caso */ t('missioni: 3 giorni con umidità giusta completano «umidità»',P.G.miss.recenti.includes('umidita'),JSON.stringify(P.G.miss.att.map(a=>[a.k,a.p])));
   { const Q=P.G.miss; Q.oggi={t:P.todayIdx(),n:P.MISS.alGiorno}; Q.att.pop(); P.missioni(); t('missioni: al massimo '+P.MISS.alGiorno+' al giorno, poi il posto resta libero fino a domani',Q.att.length===2&&P.missioni().riposo); P.G.dev.offset+=1; t('missioni: il giorno dopo il posto si riempie',P.missioni().att.length===3); }
   // spesa
-  P.G.miss.gocce=2; t('spesa: poche gocce → rifiuto, nulla cambia',P.missSpendi('avanza').why==='gocce'&&P.G.miss.gocce===2);
-  P.G.miss.gocce=20; P.G.power.salto=0; P.G.miss.pronte=0; const r1=P.missSpendi('avanza'), r2=P.missSpendi('salto'); t('spesa: notte e salto in più, gocce scalate',r1.ok&&r2.ok&&P.G.power.salto===1&&P.G.miss.pronte===1&&P.G.miss.gocce===20-P.MISS.costo.avanza-P.MISS.costo.salto);
+  P.G.miss.gocce=2; t('spesa: poche gocce → rifiuto, nulla cambia',P.missSpendi('salto').why==='gocce'&&P.G.miss.gocce===2);
+  P.G.miss.gocce=20; P.G.power.salto=0; const r2=P.missSpendi('salto'); t('spesa: un salto in più, gocce scalate',r2.ok&&P.G.power.salto===1&&P.G.miss.gocce===20-P.MISS.costo.salto);
   P.G.power.salto=P.MISS.tetti.salto; t('spesa: tetto dei salti',P.missSpendi('salto').why==='tetto');
-  P.G.miss.pronte=0; P.G.miss.gocce=0; P.G.power.salto=0; P.G.dev.offset+=1; P.checkNewDay(); P.popups.length=0; P.sim.pending.length=0; P.G.real.owed=0; P.G.power.resto=0; P.G.letargo=null; P.G.miss.gocce=0; P.G.power.salto=0; P.G.ui.avanza={n:P.AVANZA.max,visto:P.nowMs()}; t('avanza: tetto raggiunto senza notti comprate',P.avanzaInfo().why==='tetto');
-  P.G.miss.gocce=10; P.missSpendi('avanza'); const n0=P.G.ui.avanza.n; const ra=P.avanzaNotte(); t('avanza: una notte comprata supera il tetto, senza cambiare il contatore di visita',ra.ok&&P.G.ui.avanza.n===n0&&P.G.miss.pronte===0,JSON.stringify(ra)+P.G.miss.pronte);
   t('missioni: salvataggio leggero',JSON.stringify(P.G.miss).length<900,JSON.stringify(P.G.miss).length);
 }
 // 10b) missioni visibili: pillola, popup al ritmo giusto, tetto 4 al giorno, accodamento, «Fallo», missioni brevi, missione grande
