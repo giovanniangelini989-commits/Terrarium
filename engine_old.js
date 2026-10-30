@@ -19,7 +19,7 @@ const PIANTE={
 };
 const SPECIE={
  formiche:{nome:'Formiche',icon:'🐜',g:0,dieta:'onnivora',sociale:true,size:1,rep:1,agg:.45,int:.7,tol:{l:.7,w:.4,r:.7},aff:{radioattivo:2.2,intelligenza:2,gigantismo:.8,corazza:.7,velenoso:.4,iperfertilita:1,bioluminescenza:.6},nota:'Sociali e adattabili: le più portate a farsi una società.'},
- termiti:{nome:'Termiti',icon:'🐛',g:0,dieta:'marcio',sociale:true,size:.9,rep:.9,agg:.35,int:.68,tol:{l:.25,w:.7,r:.5},aff:{intelligenza:2,corazza:1.3,radioattivo:1.2,gigantismo:.8,iperfertilita:1,bioluminescenza:.8,velenoso:.3},nota:'Sociali; vivono di marcio e amano il buio umido.'},
+ termiti:{nome:'Termiti',icon:'🐛',g:0,dieta:'marcio',sociale:true,size:.9,rep:.9,agg:.35,int:.68,tol:{l:.25,w:.7,r:.5},aff:{intelligenza:2,corazza:1.3,radioattivo:1.2,gigantismo:.8,iperfertilita:1,bioluminescenza:.8,velenoso:.3},nota:'Sociali; mangiano legno morto e foglie secche, amano il buio umido.'},
  mosche:{nome:'Mosche',icon:'🪰',g:0,dieta:'marcio',sociale:false,size:.5,rep:1.8,agg:.1,int:.1,tol:{l:.55,w:.6,r:.32},aff:{gigantismo:2.1,iperfertilita:1.5,radioattivo:1,bioluminescenza:.5,corazza:.4},nota:'Si riproducono in fretta; mutano in giganti.'},
  coleotteri:{nome:'Coleotteri',icon:'🪲',g:1,dieta:'foglie',sociale:false,size:1.2,rep:.6,agg:.3,int:.3,tol:{l:.5,w:.5,r:.65},aff:{corazza:2.5,gigantismo:1.6,radioattivo:1,velenoso:.6,iperfertilita:.8},nota:'Corazzati; mangiano foglie.'},
  ragni:{nome:'Ragni',icon:'🕷️',g:1,dieta:'insetti',sociale:false,size:1.1,rep:.5,agg:.9,int:.4,tol:{l:.45,w:.4,r:.5},aff:{velenoso:2.5,gigantismo:1.9,radioattivo:1,intelligenza:.5,corazza:.6},nota:'Predatori: tengono a bada gli altri, o li divorano.'},
