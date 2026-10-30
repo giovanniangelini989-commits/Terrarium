@@ -459,7 +459,7 @@ function createSim(setup0,opts){
   const ev=(d,kind,icon,text,why)=>{ const en={d,kind,icon,text,why:why||[]}; if(opts.game) en.n=++evN; log.push(en); if(kind==='pace') flags.pace=true; if(kind==='guerra'&&text.indexOf('La guerra finisce')===0) flags.warEnded=true; };
   let s,w,T,H,met,wBoost=0;
   let Wres=ACQUA[setup0.acqua==null?1:setup0.acqua].w, nw={um:false,ter:false,pul:false}; const ERED=opts.eredita||{}; let E=ERED.E!=null?ERED.E:20,pulse=0,muffa=ACQUA[setup.acqua].w>.7?.3:.05,detr=(opts.needs?DET0:.2); if(NEEDS&&ERED.um!=null) Wres=clamp(ERED.um,0,1); let muffaWarn=false, siccita=false;
-  const climaZero=()=>({tappo:0,ap:0,apOggi:0,dren:0,rist:0,umG:0,colle:0,rin:0,Tc:22,Hc:.8,pv:.7,f:{}}); let clima=climaZero();
+  const climaZero=()=>({tappo:0,ap:0,apOggi:0,dren:0,rist:0,umG:0,colle:0,rin:0,Tc:22,Hc:.8,pv:.7,f:{},fq:null,fU:null,fL:null,fP:null,fqs:0,fq0:0,ml:null,sc:0,scT:-99,fon:0}); let clima=climaZero();
   const mkPlant=id=>({id,...PIANTE[id],mut:false,v:0});
   const mkSp=id=>{ const b=SPECIE[id]; return {id,...b,tol:{...b.tol},pop:12,mut:[],mutIdx:0,X:0,gen:0,genAcc:0,society:null,suscept:1,tossico:false,alive:true,intBonus:0,monster:false,rep0:b.rep}; };
   const plants=setup.piante.map(mkPlant);
@@ -526,7 +526,7 @@ function createSim(setup0,opts){
       if(!x.alive) return;
       let K;
       if(x.dieta==='foglie') K=70*leaf; else if(x.dieta==='marcio') K=60*(rot+.15)*(x.id==='termiti'?.8:1); else if(x.dieta==='onnivora') K=50*(.5*leaf+.6*rot+.35); else if(x.dieta==='misto') K=45*(.6*leaf+.6*rot+.1);
-      else { let prey=0; sp.forEach(y=>{ if(y!==x&&y.alive&&y.dieta!=='insetti') prey+=y.pop*y.size*y.suscept; }); K=.7*prey/x.size; }
+      else { let prey=0; sp.forEach(y=>{ if(y!==x&&y.alive&&y.dieta!=='insetti') prey+=y.pop*y.size*y.suscept; }); if(NEEDS&&clima.ml>0){ const m=sp.find(y=>y.id==='mosche'); if(m&&m.alive) prey+=clima.ml*m.size*m.suscept; } K=.7*prey/x.size; }
       K=Math.min(100,K)*(x.mut.includes('gigantismo')?.6:1);
       const suit=clamp(1-.55*Math.abs(s-x.tol.l)-.7*Math.abs(w-x.tol.w)-.8*Math.max(0,R-x.tol.r)-(NEEDS?clamp((muffa-.6)*.5,0,.3):0));
       x.K=Math.max(x.dieta==='insetti'?.4:2,K*suit); x.suit=suit; x.Rexp=R;
@@ -537,10 +537,10 @@ function createSim(setup0,opts){
       if(!x.alive) return;
       let comp=x.pop; sp.forEach(y=>{ if(y!==x&&y.alive) comp+=overlap(x,y)*y.pop*(y.size/x.size); });
       const r=.12*x.rep*clamp(x.suit+.15,0,1.2)*(NEEDS?clamp((clima.Tc-8)/12,.2,1)*(w<.2&&x.id!=='lumache'?.5:1):1);
-      let dp=r*x.pop*(1-comp/x.K);
+      const gro=r*x.pop*(1-comp/x.K); let dp=gro;
       // disagio: se l'ambiente è troppo lontano dai gusti della specie, muoiono individui
       if(x.suit<.55) dp-=(.55-x.suit)*.16*x.pop;
-      if(x.dieta==='insetti'){ let prey=0; sp.forEach(y=>{ if(y!==x&&y.alive&&y.dieta!=='insetti') prey+=y.pop; }); if(prey<8){ x.fame=(x.fame||0)+1; if(x.fame>10) dp-=.008*x.pop; } else x.fame=0; }
+      if(x.dieta==='insetti'){ let prey=0; sp.forEach(y=>{ if(y!==x&&y.alive&&y.dieta!=='insetti') prey+=y.pop; }); if(NEEDS&&clima.ml>0) prey+=clima.ml*.5; if(prey<8){ x.fame=(x.fame||0)+1; if(x.fame>10) dp-=.008*x.pop; } else x.fame=0; }
       // stress idrico: troppo secco o troppo bagnato per la specie
       const stress=Math.max(0,Math.abs(w-x.tol.w)-.35)*.08; if(stress>0) dp-=stress*x.pop; if(NEEDS){ const crit=(w<CW?1:0)+(detr<.04?.5:0)+(muffa>.88?.5:0); if(crit) dp-=crit*CM*x.pop; }
       if(stress>.015 && !x.idro && d>8){ x.idro=true; ev(d,'ambiente','💧',x.nome+(w<x.tol.w?' soffrono la siccità.':' soffrono l’umidità eccessiva.'),['Acqua '+ACQUA[setup.acqua].nome.toLowerCase()+': non è l’ambiente giusto per '+x.nome.toLowerCase()+'.']); }
@@ -550,9 +550,11 @@ function createSim(setup0,opts){
       sp.forEach(y=>{ if(y.dieta==='insetti'&&y.alive&&y!==x&&x.dieta!=='insetti'){ dp-=.0045*y.pop*y.agg*(y.mut.includes('gigantismo')?1.6:1)*x.suscept*x.pop/(x.pop+25); } });
       if(carn>0 && x.id==='mosche') dp-=.003*carn*x.pop*30/(x.pop+25)*.5;
       if(NEEDS&&x.id==='lumache') dp=climaLumache(x,dp);
+      if(NEEDS&&(x.id==='formiche'||x.id==='mosche')) dp=bioStadi(x,dp,gro);
       delta.set(x,dp);
     });
     sp.forEach(x=>{ if(!x.alive) return; x.pop=clamp(x.pop+delta.get(x),0,100); detr=clamp(detr+(delta.get(x)<0?-delta.get(x)*.004:0)-.002); });
+    if(NEEDS) bioDay();
     // --- generazioni, esposizione, mutazioni ---
     sp.forEach(x=>{
       if(!x.alive) return;
@@ -657,7 +659,9 @@ function createSim(setup0,opts){
     const fRH=clamp((Hc-.6)/.3), fT=clamp(1-Math.abs(Tc-25)/20), morta=clamp(.5+.4*detr+.4*(1-c.pv));
     const cresce=MG*fRH*fT*morta*(ap?.6:1), cala=.004+(ap?.03:0)+.01*Math.max(0,s-.5)+.04*c.colle;
     c.umG=Hc>.8?c.umG+1:0;
-    if(muffa>.45&&Hc>.8) c.colle=clamp(c.colle+.04); else if(Wres<.3||muffa<.1) c.colle=clamp(c.colle-.02);   // collemboli: arrivano dove c'è muffa e umido, se ne vanno col secco
+    // collemboli: popolazione di fondo (0–1 = 0–100). Arrivano da soli dove muffa e umido durano; crescono con umido e cibo (muffa + detrito); col secco o senza cibo calano. Mangiano muffa (sopra) e detrito (bioDay); nessuna guerra.
+    { const cibo=clamp(1.3*(.7*muffa+.4*detr)), umi=clamp((Hc-.55)/.35), secco=Wres<.3||Hc<.65;
+      c.colle=clamp(c.colle+((muffa>.45&&Hc>.8)?.03:0)+.07*c.colle*umi*cibo*(1-c.colle)-c.colle*(secco?.06:.005)-(muffa<.1&&detr<.1?.03*c.colle:0)); }
     return clamp(muffa+cresce-cala); }
   // B3–B5, B8: il vaso cuoce al sole, le radici soffocano, la succulenta marcisce nel chiuso, il muschio rinasce
   function climaPianta(p,v){ const c=clima; let x=v; if(c.Tc>TOK[p.id]) x-=.035*(c.Tc-TOK[p.id]);
@@ -669,6 +673,39 @@ function createSim(setup0,opts){
     if(c.Tc>28&&!c.apOggi&&plants.length&&!f.serra){ f.serra=1; ev(d,'ambiente','🌡️','Al sole, col tappo chiuso, dentro fa caldo come in una serra: il muschio e la felce soffrono.',['Il sole scalda il vetro chiuso di molti gradi. Spostalo in mezza luce o apri il tappo.']); } if(c.Tc<26) f.serra=0;
     if(c.umG===5&&plants.some(p=>p.id==='succulenta')){ ev(d,'ambiente','🌵','La succulenta è molle alla base: nell’aria chiusa e umida marcisce.',['Vuole il tappo aperto e il sole.']); }
     if(c.colle>=.2&&!f.colle){ f.colle=1; ev(d,'ambiente','🔬','Sulla terra saltano minuscoli collemboli bianchi: mangiano la muffa.',['Arrivano da soli dove la muffa e l’umido durano a lungo.']); } if(c.colle<.05) f.colle=0; }
+  // ---------- biologia di fondo (NEEDS): covata delle formiche, larve delle mosche, regina, sciame delle termiti ----------
+  // Stato aggregato in clima (si salva con il resto): fq regina (null=nessuna colonia, 1 sì, 0 no), fU/fL/fP uova/larve/pupe, ml larve di mosca, sc giorni di sciame, fon nidi fondati.
+  // Le nascite della logistica passano per gli stadi: uova→larve→pupe→adulti (formiche, solo con la regina), larve→adulti (mosche).
+  function bioStadi(x,dp,gro){ const c=clima, loss=dp-gro;
+    if(x.id==='formiche'){
+      if(c.fU==null){ c.fU=.15*x.pop; c.fL=.15*x.pop; c.fP=.1*x.pop; } if(c.fq==null) c.fq=1;
+      const q=c.fq!==0, fin=q?Math.max(gro,0):0, k=loss<0?clamp(loss/x.pop,-.3,0):0, eU=c.fU*.45, eL=c.fL*.45, eP=c.fP*.5;
+      c.fU=Math.min(60,Math.max(0,(c.fU+fin-eU)*(1+k))); c.fL=Math.max(0,(c.fL+eU-eL)*(1+k)); c.fP=Math.max(0,(c.fP+eL-eP)*(1+k));
+      const out=Math.min(gro,0)+loss+eP; return q?out:Math.max(Math.min(out,-.02*x.pop),-.05*x.pop); }   // senza regina nessuna nascita: le operaie invecchiano, 2–5% al giorno
+    if(c.ml==null) c.ml=.3*x.pop;
+    const em=c.ml*.25; c.ml=Math.max(0,(c.ml+Math.max(gro,0)-em)*(1-(Wres<.25?.15:.02)));
+    sp.forEach(y=>{ if(y.alive&&y.dieta==='insetti') c.ml=Math.max(0,c.ml-.006*y.pop*y.agg*c.ml/(c.ml+15)); });   // ragni e coleotteri mangiano le larve
+    detr=clamp(detr-.00004*c.ml);
+    return Math.min(gro,0)+loss+em; }
+  function bioDay(){ const c=clima, f=c.f, fo=sp.find(y=>y.id==='formiche'), te=sp.find(y=>y.id==='termiti'), mo=sp.find(y=>y.id==='mosche');
+    detr=clamp(detr-.004*c.colle);                                                          // i collemboli mangiano anche il detrito
+    if(c.colle>=.2) f.colleSu=1; if(c.colle<.05&&f.colleSu){ f.colleSu=0; ev(d,'ambiente','🔬','I collemboli sono spariti: la terra è troppo asciutta o senza muffa.',['Senza umido né cibo non restano.']); }
+    if(fo&&fo.alive){
+      if(c.fq===1){ c.fqs=fo.suit<.3?c.fqs+1:0; if(c.fqs>=10){ c.fq=0; c.fq0=d; c.fqs=0; ev(d,'ambiente','👑','Non vedi più la regina: la colonia non farà più figli e le operaie invecchiano.',['La colonia ha sofferto troppo a lungo ('+f2(fo.suit)+' di adattamento).']); } }
+      else if(c.fq===0 && fo.pop>=4 && d-c.fq0>=18 && w>=.3 && fo.suit>=.4){ c.fq=1; ev(d,'ambiente','👑','Una regina alata è atterrata sul vetro e scende nel nido: la colonia ricomincia.',['Dopo giorni senza regina, ne è arrivata una.']); }
+      if(!f.cov&&c.fU>=4){ f.cov=1; ev(d,'ambiente','🥚','Nel nido vedi mucchietti di uova bianche, e la regina che le accudisce.',['La regina depone: uova, larve e pupe diventano nuove operaie.']); }
+    } else { c.fq=null; c.fU=c.fL=c.fP=null; c.fqs=0; f.cov=0; }
+    if(mo&&mo.alive){ if(!f.lar&&c.ml>=5){ f.lar=1; ev(d,'ambiente','🪱','Nel marcio si muovono piccole larve bianche: sono i figli delle mosche.',['Le larve crescono nel detrito e nella frutta, poi diventano mosche. Ragni e coleotteri le mangiano.']); } }
+    else { c.ml=null; f.lar=0; }
+    if(c.sc>0){ c.sc--; if(c.sc===0&&te&&te.alive){ c.fon++; te.pop=clamp(te.pop*1.06); ev(d,'ambiente','🪽','Le termiti alate perdono le ali sul fondo: una coppia scava e fonda un nido nuovo.',['Dopo lo sciame, le sopravvissute fondano una colonia.']); } }
+    if(te&&te.alive&&te.pop>=40&&c.sc===0&&d-c.scT>=90&&(Wres>=.75||c.umG>=4)){ c.sc=3; c.scT=d; te.pop=clamp(te.pop*.85); ev(d,'ambiente','🪽','Dopo l’umido, dai tunnel escono centinaia di termiti con le ali: ti sbattono contro il vetro.',['Colonia grande ('+Math.round(te.pop)+') e aria umida: le alate escono a fondare un altro nido. Parte della colonia se ne va.']); }
+    if(!(te&&te.alive)) c.sc=0; }
+  function bioView(){ const c=clima, r=x=>Math.round(x*10)/10, fo=sp.find(y=>y.id==='formiche'), te=sp.find(y=>y.id==='termiti'), mo=sp.find(y=>y.id==='mosche');
+    return {collemboli:Math.round(c.colle*100),
+      formiche:fo&&fo.alive?{regina:c.fq!==0,covata:{uova:r(c.fU||0),larve:r(c.fL||0),pupe:r(c.fP||0)}}:null,
+      termiti:te&&te.alive?{sciame:c.sc>0,fondati:c.fon}:null,
+      mosche:mo&&mo.alive?{larve:r(c.ml||0)}:null}; }
+  function setRegina(on){ const fo=sp.find(y=>y.id==='formiche'); if(!fo||!fo.alive||clima.fq==null) return false; const a=on?1:0; if(clima.fq===a) return false; clima.fq=a; clima.fq0=d; ev(d,'ambiente','👑',a?'Una regina alata è atterrata sul vetro e scende nel nido.':'Non vedi più la regina.',[]); return true; }
   function climaCura(name){ const c=clima; c.ap=1;                                               // per curare togli il tappo: per un giorno entra aria
     if(name==='acqua'){ const over=Wres+.3-1; if(over>0) c.dren=clamp(c.dren+over*3.2);
       if((nw.um||Wres<.25)&&plants.some(p=>p.id==='muschio')){ c.rin=2; ev(d,'ambiente','🌿','Hai bagnato il muschio secco: in un’ora si riapre, verde come prima.',['Il muschio secco non è morto: aspetta l’acqua.']); } }
@@ -716,8 +753,8 @@ function createSim(setup0,opts){
     return {d,chapter:chapterNo,setup:{luce:setup.luce,acqua:setup.acqua,meteorite:setup.meteorite,piante:setup.piante.slice(),insetti:setup.insetti.slice(),oggetti:setup.oggetti.slice()},vit:Math.round(100*clamp(.5*pv+.5*sv)),E:Math.round(E),R:lastR,muffa,H,s,w,wBoost,detr,
       plants:plants.map(p=>({id:p.id,v:p.v,mut:p.mut})),
       sp:sp.map(x=>({id:x.id,nome:x.nome,icon:x.icon,pop:x.pop,alive:x.alive,mut:x.mut.slice(),society:x.society?{name:x.society.name,cult:x.society.cult,since:x.society.since,culto:x.society.culto}:null,monster:x.monster,size:x.size,gen:x.gen,sociale:x.sociale,suit:x.suit==null?.7:x.suit})),
-      wars:wars.filter(g=>!g.end).map(g=>[g.a.id,g.b.id]),pending:pending.slice(),finalePending,age:d-chapterStart,needs:{um:NEEDS?Wres:w,ter:detr,pul:1-muffa},clima:NEEDS?climaView():null}; }
-  return {setup,step,steps,summary,classify,log,series,pending,sp,plants,wars,R_,addSpecies,removeSpecies,addPlant,removePlant,addObject,removeObject,setLuce,setMalus,setNeeds,setTappo,charge,growMeteo,act,resolve,save,load,closeChapter,view,
+      wars:wars.filter(g=>!g.end).map(g=>[g.a.id,g.b.id]),pending:pending.slice(),finalePending,age:d-chapterStart,needs:{um:NEEDS?Wres:w,ter:detr,pul:1-muffa},clima:NEEDS?climaView():null,bio:NEEDS?bioView():null}; }
+  return {setup,step,steps,summary,classify,log,series,pending,sp,plants,wars,R_,addSpecies,removeSpecies,addPlant,removePlant,addObject,removeObject,setLuce,setMalus,setNeeds,setTappo,setRegina,charge,growMeteo,act,resolve,save,load,closeChapter,view,
     get d(){return d;}, get finalePending(){return finalePending;}, get chapter(){return chapterNo;}, get E(){return E;}, get lastR(){return lastR;} };
 }
 function run(setup,opts){ opts=opts||{}; const days=opts.days||120; const sim=createSim(setup,{seed:opts.seed}); for(let i=0;i<days;i++) sim.step(); const r=sim.summary(); r.days=days; return r; }
@@ -923,7 +960,11 @@ const DIARIO=[
  {id:'diario-sete',t:'Ho dimenticato',c:v=>v.needs&&v.needs.um<.35,x:'Oggi le foglie pendevano. Ho dimenticato l’acqua. Nessuno mi ha sgridato, ma il vaso era più silenzioso.'},
  {id:'diario-ristagno',t:'Troppa acqua',c:v=>v.needs&&v.needs.um>.9,x:'Ho dato troppa acqua. In fondo, tra i sassolini, c’è una pozza ferma. La nonna dice che anche le radici devono respirare.'},
  {id:'diario-muffa',t:'La muffa',c:v=>v.muffa>.4,x:'Sul vetro c’è una macchia grigia. È muffa: nasce dove è umido e fermo. Devo pulire prima che arrivi alle foglie.'},
- {id:'diario-collemboli',t:'Puntini bianchi',c:v=>v.muffa>.3,x:'Con la lente ho visto puntini bianchi che saltano. Si chiamano collemboli e mangiano la muffa. Il vaso si pulisce anche da solo.'},
+ {id:'diario-collemboli',t:'Puntini bianchi',c:v=>(v.bio?v.bio.collemboli>=20:v.muffa>.3),x:'Con la lente ho visto puntini bianchi che saltano. Si chiamano collemboli e mangiano la muffa. Il vaso si pulisce anche da solo.'},
+ {id:'diario-regina',t:'La regina',c:v=>v.bio&&v.bio.formiche&&v.bio.formiche.regina&&v.bio.formiche.covata.uova>=2,x:'Con la lente ho visto la regina: è molto più grande delle altre. Le operaie le portano da mangiare, e dietro di lei ci sono mucchietti di uova bianche. Senza di lei il nido non crescerebbe.'},
+ {id:'diario-senza-regina',t:'Il nido senza regina',c:v=>v.bio&&v.bio.formiche&&!v.bio.formiche.regina,x:'Non trovo più la regina. Le formiche camminano in fretta, senza uova da curare. Se non ne arriva un’altra, il nido si svuoterà piano.'},
+ {id:'diario-sciame',t:'Ali sul vetro',c:v=>v.bio&&v.bio.termiti&&v.bio.termiti.fondati>0,x:'Dopo l’umido sono uscite le termiti con le ali, a centinaia. Sbattevano sul vetro. Poi le ali sono cadute come petali, e due di loro hanno scavato un nido nuovo.'},
+ {id:'diario-larve',t:'Vermetti bianchi',c:v=>v.bio&&v.bio.mosche&&v.bio.mosche.larve>=6,x:'Nel marcio ci sono vermetti bianchi: sono le larve delle mosche. Sembrano inutili, ma ragni e coleotteri le aspettano.'},
  {id:'diario-sasso',t:'Il sasso acceso',c:v=>v.E>60,x:'Stasera ho spento la luce e le crepe del sasso erano accese. Viola. Ho messo la mano sul vetro: era tiepido.'},
  {id:'diario-tanti',t:'Coinquilini',c:v=>v.sp.filter(x=>x.alive).length>=2,x:'Adesso nel vaso sono in tanti. Ognuno ha il suo angolo. Mi chiedo se sanno degli altri, o se ognuno si crede solo.'},
  {id:'diario-oggetto',t:'Un pezzo di cielo',c:v=>v.setup.oggetti.length>0&&v.sp.some(x=>x.alive),x:v=>'Hanno trovato '+(OGG_BREVE[v.setup.oggetti[0]]||'la mia cosa')+'. Ci girano intorno ogni giorno. Per me era una cosa da tasca. Per loro è un pezzo di cielo.'},
