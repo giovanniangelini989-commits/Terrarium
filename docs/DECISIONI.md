@@ -43,3 +43,7 @@ Il battito e l'interferenza del meteorite di oggi restano **sempre presenti**, s
 
 ## Ecosistema reale al 100% (Giovanni, 29 ottobre 2026)
 L'ambiente del vaso (acqua, luce, temperatura, umidità, condensa, terra, piante, muffa, decomposizione, creature, catene alimentari, comportamenti) deve seguire un ecosistema reale al 100%, verificato su fonti scientifiche. **Il meteorite è l'unico elemento fantastico**: aggiunge mutazioni (bagliore, gigantismo, ecc.) sopra un mondo che altrimenti è fedele alla biologia vera. Ogni regola nuova va confrontata con i dati reali prima di entrare nel gioco.
+
+
+## Case delle specie (Giovanni, 30 ottobre 2026)
+Niente capanne uguali per tutti: ogni specie abita come in natura. Formiche: formicaio scavato; termiti: termitaio a torre; lumache: rifugio di gusci vuoti sotto una foglia; mosche: frutto che matura con le pupe; ragni: tana di seta a imbuto; coleotteri: legno scavato. Quattro stadi di crescita ciascuno. Prompt in `docs/modelli/case-specie-prompt.md`.
