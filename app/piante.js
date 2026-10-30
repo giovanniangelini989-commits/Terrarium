@@ -227,8 +227,8 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
   // ---------- mutazioni magiche: grappoli di foto vere (piani incrociati, alphaTest + depthWrite, nessun blending) con emissiveMap = la foto: il bloom li accende ----------
   const MAGICMATS=[];
   function magMat(F,mask){ const m=new THREE.MeshStandardMaterial({color:mask?0xb8a4ff:0xffffff,roughness:.5,side:THREE.DoubleSide,alphaTest:.5,emissive:0xffffff,emissiveIntensity:0}); m.userData.F=F;
-    if(mask) m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{ vec3 e_=texture2D(emissiveMap,vEmissiveMapUv).rgb; float k_=smoothstep(.08,.3,max(e_.b-e_.g*.9,e_.r-e_.g*1.1)); vec3 vi_=mix(e_,vec3(.5,.14,1.)*dot(e_,vec3(.4,.4,.2)),.7); totalEmissiveRadiance=emissive*vi_*k_*.8; }'); };
-    m.customProgramCacheKey=()=>mask?'magL':'magF'; const dm=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,alphaTest:.5}); m.userData.dm=dm;
+    if(mask) m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n#ifdef USE_EMISSIVEMAP\n{ vec3 e_=texture2D(emissiveMap,vEmissiveMapUv).rgb; float k_=smoothstep(.08,.3,max(e_.b-e_.g*.9,e_.r-e_.g*1.1)); vec3 vi_=mix(e_,vec3(.5,.14,1.)*dot(e_,vec3(.4,.4,.2)),.7); totalEmissiveRadiance=emissive*vi_*k_*.8; }\n#endif'); };
+    m.customProgramCacheKey=()=>(mask?'magL':'magF')+(m.emissiveMap?'1':'0'); const dm=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,alphaTest:.5}); m.userData.dm=dm;
     if(F) F.when(()=>magApply(m)); MAGICMATS.push(m); return m; }
   function magApply(m){ const F=m.userData.F, M=F&&F.maps(fotoLvl); if(!M) return; m.map=m.emissiveMap=M.map; m.normalMap=M.normalMap||null; m.needsUpdate=true; m.userData.dm.map=M.map; m.userData.dm.needsUpdate=true; }
   function magCluster(F,w,n,spread,r,mask){ const grp=new THREE.Group(), m=magMat(F,mask); const geo=new THREE.PlaneGeometry(w,w); geo.translate(0,w/2,0);
