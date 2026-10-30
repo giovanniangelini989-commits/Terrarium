@@ -353,3 +353,6 @@ body:has(.mpill) .toast{bottom:calc(env(safe-area-inset-bottom) + 218px)}
 .rb.guida::before{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid #A88BFF;box-shadow:0 0 18px rgba(168,139,255,.55);opacity:0;pointer-events:none;animation:guidap 1.4s ease-in-out 3}
 @keyframes guidap{0%,100%{opacity:0;transform:scale(.94)}50%{opacity:1;transform:scale(1.06)}}
 @media (prefers-reduced-motion: reduce){.rb.guida::before{animation:none;opacity:1}.mpill .mp-body,.mpill .mp-go{transition:none}}
+
+.nf.n-m{border-color:rgba(168,139,255,.6)}
+.mic{width:1em;height:1em;display:block}.mi-ill{color:#A88BFF}.mi-ill .mic{width:44px;height:44px;margin:0 auto}
