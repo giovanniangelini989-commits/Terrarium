@@ -74,7 +74,7 @@ with sync_playwright() as p:
     drain()
     # ---- notti vive e Biscotto
     drain(); goto('imp'); pg.click('[data-a=t-notte]'); pg.wait_for_timeout(400); t('una notte racconta qualcosa',pg.locator('.sheet').count()==1 and 'stanotte' in pg.inner_text('.sheet').lower()); pg.screenshot(path=f'screenshots/{tag}_x1_notte.png'); drain()
-    goto('imp'); pg.click('[data-a=t-gatto]'); pg.wait_for_timeout(400); t('Biscotto: primo capitolo con una scelta',pg.locator('.sheet [data-a=gt]').count()==2); pg.screenshot(path=f'screenshots/{tag}_x2_gatto.png'); pg.locator('.sheet [data-a=gt]').nth(1).click(); pg.wait_for_timeout(300); t('la scelta su Biscotto ha un seguito',pg.locator('.sheet').count()==1 and pg.evaluate("(__app.G.ui.gattoF||{}).curioso")==1); drain()
+    goto('imp'); pg.evaluate('__app.popups.length=0'); pg.click('[data-a=t-gatto]'); pg.wait_for_timeout(400); t('Biscotto: primo capitolo con una scelta',pg.locator('.sheet [data-a=gt]').count()==2); pg.screenshot(path=f'screenshots/{tag}_x2_gatto.png'); pg.locator('.sheet [data-a=gt]').nth(1).click(); pg.wait_for_timeout(300); t('la scelta su Biscotto ha un seguito',pg.locator('.sheet').count()==1 and pg.evaluate("(__app.G.ui.gattoF||{}).curioso")==1); drain()
     for _ in range(3):
         goto('imp'); pg.click('[data-a=t-gatto]'); pg.wait_for_timeout(300)
         if pg.locator('.sheet [data-a=gt]').count(): pg.locator('.sheet [data-a=gt]').first.click(); pg.wait_for_timeout(200)
@@ -110,6 +110,18 @@ with sync_playwright() as p:
     # osserva con zoom
     pg.evaluate('window.__fast=false'); pg.click('[data-a=osserva]'); pg.wait_for_timeout(1900); t('zoom cinematografico attivo',pg.locator('#cine .cstage canvas').count()==1); pg.screenshot(path=f'screenshots/{tag}_g3_zoom.png'); pg.click('#cine'); pg.wait_for_timeout(700); pg.evaluate('window.__fast=true')
     t('finito lo zoom il vaso torna in home',pg.locator('#cine').count()==0 and pg.locator('#vb canvas').count()==1)
+    # Notte SENZA __fast (bug del 30 ottobre: con le animazioni vere il giorno non avanzava). Tocco = una notte, tieni premuto = due.
+    drain(); goto('vaso'); pg.evaluate('window.__fast=false; __app.G.ui.avanza={n:0,visto:__app.nowMs()}; __app.sim.pending.length=0; __app.G.real.owed=0; __app.G.letargo=null'); pg.wait_for_timeout(300)
+    dn0=pg.evaluate("__app.sim.d"); pg.click('.rb.av'); pg.wait_for_timeout(1100); pg.screenshot(path=f'screenshots/{tag}_notte_buio.png'); pg.wait_for_timeout(2800)
+    t('Notte senza __fast: il giorno avanza di uno (transizione al buio)',pg.evaluate("__app.sim.d")==dn0+1 and pg.locator('.nite').count()==0,(dn0,pg.evaluate("__app.sim.d")))
+    drain(); pg.evaluate('__app.sim.pending.length=0; __app.G.real.owed=0'); dn1=pg.evaluate("__app.sim.d"); bb=pg.locator('.rb.av').bounding_box(); pg.mouse.move(bb['x']+bb['width']/2,bb['y']+bb['height']/2); pg.mouse.down(); pg.wait_for_timeout(700); pg.mouse.up(); pg.wait_for_timeout(3600)
+    t('Notte tenuta premuta: due notti di fila',pg.evaluate("__app.sim.d")>=dn1+2 and pg.locator('.nite').count()==0,(dn1,pg.evaluate("__app.sim.d")))
+    t('niente pulsante Salta 2',pg.locator('.rb.pw').count()==0 and pg.locator('[data-a=salto]').count()==0)
+    # «Mentre non c'eri»: ogni avviso nomina la cura e ha il suo pulsante
+    pg.wait_for_timeout(1500); drain(); pg.wait_for_timeout(400); drain(); pg.evaluate("document.querySelectorAll('.nite,#reveal').forEach(e=>e.remove())"); pg.evaluate("__app.sim.setNeeds({um:.15,ter:.2}); __app.popups.length=0; __app.popups.push({t:'risveglio',eventi:[],giorni:3,notti:12}); __ui.popup()"); pg.wait_for_timeout(700)
+    t('riepilogo: bisogni bassi con la cura nominata e il pulsante',pg.locator('.sheet [data-a=cura-qui]').count()>=1 and 'tocca' in pg.inner_text('.sheet').lower() and 'dell’acqua' in pg.inner_text('.sheet').lower(),pg.inner_text('.sheet')[:200] if pg.locator('.sheet').count() else 'nessuna scheda'); pg.screenshot(path=f'screenshots/gameplay-fix/{tag}_riepilogo-cure.png')
+    um0=pg.evaluate("__app.sim.view().needs.um"); pg.locator('.sheet [data-a=cura-qui]').first.click(); pg.wait_for_timeout(500); t('il pulsante nel riepilogo esegue la cura',pg.evaluate("__app.sim.view().needs.um")>um0+.1 or pg.evaluate("__app.sim.view().needs.ter")>.3)
+    drain(); pg.evaluate('window.__fast=true; __app.popups.length=0; __app.sim.pending.length=0; __app.G.real.owed=0; __app.G.arrivi.list.forEach(a=>{ if(a.state==="nuovo") a.state="saltato"; })')
     drain(); goto('imp'); n0=pg.evaluate("__app.sim.view().setup.insetti.length+__app.sim.view().setup.piante.length+__app.sim.view().setup.oggetti.length")
     pg.click('[data-a=t-arrivo]'); pg.wait_for_timeout(600); t('arriva una notifica del bambino',pg.locator('.sheet [data-a=arr-ok]').count()>=1); pg.screenshot(path=f'screenshots/{tag}_g4_arrivo.png')
     pg.locator('.sheet [data-a=arr-ok]').first.click(); pg.wait_for_timeout(500)
