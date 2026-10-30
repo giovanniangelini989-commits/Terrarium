@@ -3505,7 +3505,7 @@ return {crt,sync,move,ready,stats,object,objs,trails:[trG,trS],ah:AH,ahCanvas,we
 window.__PIANTE=function(THREE,env){
   const {S,ptex,TX,rngS,clamp,SLOTS,A,FOTO}=env;
   // materiali fotografici (foto vere: muschio ripetibile 5 cm, fronda di felce scontornata); senza __MAT_FOTO restano i colori procedurali
-  const FM=FOTO?FOTO.mat('muschio'):null, FF=FOTO?FOTO.mat('foglia_felce'):null, FS=FOTO?FOTO.mat('foglia_succulenta'):null, FD=FOTO?FOTO.mat('drosera'):null, FU=FOTO?FOTO.mat('fungo'):null, FMS=FOTO?FOTO.mat('muschio_secco'):null, FXM=FOTO?FOTO.mat('funghi_magici'):null, FXC=FOTO?FOTO.mat('carnivora_magica'):null, FXL=FOTO?FOTO.mat('foglia_magica'):null, FXMU=FOTO?FOTO.mat('muschio_magico'):null, FXF=FOTO?FOTO.mat('felce_magica'):null, FXS=FOTO?FOTO.mat('succulenta_magica'):null, FRA=FOTO?FOTO.mat('rametto'):null, FCO=FOTO?FOTO.mat('corteccia_gelso'):null, FOTOMATS=[], SECCOMATS=[]; let fotoLvl=0;
+  const FM=FOTO?FOTO.mat('muschio'):null, FF=FOTO?FOTO.mat('foglia_felce'):null, FS=FOTO?FOTO.mat('foglia_succulenta'):null, FD=FOTO?FOTO.mat('drosera'):null, FU=FOTO?FOTO.mat('fungo'):null, FMS=FOTO?FOTO.mat('muschio_secco'):null, FXM=FOTO?FOTO.mat('funghi_magici'):null, FXC=FOTO?FOTO.mat('carnivora_magica'):null, FXL=FOTO?FOTO.mat('foglia_magica'):null, FXMU=FOTO?FOTO.mat('muschio_magico'):null, FXF=FOTO?FOTO.mat('felce_magica'):null, FXS=FOTO?FOTO.mat('succulenta_magica'):null, FRA=FOTO?FOTO.mat('rametto'):null, FCO=FOTO?FOTO.mat('corteccia_gelso'):null, FOTOMATS=[], SECCOMATS=[], FRU=FOTO?FOTO.mat('rugiada'):null, DEWT={value:null}, DEWK={value:0}; let fotoLvl=0;
   function fotoBind(mat,F,depth){ FOTOMATS.push({mat,F,depth}); F.when(()=>fotoApply(mat,F,depth)); }
   function fotoApply(mat,F,depth){ const M=F.maps(fotoLvl); if(!M) return; mat.map=M.map; mat.normalMap=M.normalMap||null; mat.roughnessMap=M.roughnessMap||null; if(mat.normalMap) mat.normalScale.set(1,1); mat.needsUpdate=true; if(depth){ depth.map=M.map; depth.needsUpdate=true; } }
   // muschio secco: seconda foto mescolata alla prima in base a uDry (vDry nel fragment)
@@ -3567,10 +3567,11 @@ vec3 glassW(vec3 w,out float k,out vec2 dir){ float r=length(w.xz); dir=r>1e-4?w
 vec3 glassP_(vec3 w,out float k,out vec2 dir){ return glassW(w,k,dir); }
 `;
   const HEAD_INST=GLASS_FN+`uniform float uGrow,uTurgor,uDry,uRot,uWind,uTime,uPress,uOver,uLean,uNight; uniform vec2 uLight; attribute float iGrow,iPhase; varying float vDry,vRot,vShade; varying vec3 vMW;\n`;
-  const FRAG_HEAD='uniform float uGloss,uTrans,uMut,uCharge,uTime,uFung,uBite,uPale,uSwell; varying float vDry,vRot,vShade; varying vec3 vMW;\n';
+  const FRAG_HEAD='uniform float uGloss,uTrans,uMut,uCharge,uTime,uFung,uBite,uPale,uSwell,uDewK; uniform sampler2D uDewT; float dewA_=0.; varying float vDry,vRot,vShade; varying vec3 vMW;\n';
   const FRAG_COL=`#include <color_fragment>
 if(uBite>.001){ vec3 bq_=vMW*15.; vec2 bc_=floor(bq_.xz+bq_.y*.7); float bh_=fract(sin(dot(bc_,vec2(12.9898,78.233)))*43758.5453); vec2 bo_=vec2(fract(bh_*7.3),fract(bh_*3.7))*.5+.25; float bd_=length(fract(bq_.xz+bq_.y*.7)-bo_); if(bh_<uBite*.55&&bd_<.2+.14*fract(bh_*11.)) discard; }
 diffuseColor.rgb*=vShade;
+if(uDewK>.01){ vec4 dw_=texture2D(uDewT,vMW.xz*7.+vMW.y*3.5); dewA_=dw_.a*uDewK*(.55+.45*clamp(normalize(vNormal).y*.5+.7,0.,1.)); diffuseColor.rgb=mix(diffuseColor.rgb,dw_.rgb*1.15,dewA_*.35); }
 { float l0_=dot(diffuseColor.rgb,vec3(.3,.59,.11)); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(l0_*1.12+.05,l0_*1.2+.07,l0_*.7+.01),uPale*.4); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(l0_*.85+.07,l0_*1.15+.1,l0_*1.02+.08),uSwell*.5*(1.-clamp(vRot,0.,1.))); }
 { float d=clamp(vDry,0.,1.); vec3 g=vec3(dot(diffuseColor.rgb,vec3(.3,.59,.11))); diffuseColor.rgb=mix(diffuseColor.rgb,mix(g,diffuseColor.rgb,.3)*vec3(1.5,1.14,.4)+vec3(.12,.08,0.),d); }
 diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.32,.28,.2),clamp(vRot,0.,1.));
@@ -3588,7 +3589,7 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
   if(uFung>.5){ float up=smoothstep(-.1,.6,normalize(normal).y); em+=mix(vio,vec3(.5,.45,1.),irid*.35)*vec3(.8,.55,1.)*(.3+.45*fr+.25*up)*(.45+.6*nr); } /* fungo: cappello e lamelle luminosi */
   totalEmissiveRadiance+=em*st*1.1; }
 #endif`;
-  const FRAG_ROUGH='#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,roughnessFactor*.5,uGloss); roughnessFactor=mix(roughnessFactor,min(1.,roughnessFactor+.3),clamp(vDry,0.,1.));';
+  const FRAG_ROUGH='#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,roughnessFactor*.5,uGloss); roughnessFactor=mix(roughnessFactor,.1,dewA_*.85); roughnessFactor=mix(roughnessFactor,min(1.,roughnessFactor+.3),clamp(vDry,0.,1.));';
   // luce che passa attraverso la foglia (translucenza economica: luce principale da dietro)
   const FRAG_TRANS='#include <lights_fragment_end>\n#if NUM_DIR_LIGHTS > 0\nreflectedLight.directDiffuse += diffuseColor.rgb*directionalLights[0].color*uTrans*max(0.,-dot(normal,directionalLights[0].direction))*.55;\n#endif\n';
   // muschio fotografico: proiezione dall'alto nello spazio della pianta (la foto è ripresa dall'alto; niente pizzicature ai poli)
@@ -3598,7 +3599,7 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
       ?`float op=smoothstep(iGrow-.12,iGrow+.08,uGrow); float sc=op*(.6+.4*min(uGrow,1.)); vec3 transformed=position*sc; transformed.xz*=(.35+.65*uTurgor); transformed.y*=(.55+.45*uTurgor); transformed.x+=uWind*.0025*sin(uTime*2.2+iPhase*6.28)*position.y*25.; vDry=uDry; vRot=uRot; vShade=1.;`
       :`float op=smoothstep(iGrow-.12,iGrow+.08,uGrow); float sc=op*(.6+.4*min(uGrow,1.)); vec3 transformed=position*sc; transformed.y*=(.42+.58*uTurgor); vDry=uDry; vRot=uRot; vShade=.45+.55*clamp(position.y*.75+.45,0.,1.);`)
       :`Org o_=org(); vec3 transformed=plantPos(o_); vDry=uDry+o_.wilt*.55; vRot=uRot+o_.wilt*.6; if(KIND==2) vRot=uRot*(.3+.7*(1.-smoothstep(.02,.18,aPivot.y))); vShade=1.; { float gk_; vec2 gd_; transformed=glassP(transformed,gk_,gd_); vShade*=1.-.32*gk_; }`;
-    mat.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,U); const SC=mat.userData.secco; if(SC){ sh.uniforms.mapSecco=SC; sh.uniforms.uSeccoOn=mat.userData.seccoOn; }
+    mat.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,U); sh.uniforms.uDewT=DEWT; sh.uniforms.uDewK=DEWK; const SC=mat.userData.secco; if(SC){ sh.uniforms.mapSecco=SC; sh.uniforms.uSeccoOn=mat.userData.seccoOn; }
       sh.vertexShader=sh.vertexShader.replace('void main() {','#define KIND '+kind+'\n'+head+'void main() {').replace('#include <begin_vertex>',begin+(inst&&!noPl?UV_PLANAR:'')).replace('#include <project_vertex>',inst?'vec4 mvPosition=vec4(transformed,1.); mvPosition=instanceMatrix*mvPosition; { float gk_; vec2 gd_; vec3 gw_=glassW((modelMatrix*mvPosition).xyz,gk_,gd_); mvPosition=viewMatrix*vec4(gw_,1.); vMW=gw_; vShade*=1.-.32*gk_; } gl_Position=projectionMatrix*mvPosition;':'#include <project_vertex>\nvMW=(modelMatrix*vec4(transformed,1.)).xyz;');
       if(!inst) sh.vertexShader=sh.vertexShader.replace('#include <beginnormal_vertex>','Org on_=org(); vec3 objectNormal=rotA(normal,aAxis,on_.bend); { float gk_; vec2 gd_; glassP(plantPos(on_),gk_,gd_); objectNormal=normalize(mix(objectNormal,-vec3(gd_.x,.25,gd_.y),gk_*.7)); }');
       sh.fragmentShader=sh.fragmentShader.replace('void main() {',FRAG_HEAD+'void main() {'); if(SC) sh.fragmentShader=sh.fragmentShader.replace('void main() {','uniform sampler2D mapSecco; uniform float uSeccoOn;\nvoid main() {').replace('vec4 sampledDiffuseColor = texture2D( map, vMapUv );','vec4 sampledDiffuseColor = texture2D(map,vMapUv); if(uSeccoOn>.5) sampledDiffuseColor=mix(sampledDiffuseColor,texture2D(mapSecco,vMapUv),smoothstep(.12,.65,vDry));'); sh.fragmentShader=sh.fragmentShader.replace('#include <color_fragment>',FRAG_COL).replace('#include <roughnessmap_fragment>',FRAG_ROUGH).replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n'+FRAG_MUT).replace('#include <lights_fragment_end>',FRAG_TRANS); };
@@ -3790,7 +3791,7 @@ if(uMut>.004||uFung>.5){ float um=max(uMut,uFung*.55); float dd=length(vMW.xz), 
     if(t-lastPull>.5){ lastPull=t; try{ micro=A.micro?A.micro():null; }catch(e){ micro=null; } }
     Object.keys(objs).forEach(id=>{ if(!plantObjs[id]||plantObjs[id]!==objs[id]){ objs[id].dispose(); delete objs[id]; } });
     if(litG){ const gg=forced&&forced.giungla!=null?forced.giungla:micro&&micro.giungla||0, de=forced&&forced.detrito!=null?forced.detrito:micro&&micro.detrito||0, want=Math.round(litG.userData.N*clamp(de*1.3+gg*.7)); litN=ease(litN,want,dt*3); litG.userData.im.count=Math.round(litN); }
-    { let nt=0; try{ nt=window.__vase&&window.__vase.isNight&&window.__vase.isNight()?1:0; }catch(e){} nightK=ease(nightK,nt,dt*.15); }
+    { let nt=0; try{ nt=window.__vase&&window.__vase.isNight&&window.__vase.isNight()?1:0; }catch(e){} nightK=ease(nightK,nt,dt*.15); /* rugiada fotografica: di notte e nelle prime ore del mattino (nightK scende piano) */ if(FRU&&FRU.ready){ if(!DEWT.value){ const M=FRU.maps(1); if(M&&M.mask){ M.mask.colorSpace=THREE.SRGBColorSpace; M.mask.needsUpdate=true; DEWT.value=M.mask; } } DEWK.value=DEWT.value?nightK*.9:0; } }
     v.plants.forEach(p=>{ const o=objs[p.id]; if(!o) return; o.g.position.y=S.soilTop; const T=target(p.id,p,v,micro); let s=o.st;
       if(!s){ s=o.st=Object.assign({},T); }
       else { s.grow=ease(s.grow,T.grow,T.grow>s.grow+.03?dt*1.6:dt*.6); s.vig=ease(s.vig,T.vig,dt*.5); s.tur=ease(s.tur,T.tur,T.tur>s.tur?dt*.45:dt*.07); s.droop=ease(s.droop,T.droop,T.droop<s.droop?dt*.4:dt*.08); s.dry=ease(s.dry,T.dry,T.dry<s.dry?dt*.35:dt*.06); s.rot=ease(s.rot,T.rot,dt*.08); s.dew=ease(s.dew,T.dew,dt*.3); s.gloss=ease(s.gloss,T.gloss,dt*.4); s.wind=ease(s.wind,T.wind,dt*.5); s.mut=ease(s.mut,T.mut,dt*.5); s.E=ease(s.E,T.E,dt*.8); s.volY=ease(s.volY,T.volY,T.volY<s.volY-.03?dt*9:dt*.5); s.volX=ease(s.volX,T.volX,T.volX<s.volX-.03?dt*9:dt*.5); s.rel=T.rel; s.ov=ease(s.ov||0,T.ov,dt*.4); s.press=ease(s.press||0,T.press,dt*.4); s.gg=ease(s.gg,T.gg,dt*.5); s.ombra=T.ombra; s.pale=ease(s.pale||0,T.pale,dt*.05); s.swell=ease(s.swell||0,T.swell,dt*.08); s.lean=ease(s.lean||0,T.lean,dt*.02); s.bite=ease(s.bite||0,T.bite,T.bite>(s.bite||0)?dt*3:dt*.05); }
@@ -3833,7 +3834,7 @@ window.__CASE=function(THREE,env){
   const fbm=(x,y,z,s)=>(vn(x+s,y+s*1.7,z-s)*.6+vn(x*2.1+s,y*2.1,z*2.1+s)*.3+vn(x*4.3,y*4.3+s,z*4.3)*.1)-.5;
   // ---------- materiali: foto vere quando ci sono, altrimenti il colore di ripiego ----------
   const MATS=[]; let lvl=0;
-  function apply(e){ const M=e.F.maps(lvl); if(!M) return; const m=e.m; m.map=M.map||null; m.normalMap=e.o.tri?null:(M.normalMap||null); m.roughnessMap=(lvl<1&&M.roughnessMap)||null; m.color.set(e.o.tint==null?0xffffff:e.o.tint); m.needsUpdate=true; }
+  function apply(e){ const M=e.F.maps(lvl); if(!M) return; const m=e.m; if(e.o.mask){ const t=M.mask; if(!t) return; t.colorSpace=THREE.SRGBColorSpace; if(e.o.rep) t.repeat.set(e.o.rep[0],e.o.rep[1]); t.needsUpdate=true; m.map=t; m.color.set(0xffffff); m.needsUpdate=true; return; } m.map=M.map||null; m.normalMap=e.o.tri?null:(M.normalMap||null); m.roughnessMap=(lvl<1&&M.roughnessMap)||null; m.color.set(e.o.tint==null?0xffffff:e.o.tint); m.needsUpdate=true; }
   function pm(id,o){ o=o||{}; const F=FOTO?FOTO.mat(id):null, m=new THREE.MeshStandardMaterial({color:o.fb==null?0x6b5440:o.fb,roughness:o.rough==null?.95:o.rough,metalness:0,side:o.side||THREE.FrontSide,vertexColors:!!o.vc});
     const lift=o.lift||0; if(o.tri){ m.onBeforeCompile=sh=>{ sh.vertexShader=sh.vertexShader.replace('void main() {','varying vec3 vTP; varying vec3 vTN;\nvoid main() {').replace('#include <begin_vertex>','#include <begin_vertex>\n vTP=position; vTN=normal;');
       sh.fragmentShader=sh.fragmentShader.replace('void main() {','varying vec3 vTP; varying vec3 vTN;\nvoid main() {').replace('#include <map_fragment>','#ifdef USE_MAP\n { vec3 w=pow(abs(normalize(vTN)),vec3(4.)); w/=(w.x+w.y+w.z); float k=2.8; vec4 tc=texture2D(map,vTP.zy*k)*w.x+texture2D(map,vTP.xz*k)*w.y+texture2D(map,vTP.xy*k)*w.z; diffuseColor*=tc; }\n#endif\n diffuseColor.rgb=min(vec3(1.),diffuseColor.rgb*'+lift.toFixed(2)+');'); }; m.customProgramCacheKey=()=>'tri'+lift; } else if(lift){ m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n diffuseColor.rgb=min(vec3(1.),diffuseColor.rgb*'+lift.toFixed(2)+');'); }; m.customProgramCacheKey=()=>'case'+lift; }
@@ -3844,8 +3845,11 @@ window.__CASE=function(THREE,env){
     mk.suoloV=pm('terriccio',{fb:0x6a5240,tint:0xffffff,lift:2.6,rough:.97,vc:true,tri:true,side:THREE.DoubleSide});
     mk.lettiera=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.92,metalness:0,side:THREE.DoubleSide});
     mk.suoloC=pm('terriccio',{fb:0x7a6048,tint:0xd8c6ad,lift:2.5,rough:.97});         // terra battuta, più chiara
-    mk.argilla=pm('terriccio',{fb:0x9a6f3c,tint:0xf0b970,lift:3.4,rough:.92});        // argilla ocra del termitaio
-    mk.umido=pm('terriccio',{fb:0x2b2019,tint:0x9a8a80,rough:.4});                    // terra bagnata e lucida
+    mk.argilla=pm('argilla_termitaio',{fb:0x9a6f3c,tint:0xffffff,lift:1.25,rough:.92});        // argilla ocra del termitaio
+    mk.umido=pm('terra_bagnata',{fb:0x2b2019,tint:0xc8c0b8,rough:.4});
+    mk.scavato=pm('legno_scavato',{fb:0x8a6a48,tint:0xffffff,lift:1.2,rough:.8});
+    mk.tetto=pm('foglia_secca',{fb:0x8a5a2c,tint:0xffffff,lift:1.15,rough:.85,side:THREE.DoubleSide}); mk.tetto.alphaTest=.5;
+    mk.gusciF=pm('gusci_vuoti',{fb:0x8a5a2c,tint:0xffffff,lift:1.1,rough:.5,side:THREE.DoubleSide}); mk.gusciF.alphaTest=.5;                    // terra bagnata e lucida
     mk.aghi=pm('muschio_secco',{fb:0x7a5a32,tint:0xb89a74,rough:.9});
     mk.rametto=pm('rametto',{fb:0x6b5440,rough:.9,side:THREE.DoubleSide});
     mk.corteccia=pm('corteccia_gelso',{fb:0x5a4636,tint:0xd8c8b8,rough:.95});
@@ -3856,16 +3860,16 @@ window.__CASE=function(THREE,env){
     mk.fogliaSecca=pm('muschio_secco',{fb:0x8a5a2c,tint:0xa8845a,lift:1.0,rough:.85,side:THREE.DoubleSide});
     mk.gusciV=pm('legno',{fb:0x8a5a2c,tint:0xc08c58,rough:.4});
     mk.muschio=pm('muschio',{fb:0x4f6a2a,tint:0xffffff,rough:1});
-    mk.frutto=pm('terriccio',{fb:0x6a2a4c,tint:0xffffff,lift:3.6,rough:.55,vc:true});
+    mk.frutto=pm('frutto_mosche',{fb:0x6a2a4c,tint:0xffffff,lift:1.1,rough:.5,vc:true});
     mk.muffa=pm('muffa',{fb:0x9aa393,tint:0xb4bfa8,lift:1.2,rough:1,transparent:true,opacity:.55,depthWrite:false});
     Object.assign(mk.muffa,{transparent:true,opacity:.6,depthWrite:false});
     mk.pupa=pm('legno',{fb:0x8a3e1e,tint:0xd0703a,lift:1.4,rough:.3});
     mk.pupaV=pm('legno',{fb:0xc9a37a,tint:0xe8d0a8,rough:.5});
     mk.seta=pm('muffa',{fb:0xe6e3d8,tint:0xfffaf0,lift:2.2,rough:.7,side:THREE.DoubleSide});
     mk.buco=new THREE.MeshStandardMaterial({color:0x070403,roughness:1});
-    mk.bava=new THREE.MeshStandardMaterial({color:0xdde8ec,roughness:.08,metalness:0,transparent:true,opacity:.55,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,emissive:0xA88BFF,emissiveIntensity:0});
+    mk.bava=pm('bava',{fb:0xdde8ec,mask:1,rough:.08,rep:[1,1]}); Object.assign(mk.bava,{metalness:0,transparent:true,opacity:.85,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,emissive:new THREE.Color(0xA88BFF),emissiveIntensity:0});
     mk.filo=new THREE.LineBasicMaterial({color:0xf2f0ea,transparent:true,opacity:.7});
-    mk.velo=new THREE.MeshStandardMaterial({color:0xf2efe6,roughness:.7,transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false,emissive:0xA88BFF,emissiveIntensity:0});
+    mk.velo=pm('seta',{fb:0xf2efe6,mask:1,rough:.7,side:THREE.DoubleSide,rep:[2,1]}); Object.assign(mk.velo,{transparent:true,opacity:.9,depthWrite:false,emissive:new THREE.Color(0xA88BFF),emissiveIntensity:0});
     mk.luce=new THREE.MeshStandardMaterial({color:0x2a1a44,emissive:0xA88BFF,emissiveIntensity:0,roughness:.5});
     return mk; }
   // ---------- geometrie ----------
@@ -3966,18 +3970,20 @@ window.__CASE=function(THREE,env){
     const lean=new THREE.Group(); lean.rotation.y=.55; g.add(lean);
     { const sh=[.022,.03,.036,.042][i4], rg=dome(sh*1.6,sh,sh*1.3,12,6,.3,41,3); const rk=new THREE.Mesh(rg.g,M.suoloC); rk.position.set(-W*.46,0,0); rk.castShadow=rk.receiveShadow=true; lean.add(rk);
       const NU=20, NV=10, pos=[],uv=[],idx=[], tilt=Math.atan2(sh*1.5,W), Hl=[.05,.065,.08,.095][i4];
-      for(let i=0;i<=NU;i++){ const u=i/NU*2-1, hw=Wd*1.15*Math.pow(Math.max(0,1-Math.pow(Math.abs(u),2.6)),.55)+.004;
-        for(let j=0;j<=NV;j++){ const v=j/NV*2-1, edge=1+.08*fbm(u*5,v*3,0,9), x=u*W*.5, z=v*hw*edge, ax=Math.abs(v);
+      for(let i=0;i<=NU;i++){ const u=i/NU*2-1, hw=W*.635;
+        for(let j=0;j<=NV;j++){ const v=j/NV*2-1, edge=1, x=u*W*.5, z=v*hw*edge, ax=Math.abs(v);
           let y=Hl*(1-v*v)*(1-.3*u*u)*(1+.1*fbm(u*3,0,2,5)); y+=.006*Math.pow(ax,5)*(1+fbm(u*14,v,3,6))+.0022*Math.exp(-v*v*60)-.0012*Math.abs(Math.sin((Math.abs(u)*9+ax*5)*Math.PI))*ax+.003*fbm(u*7,v*7,1,4);
-          const yy=y+.004+(x+W*.5)*Math.tan(tilt)*.9; pos.push(x,yy,z); uv.push(x*.7,z*.7); } }
+          const yy=y+.004+(x+W*.5)*Math.tan(tilt)*.9; pos.push(x,yy,z); uv.push((v+1)/2,(u+1)/2); } }
       for(let i=0;i<NU;i++) for(let j=0;j<NV;j++){ const a=i*(NV+1)+j,b=a+NV+1; idx.push(a,b,a+1,a+1,b,b+1); }
-      const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); lg.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); lg.setIndex(idx); lg.computeVertexNormals(); const lf=new THREE.Mesh(lg,M.fogliaSecca); lf.castShadow=lf.receiveShadow=true; lean.add(lf);
+      const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); lg.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); lg.setIndex(idx); lg.computeVertexNormals(); const lf=new THREE.Mesh(lg,M.tetto); lf.castShadow=lf.receiveShadow=true; lean.add(lf);
       // ombra umida sotto il tetto
       const sg=new THREE.CircleGeometry(1,20); sg.rotateX(-Math.PI/2); const sd=new THREE.Mesh(sg,M.umido); sd.scale.set(W*.5,1,Wd*.9); sd.position.set(0,.0045,0); sd.receiveShadow=true; lean.add(sd); }
-    // gusci vuoti a spirale (2-5), bruno-ambra, uno rotto: davanti e sotto il tetto
-    { const cfg=[[[-.06,.19,.06,1,.3],[.07,.23,.05,.62,2]],[[-.1,.22,.065,1,.5],[.06,.25,.055,.65,2],[-.02,.02,.05,1,3.6]],[[-.13,.24,.07,1,0],[.05,.26,.06,1,1.7],[.15,.19,.055,.7,3.3],[-.04,.0,.055,1,4.5]],
-        [[-.18,.26,.085,1,.2],[.1,.28,.07,1,1.9],[.0,.2,.06,.7,3.1],[.22,.22,.055,1,4.4],[-.06,.0,.06,1,5.5]]][i4];
-      cfg.forEach((c,k)=>{ const sg=new THREE.Mesh(shell(R,c[2]*1.5,c[3],k+4),M.gusciV); sg.rotation.set(Math.PI*.5*(k%2?.7:-.2)+R()*.4,c[4],Math.PI/2*(k%3?0:1)); sg.updateMatrixWorld(); const bb=new THREE.Box3().setFromObject(sg); sg.position.set(c[0],-bb.min.y+.002,c[1]); sg.castShadow=true; sg.receiveShadow=true; g.add(sg); }); }
+    // gusci vuoti (foto di 3 gusci, uno rotto): piani incrociati con alpha + uno disteso a terra, sotto e davanti al tetto
+    { const cfg=[[[-.06,.19,1,.3]],[[-.1,.2,1,.5],[.07,.02,.8,3.6]],[[-.13,.22,1.1,0],[.1,.0,.85,1.7]],[[-.18,.24,1.2,.2],[.08,.0,.95,1.9],[.22,.2,.8,4.4]]][i4];
+      const pg=new THREE.PlaneGeometry(1,.669); pg.translate(0,.3345,0);
+      cfg.forEach((c,k)=>{ const w=.2*c[2], cl=new THREE.Group(); cl.position.set(c[0],.004,c[1]); cl.rotation.y=c[3];
+        for(let q=0;q<2;q++){ const p=new THREE.Mesh(pg,M.gusciF); p.scale.set(w,w,1); p.rotation.y=q*Math.PI/2; p.castShadow=true; cl.add(p); }
+        const fl=new THREE.Mesh(pg,M.gusciF); fl.scale.set(w,w,1); fl.rotation.x=-Math.PI/2; fl.position.y=.002; fl.receiveShadow=true; cl.add(fl); g.add(cl); }); }
     // muschio verde intorno
     { const n=[2,3,4,6][i4]; for(let k=0;k<n;k++){ const a=R()*TAU, D=dome(.03+R()*.03,.018+R()*.012,.035,10,5,.35,20+k,4); const mm=new THREE.Mesh(D.g,M.muschio); mm.position.set(Math.sin(a)*(.12+R()*.1)*(W/.42)*1.2,0,Math.cos(a)*(.1+R()*.1)+.08); g.add(mm); } }
     // scie di bava argentea
@@ -3986,10 +3992,10 @@ window.__CASE=function(THREE,env){
     return {g,fx,rad:W*.7+.08}; };
   // FRUTTO + PUPE DELLE MOSCHE ---------------------------------------------------
   B.mosche=function(st,ctx){ const g=new THREE.Group(), M=mats(), R=rngS(404), fx=[], i4=st-1, rf=[.13,.125,.115,.105][i4], sq=[1,.88,.78,.55][i4], dent=[.03,.1,.14,.28][i4];
-    const fg=new THREE.SphereGeometry(1,22,13), p=fg.attributes.position, cols=new Float32Array(p.count*3), fresh=new THREE.Color(0x7a2f70), ripe=new THREE.Color(0x6a2a5c), pulp=new THREE.Color(0xd05a6c), dry=new THREE.Color(0x6a3a44), tmp=new THREE.Color(), cut=new V3(.55,.55,.6).normalize();
+    const fg=new THREE.SphereGeometry(1,22,13), p=fg.attributes.position, cols=new Float32Array(p.count*3), fresh=new THREE.Color(0xffffff), ripe=new THREE.Color(0xf4eaf2), pulp=new THREE.Color(0xff9aa6), dry=new THREE.Color(0x9a8088), tmp=new THREE.Color(), cut=new V3(.55,.55,.6).normalize();
     for(let i=0;i<p.count;i++){ let x=p.getX(i),y=p.getY(i),z=p.getZ(i); const drup=.035*Math.abs(Math.sin(x*21)*Math.sin(y*19+z*8)), n=1+dent*2*fbm(x*2.2,y*2.2,z*2.2,7)-drup*(st<4?1:.4), k=rf*n; let yy=y*k*sq; if(yy<-rf*.55*sq) yy=-rf*.55*sq+(yy+rf*.55*sq)*.2;
       p.setXYZ(i,x*k,yy+rf*sq*.55,z*k); const d=new V3(x,y,z).normalize().dot(cut); tmp.copy(st===1?fresh:st===2?ripe:st===3?ripe:dry); if(st===3&&d>.62){ const t=clamp((d-.62)*6); tmp.lerp(pulp,t); if(t>.5){ const q=p.getX(i),rr=p.getY(i); p.setXYZ(i,x*k-cut.x*.012*t,yy+rf*sq*.55-cut.y*.012*t,z*k-cut.z*.012*t); } } if(st>=2) tmp.multiplyScalar(.85+.3*vn(x*5,y*5,z*5)); cols[i*3]=tmp.r; cols[i*3+1]=tmp.g; cols[i*3+2]=tmp.b; }
-    fg.setAttribute('color',new THREE.BufferAttribute(cols,3)); surfUV(fg,1,.4); fg.computeVertexNormals(); const fm=new THREE.Mesh(fg,M.frutto); fm.castShadow=fm.receiveShadow=true; g.add(fm);
+    fg.setAttribute('color',new THREE.BufferAttribute(cols,3)); { const uv=new Float32Array(p.count*2), rr=rf*2.15, u0=st<3?.30:.5, us=st<3?.42:.9; for(let i=0;i<p.count;i++){ uv[i*2]=u0+(p.getX(i)/rr)*us*(st<3?-1:1); uv[i*2+1]=.5+(p.getY(i)-rf*sq*.55)/(rr*.9)*.95; } fg.setAttribute('uv',new THREE.BufferAttribute(uv,2)); } fg.computeVertexNormals(); const fm=new THREE.Mesh(fg,M.frutto); fm.castShadow=fm.receiveShadow=true; g.add(fm);
     const pivot=new THREE.Group(); // picciolo
     if(st<4){ const sg=new THREE.CylinderGeometry(.004,.006,.04,5,1,true), sm_=new THREE.Mesh(sg,M.rametto); sm_.position.set(0,rf*sq*1.1+.015,0); sm_.rotation.z=.25; g.add(sm_); }
     // pupe: ovali marrone-rossicci, lucidi, mezze interrate
@@ -3999,7 +4005,7 @@ window.__CASE=function(THREE,env){
       if(st===4){ const wg=new THREE.PlaneGeometry(.022,.009), wi=[]; for(let k=0;k<6;k++){ const a=R()*TAU, rr=rf*1.2+R()*.2; wi.push({p:new V3(Math.sin(a)*rr,.003,Math.cos(a)*rr),q:new Q().setFromEuler(new THREE.Euler(-Math.PI/2,0,R()*TAU)),s:.7+R()*.6}); } const wm=inst(g,wg,M.seta,wi,true); } }
     // muffa e bagliore sul frutto che avvizzisce
     if(st>=3){ const mg=new THREE.SphereGeometry(1,6,3), it=[], f=new THREE.Group(); for(let k=0;k<(st===3?6:10);k++){ const d=new V3(R()-.5,R()*.6+.1,R()-.5).normalize(); it.push({p:new V3(d.x*rf*.99,d.y*rf*sq*.99+rf*sq*.55,d.z*rf*.99),q:alongQ(d),s:new V3(.02+R()*.02,.0022,.02+R()*.02)}); }
-      inst(g,mg,M.muffa,it); const lm=[]; it.forEach(o=>lm.push({p:o.p.clone().add(new V3(0,.004,0)),q:new Q(),s:new V3(.7,.7,.7).multiplyScalar(.01)})); inst(f,new THREE.SphereGeometry(1,6,4),M.luce,lm); g.add(f); fx.push(f); }
+      if(!(FOTO&&FOTO.mat('frutto_mosche'))) inst(g,mg,M.muffa,it); const lm=[]; it.forEach(o=>lm.push({p:o.p.clone().add(new V3(0,.004,0)),q:new Q(),s:new V3(.7,.7,.7).multiplyScalar(.01)})); inst(f,new THREE.SphereGeometry(1,6,4),M.luce,lm); g.add(f); fx.push(f); }
     return {g,fx,rad:[.17,.18,.2,.24][i4]}; };
   // RAGNI: rifugio di seta nella foglia arrotolata, in alto contro il vetro -------------------
   B.ragni=function(st,ctx){ const g=new THREE.Group(), M=mats(), R=rngS(505), fx=[], f=new THREE.Group();
@@ -4020,7 +4026,7 @@ window.__CASE=function(THREE,env){
     const log=new THREE.Group(); log.position.y=r*.85; log.rotation.z=0; g.add(log);
     const ed=a=>new V3(0,Math.sin(a),Math.cos(a)); // angolo attorno all'asse X
     // anima di legno
-    { const cg=new THREE.CylinderGeometry(r*.94,r*.94,L,22,6,false), p=cg.attributes.position; for(let i=0;i<p.count;i++){ const x=p.getX(i),y=p.getY(i),z=p.getZ(i), k=1+.06*fbm(x*14,y*6,z*14,1); p.setXYZ(i,x*k,y,z*k); } cg.rotateZ(Math.PI/2); surfUV(cg,1,.5); const uvp=cg.attributes.uv; for(let i=0;i<p.count;i++){ uvp.setXY(i,p.getX(i)*2,Math.atan2(p.getZ(i),p.getY(i))*r*2); } cg.computeVertexNormals(); const cm=new THREE.Mesh(cg,M.legno); cm.castShadow=cm.receiveShadow=true; log.add(cm); }
+    { const cg=new THREE.CylinderGeometry(r*.94,r*.94,L,22,6,false), p=cg.attributes.position; for(let i=0;i<p.count;i++){ const x=p.getX(i),y=p.getY(i),z=p.getZ(i), k=1+.06*fbm(x*14,y*6,z*14,1); p.setXYZ(i,x*k,y,z*k); } cg.rotateZ(Math.PI/2); surfUV(cg,1,.5); const uvp=cg.attributes.uv; for(let i=0;i<p.count;i++){ uvp.setXY(i,p.getX(i)*2,Math.atan2(p.getZ(i),p.getY(i))*r*2); } cg.computeVertexNormals(); const cm=new THREE.Mesh(cg,M.scavato); cm.castShadow=cm.receiveShadow=true; log.add(cm); }
     // corteccia: arco aperto che lascia in vista il legno scavato (la parte scoperta guarda in alto)
     { const th0=Math.PI/2-(TAU+arc)/2, gapA=Math.PI/2, gw=(TAU-arc)/2, bg=new THREE.CylinderGeometry(r,r*.98,L,26,8,true,th0,arc), p=bg.attributes.position, uv=bg.attributes.uv; for(let i=0;i<p.count;i++){ const x=p.getX(i),y=p.getY(i),z=p.getZ(i), k=1+.1*fbm(x*18,y*5,z*18,2)+.05*Math.sin(y*40+z*30); p.setXYZ(i,x*k,y,z*k); uv.setXY(i,uv.getX(i)*arc*r*2,y*2+L); } bg.rotateZ(Math.PI/2); bg.computeVertexNormals(); const bm=new THREE.Mesh(bg,M.corteccia); bm.castShadow=bm.receiveShadow=true; log.add(bm);
       // gallerie scavate nel legno scoperto
@@ -4129,7 +4135,7 @@ function build(THREE){
   const SOIL0=.2, GH=.19, AMP=.032, DISC_REP=1.9; // DISC_REP: tessere da 10 cm sul disco Ø 19 cm
   // ---------- materiali fotografici (foto vere di Giovanni: assets/materiali/<id>, incorporate da build_app.py in window.__MAT_FOTO) ----------
   // FOTO_SCALA: lato della foto in unità (1 unità = 10 cm); null = immagine singola non ripetibile (fronda scontornata).
-  const MF=window.__MAT_FOTO||null, FOTO_SCALA={terriccio:1,ghiaia:.6,muschio:.5,muffa:.6,muschio_secco:.5,legno:3,coperchio:null,vetro_sporco:null,foglia_felce:null,foglia_succulenta:null,fungo:null,drosera:null,funghi_magici:null,carnivora_magica:null,foglia_magica:null,muschio_magico:null,felce_magica:null,succulenta_magica:null,rametto:null}, FOTOS={};
+  const MF=window.__MAT_FOTO||null, FOTO_SCALA={terriccio:1,ghiaia:.6,muschio:.5,muffa:.6,muschio_secco:.5,legno:3,coperchio:null,vetro_sporco:null,foglia_felce:null,foglia_succulenta:null,fungo:null,drosera:null,funghi_magici:null,carnivora_magica:null,foglia_magica:null,muschio_magico:null,felce_magica:null,succulenta_magica:null,rametto:null,foglia_secca:null,gusci_vuoti:null,frutto_mosche:null}, FOTOS={};
   function fotoMat(id){ if(FOTOS[id]!==undefined) return FOTOS[id]; const src=MF&&MF[id]; if(!src||!(src.colore||src.maschera)) return FOTOS[id]=null;
     const scala=FOTO_SCALA[id]===undefined?1:FOTO_SCALA[id], F={id,scala,ready:false,img:{},H:null,N:0,cache:{},q:[]}, keys=Object.keys(src); let left=keys.length;
     const done=()=>{ F.ready=!!(F.img.colore||F.img.maschera); const q=F.q; F.q=[]; if(F.ready) q.forEach(cb=>{ try{ cb(F); }catch(e){} }); };
@@ -4170,6 +4176,11 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
   const sideMat=soilMat.clone(); sideMat.vertexColors=true; // parete del terriccio vista dal vetro: più scura verso il basso (colori dei vertici)
   const gravMat=new THREE.MeshStandardMaterial(TG||FG?{color:0xffffff,roughness:1}:TX?{map:ptex('Gravel023_col',2),normalMap:ptex('Gravel023_nor',2,false),color:0x9a968f,roughness:.92}:{color:0x8a8a86,roughness:.95});
   if(FT){ antiTile(soilMat); antiTile(sideMat); } if(FG) antiTile(gravMat);
+  // terra bagnata: oltre una certa umidità la foto di terra_bagnata prende il posto del terriccio (colore e ruvidezza), sulla stessa tessitura
+  const FWT=fotoMat('terra_bagnata'), WETU={t:{value:null},k:{value:0}};
+  if(FT&&FWT){ [soilMat,sideMat].forEach(m=>{ const ob=m.onBeforeCompile; m.onBeforeCompile=sh=>{ if(ob) ob(sh); sh.uniforms.uWetT=WETU.t; sh.uniforms.uWetK=WETU.k;
+      sh.fragmentShader=sh.fragmentShader.replace('void main() {','uniform sampler2D uWetT; uniform float uWetK;\nvoid main() {').replace('#include <map_fragment>','#include <map_fragment>\n#ifdef USE_MAP\n if(uWetK>.001){ vec3 wt_=texture2D(uWetT,vMapUv*.9+vec2(.17,.31)).rgb; diffuseColor.rgb=mix(diffuseColor.rgb,wt_*diffuse*1.6,uWetK); }\n#endif').replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=mix(roughnessFactor,.35,uWetK*.6);'); }; m.customProgramCacheKey=()=>'fotowet'; });
+    FWT.when(F=>{ const M=F.maps(1); if(M&&M.map) WETU.t.value=M.map; }); }
   // ghiaia: profilo che segue il fondo del vaso
   const gravel=new THREE.Mesh(new THREE.LatheGeometry([[0,0],[.72,0],[.86,.05],[.94,.15],[.95,GH],[0,GH]].map(p=>new THREE.Vector2(p[0],p[1])),64),gravMat); gravel.receiveShadow=true; jar.add(gravel);
   const pebbles=(function(){ const geo=new THREE.IcosahedronGeometry(1,0), mat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.72,flatShading:true}), n=40, im=new THREE.InstancedMesh(geo,mat,n), r=rngS(11), m=new THREE.Matrix4(), q=new THREE.Quaternion(), PC=FG?[0xf2eee6,0xd8d2c8,0xfaf6ee,0xc8c2b8,0xe8e0d2,0xd0c8b8]:[0x968e82,0x76706a,0xa09482,0x5c5650,0xb4aa98,0x86785f]; if(FG) FG.when(F=>{ mat.map=F.maps(0).map; mat.needsUpdate=true; }); for(let i=0;i<n;i++){ const a=r()*6.283, d=Math.sqrt(r())*.88, s=.018+r()*.03; m.compose(new V3(Math.cos(a)*d,GH-s*.3,Math.sin(a)*d),q.setFromEuler(new THREE.Euler(r()*3,r()*3,r()*3)),new V3(s,s*.7,s*(.8+r()*.4))); im.setMatrixAt(i,m); im.setColorAt(i,new Col(PC[(r()*PC.length)|0])); } im.receiveShadow=true; jar.add(im); return im; })();
@@ -4220,16 +4231,16 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
   const molds=[]; { const r=rngS(13); for(let i=0;i<14;i++){ const a=r()*6.283, m=new THREE.Mesh(new THREE.CircleGeometry(.05+r()*.05,10),new THREE.MeshBasicMaterial({color:0x6a2f8f,transparent:true,opacity:.55,depthWrite:false})); m.position.set(Math.cos(a)*.975,.25+r()*.8,Math.sin(a)*.975); m.lookAt(0,m.position.y,0); m.visible=false; m.renderOrder=4; jar.add(m); molds.push(m); } }
 
   // ---------- vetro vivo: condensa da pulire col dito, gocce che scendono, muffa sul vetro e sulla terra ----------
-  const FDI=fotoMat('vetro_sporco');
+  const FDI=fotoMat('vetro_sporco'), FCO=fotoMat('condensa'), FBA=fotoMat('bava');
   const glassFX=(function(){ window.__glass=null;
     const FW=512, FH=192, FD=new Uint8Array(FW*FH*4); for(let i=0;i<FW*FH;i++){ FD[i*4]=255; FD[i*4+3]=255; }
     const tex=new THREE.DataTexture(FD,FW,FH,THREE.RGBAFormat); tex.wrapS=THREE.RepeatWrapping; tex.wrapT=THREE.ClampToEdgeWrapping; tex.magFilter=tex.minFilter=THREE.LinearFilter; tex.needsUpdate=true;
     const DR=[]; for(let i=0;i<8;i++) DR.push(new THREE.Vector4(0,0,1,0));
-    const U={uMask:{value:tex},uDens:{value:0},uZ:{value:new THREE.Vector4(1,1,1,1)},uNight:{value:0},uTex:{value:new THREE.Vector2(1/FW,1/FH)},uDrops:{value:DR},uSize:{value:new THREE.Vector2(FW,FH)},uDirt:{value:null},uDirtK:{value:0}};
+    const U={uMask:{value:tex},uDens:{value:0},uZ:{value:new THREE.Vector4(1,1,1,1)},uNight:{value:0},uTex:{value:new THREE.Vector2(1/FW,1/FH)},uDrops:{value:DR},uSize:{value:new THREE.Vector2(FW,FH)},uDirt:{value:null},uDirtK:{value:0},uCon:{value:null},uConK:{value:0},uBav:{value:null},uBavK:{value:0}};
     const mat=new THREE.ShaderMaterial({uniforms:U,transparent:true,depthWrite:false,side:THREE.DoubleSide,
       vertexShader:'varying vec2 vUv; varying vec3 vN; varying vec3 vV; void main(){ vec3 p=position; vUv=vec2(atan(p.z,p.x)/6.2831853+.5, p.y/2.34); vec4 mv=modelViewMatrix*vec4(p,1.); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }',
       fragmentShader:[
-      'uniform sampler2D uMask; uniform float uDens,uNight; uniform vec4 uZ; uniform vec2 uTex,uSize; uniform vec4 uDrops[8]; uniform sampler2D uDirt; uniform float uDirtK; varying vec2 vUv; varying vec3 vN; varying vec3 vV;',
+      'uniform sampler2D uMask; uniform float uDens,uNight; uniform vec4 uZ; uniform vec2 uTex,uSize; uniform vec4 uDrops[8]; uniform sampler2D uDirt; uniform float uDirtK; uniform sampler2D uCon,uBav; uniform float uConK,uBavK; varying vec2 vUv; varying vec3 vN; varying vec3 vV;',
       'vec2 h2(vec2 p){ p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))); return fract(sin(p)*43758.5453); }',
       'float n2(vec2 p){ vec2 i=floor(p),f=fract(p); f=f*f*(3.-2.*f); float a=h2(i).x,b=h2(i+vec2(1.,0.)).x,c=h2(i+vec2(0.,1.)).x,d=h2(i+vec2(1.,1.)).x; return mix(mix(a,b,f.x),mix(c,d,f.x),f.y); }',
       'void main(){',
@@ -4251,6 +4262,8 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
       ' vec3 cf=mix(fogC*(1.-.22*rim-.3*bigrim),vec3(1.),lens*.35);',
       ' float dirt=uDirtK>0.?texture2D(uDirt,vUv*vec2(3.,1.2)).r*uDirtK:0.; cf=mix(cf,vec3(.5,.47,.4)*(1.-.5*uNight),clamp(dirt*.8,0.,1.)); af=clamp(af+dirt*.42*(1.-af),0.,1.);',
       ' float spec=hlm*.85+hl; cf=mix(cf,vec3(1.),clamp(spec,0.,1.)); af=clamp(af+spec*.6,0.,1.);',
+      ' if(uConK>0.){ vec4 pc=texture2D(uCon,vUv*vec2(11.,4.2)+vec2(.13,.37)); float ph=pc.a*clamp(fog*1.5+edge*.8,0.,1.)*uConK*dz; cf=mix(cf,pc.rgb*vec3(1.3,1.33,1.36),clamp(ph*.85,0.,1.)); af=clamp(af+ph*.5*(1.-af),0.,1.); }',
+      ' if(uBavK>0.){ vec4 pb=texture2D(uBav,vUv*vec2(5.,2.1)+vec2(.41,.22)); float bm=pb.a*uBavK*smoothstep(.2,.9,m)*(.4+.6*smoothstep(.1,.5,vUv.y)); vec3 ir=.5+.5*cos(6.2831*(fr*1.1+vUv.x*4.+vec3(0.,.33,.67))); vec3 bc=mix(pb.rgb,pb.rgb*(.7+.6*ir),.55)*(1.-.25*uNight)+vec3(.05)*ir; cf=mix(cf,bc,clamp(bm*.6,0.,1.)); af=clamp(af+bm*.3*(1.-af),0.,1.); }',
       ' float fib=n2(vUv*vec2(900.,340.))*.6+n2(vUv*vec2(2600.,980.))*.4;',
       ' float am=smoothstep(.06,.5,mo)*(.45+.55*fib);',
       ' vec3 cm=mix(vec3(.93,.93,.88),vec3(.33,.48,.4),smoothstep(.55,.95,mo)); cm*=.85+.3*fib;',
@@ -4303,6 +4316,8 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
       if(m){ U.uDens.value+=(1-U.uDens.value)*Math.min(1,dt*.4); const kz=Math.min(1,dt*.4), c=m.condensa; Z.set(Z.x+(clamp(c.tappo)-Z.x)*kz,Z.y+(clamp(c.alto)-Z.y)*kz,Z.z+(clamp(c.medio)-Z.z)*kz,Z.w+(clamp(c.basso)-Z.w)*kz); }
       else { U.uDens.value+=((clamp((n.um-.55)/.33))-U.uDens.value)*Math.min(1,dt*1.5); const kz=Math.min(1,dt*.6); Z.set(Z.x+(1-Z.x)*kz,Z.y+(1-Z.y)*kz,Z.z+(1-Z.z)*kz,Z.w+(1-Z.w)*kz); }
       U.uNight.value+=((S.night?1:0)-U.uNight.value)*Math.min(1,dt*2);
+      if(FCO&&FCO.ready&&!U.uCon.value){ const M=FCO.maps(1); if(M&&M.mask){ M.mask.colorSpace=THREE.SRGBColorSpace; M.mask.needsUpdate=true; U.uCon.value=M.mask; U.uConK.value=1; } }
+      if(FBA&&FBA.ready){ if(!U.uBav.value){ const M=FBA.maps(1); if(M&&M.mask){ M.mask.colorSpace=THREE.SRGBColorSpace; M.mask.needsUpdate=true; U.uBav.value=M.mask; } } const sn=S.v&&S.v.sp?S.v.sp.some(x=>x.id==='lumache'&&x.alive!==false):false; U.uBavK.value+=((U.uBav.value&&sn?1:0)-U.uBavK.value)*Math.min(1,dt*.3); }
       if(FDI&&FDI.ready){ if(!U.uDirt.value){ const M=FDI.maps(1); if(M&&M.mask){ M.mask.wrapS=M.mask.wrapT=THREE.RepeatWrapping; U.uDirt.value=M.mask; } } U.uDirtK.value+=((U.uDirt.value?clamp((.9-n.pul)/.75):0)-U.uDirtK.value)*Math.min(1,dt*.6); }
       soilV=(S.soilTop||.2)/2.34; L+=((m?clamp(m.muffa.vetro):clamp((.62-n.pul)/.5))-L)*Math.min(1,dt*(m?.3:.8)); LT+=((m?clamp(m.muffa.terra):L)-LT)*Math.min(1,dt*.3); LF+=((m?clamp(m.muffa.foglie):0)-LF)*Math.min(1,dt*.3);
       const dens=U.uDens.value*Math.max(Z.x,Z.y,Z.z,Z.w); acc+=dt; let dirty=false;
@@ -4450,7 +4465,7 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
     const F=(x,d)=>Number.isFinite(x)?x:d; wet=F(wet,.5); wl=F(wl,0); rist=F(rist,0); S.wet=F(S.wet,wet); S.wl=F(S.wl,0); S.rist=F(S.rist,0); // un valore mancante del microclima non deve mai rendere NaN il terreno (terra a specchio)
     const k=Math.min(1,dt*.35); S.wet+=(wet-S.wet)*k; S.wl+=(wl-S.wl)*Math.min(1,dt*.25); S.rist+=(rist-S.rist)*k;
     const w=S.wet; // secco: chiaro e opaco · bagnato: scuro e lucido (la mappa resta la stessa: cambia la tinta, la roughness e un velo di clearcoat)
-    if(FT) soilMat.color.setRGB(1.06-.62*w,1.02-.62*w,.98-.6*w).lerp(CPOOR2,S.poor*.5); else soilMat.color.setRGB(1.16-.66*w,1.04-.6*w,.88-.5*w).lerp(CPOOR2,S.poor*.5); soilMat.roughness=1-.5*w; soilMat.clearcoat=.5*w; sideMat.color.copy(soilMat.color).multiplyScalar(.9); sideMat.roughness=soilMat.roughness; sideMat.clearcoat=soilMat.clearcoat*.6;
+    if(FT) soilMat.color.setRGB(1.06-.62*w,1.02-.62*w,.98-.6*w).lerp(CPOOR2,S.poor*.5); else soilMat.color.setRGB(1.16-.66*w,1.04-.6*w,.88-.5*w).lerp(CPOOR2,S.poor*.5); WETU.k.value=WETU.t.value?clamp((w-.55)/.35)*.8:0; soilMat.roughness=1-.5*w; soilMat.clearcoat=.5*w; sideMat.color.copy(soilMat.color).multiplyScalar(.9); sideMat.roughness=soilMat.roughness; sideMat.clearcoat=soilMat.clearcoat*.6;
     const show=S.wl>.1; water.visible=waterTop.visible=show; if(show){ const wy=S.wl*GH; waterPlane.constant=wy; waterTop.position.y=wy; waterMat.color.copy(CWATER).lerp(CMURK,S.rist); waterTop.material.color.copy(CWTOP).lerp(CMURK,S.rist*.7); waterMat.opacity=.55+.3*S.rist; waterTop.material.opacity=.45+.25*S.rist; }
     if(FG){ gravMat.color.setScalar(1.04-.5*S.wl); gravMat.roughness=1-.45*S.wl; } else gravMat.color.setScalar(1.3-.45*S.wl); // ghiaia chiara sopra la linea d'acqua, più scura se sommersa
     // muschio (C6): secco bruno-grigio opaco → bagnato verde saturo lucido; solo con il microclima (altrimenti decide upd(v,dry))
