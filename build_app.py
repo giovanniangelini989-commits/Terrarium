@@ -61,7 +61,12 @@ for _id in ('formiche','lumache','orologio'):
     if os.path.exists(_f):
         _im=Image.open(_f).convert('RGBA'); _im.thumbnail((128,128),Image.LANCZOS); _b=io.BytesIO(); _im.save(_b,'WEBP',quality=82,method=6)
         ICONE[_id]='data:image/webp;base64,'+base64.b64encode(_b.getvalue()).decode('ascii')
-icone_js='window.__ICONE='+json.dumps(ICONE,separators=(',',':'))+';'
+CARTE_ARTE={}
+for _f in sorted(os.listdir('assets/carte')) if os.path.isdir('assets/carte') else []:
+    if not _f.endswith('.webp'): continue
+    _im=Image.open('assets/carte/'+_f).convert('RGB'); _im.thumbnail((600,600),Image.LANCZOS); _b=io.BytesIO(); _im.save(_b,'WEBP',quality=80,method=6)
+    CARTE_ARTE[_f[:-5]]='data:image/webp;base64,'+base64.b64encode(_b.getvalue()).decode('ascii')
+icone_js='window.__CARTE_ARTE='+json.dumps(CARTE_ARTE,separators=(',',':'))+';window.__ICONE='+json.dumps(ICONE,separators=(',',':'))+';'
 print('icone:',{k:len(v) for k,v in ICONE.items()})
 # Manifest minimale per «Aggiungi a Home»: icone 192/512 ricompresse (palette) e incorporate come data URI
 def _png_small(path):
