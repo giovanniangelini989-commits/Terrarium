@@ -55,9 +55,9 @@ function takeArrival(id,choice){ const a=G.arrivi.list.find(x=>x.id===id), st=a&
 function takeArrival0(id,choice){ const a=G.arrivi.list.find(x=>x.id===id); if(!a||a.state!=='nuovo') return false; let ok=false;
   if(choice==='no'){ a.state='rifiutato'; if(a.kind==='oggetto') a.alt.forEach(o=>{}); a.param=a.param||(a.alt&&a.alt[0]); if(a.force&&(G.ui.fase||0)<(a.kind==='pianta'?3:4)) G.arrivi.list.push({id:'a'+(G.arrivi.n++),slot:a.slot,force:a.force,due:sim.d+1,state:'futuro'}); }
   else { a.state='accettato'; if(a.kind==='specie') ok=sim.addSpecies(a.param); else if(a.kind==='pianta') ok=sim.addPlant(a.param); else { a.param=choice; ok=sim.addObject(choice); } giveXP(10);
-    if(ok){ if(a.kind==='pianta'&&(G.ui.fase||0)<3){ G.ui.fase=3; G.ui.d3=sim.d; planAfterMoss(sim.d); G.req=makeRequest(); } else if(a.kind==='specie'&&(G.ui.fase||0)<4){ G.ui.fase=4; G.ui.eredita=null; G.req=makeRequest(); } } }
+    if(ok){ if(a.kind==='pianta'&&(G.ui.fase||0)<3){ G.ui.fase=3; G.ui.d3=sim.d; planAfterMoss(sim.d); G.req=makeRequest(); } else if(a.kind==='specie'&&(G.ui.fase||0)<4){ G.ui.fase=4; G.ui.eredita=null; G.req=makeRequest(); gamiFase4(); } } }
   if(ok){ try{ missEv('arrivo'); }catch(e){} } updateCodex(); persist(); return ok; }
-function skipStart(){ if((G.ui.fase||0)>=4) return false; sim.setNeeds({um:.7,ter:.8}); ['muschio','felce'].forEach(p=>sim.addPlant(p)); sim.addSpecies('formiche'); G.ui.fase=5; G.arrivi={list:[],n:0}; G.arrivi.list=[]; planArrivals(sim.d); G.req=makeRequest(); updateCodex(); persist(); return true; }
+function skipStart(){ if((G.ui.fase||0)>=4) return false; sim.setNeeds({um:.7,ter:.8}); ['muschio','felce'].forEach(p=>sim.addPlant(p)); sim.addSpecies('formiche'); G.ui.fase=5; gamiFase4(); G.arrivi={list:[],n:0}; G.arrivi.list=[]; planArrivals(sim.d); G.req=makeRequest(); updateCodex(); persist(); return true; }
 function forceArrival(slot,force){ G.arrivi.list.push({id:'a'+(G.arrivi.n++),slot,force,due:sim.d,state:'futuro'}); dueArrivals().forEach(x=>popups.push({t:'arrivo',id:x.id})); }
 function planAfterMoss(d){ const a=G.arrivi, ant=(G.ui.eredita&&G.ui.eredita.anticipo)||0; a.list.push({id:'a'+(a.n++),slot:'pianta',force:'felce',due:d+3,state:'futuro'},{id:'a'+(a.n++),slot:'insetto',force:'formiche',due:d+7-ant,state:'futuro'}); planArrivals(d+10); }
 const inbox=()=>G.arrivi.list.filter(x=>x.state==='nuovo');
@@ -70,6 +70,10 @@ const CARTE={
  scintilla:{n:'Scintilla',ic:'⚡',r:'carta',set:'tempo',d:'Il meteorite si carica di colpo: più mutazioni, più in fretta.',x:'Una scintilla salta dal tuo dito al sasso. Il battito si fa fitto.',w:{Quiete:1,Mostri:3,'Società':3,Conflitti:2}}, // TESTO-STORIA
  brina:{n:'Brina',ic:'❄️',r:'argento',set:'tempo',d:'Una notte di gelo: i bisogni risalgono un po’ e il sasso rallenta.',x:'Al mattino il vetro è coperto di brina. Dentro, tutto è fermo e intatto, come in una foto.',w:{Quiete:3,Mostri:1,'Società':2,Conflitti:2}}, // TESTO-STORIA
  sasso:{n:'Il sasso cresce',ic:'☄️',r:'sasso',set:'tempo',d:'Il meteorite diventa più grande: accumula energia più in fretta, per sempre.',x:'Il sasso fa un rumore come di ghiaccio che si incrina. Poi è un po’ più grande, e batte più forte.',w:{Quiete:1,Mostri:3,'Società':2,Conflitti:2}},
+ ric_festa1:{n:'La prima festa',ic:'🎉',r:'ricordo',set:'tempo',d:'La foto della sera in cui il popolo ha fatto festa per la prima volta.',x:'',come:'Passano trenta notti dal giorno in cui nasce un popolo.'},
+ ric_festa2:{n:'La seconda festa',ic:'🎊',r:'ricordo',set:'tempo',d:'La foto della seconda festa del popolo, trenta notti dopo la prima.',x:'',come:'Il popolo festeggia ancora, trenta notti dopo la prima festa.'},
+ ric_festa3:{n:'La terza festa',ic:'🪔',r:'ricordo',set:'tempo',d:'La foto della terza festa: ormai è una tradizione.',x:'',come:'Il popolo continua a festeggiare ogni trenta notti.'},
+ ric_atlante:{n:'Il quaderno si riempie',ic:'🔎',r:'ricordo',set:'tempo',d:'La foto del vaso il giorno in cui l’Atlante ha raggiunto le quattordici pagine.',x:'',come:'Riempi quattordici pagine dell’Atlante del vaso.'},
  ric_muta:{n:'La prima mutazione',ic:'✨',r:'ricordo',set:'tempo',d:'La foto del vaso il giorno in cui una creatura è cambiata per la prima volta.',x:'',come:'Arriva il giorno in cui una creatura cambia per la prima volta.'}, // TESTO-STORIA
  // La casa
  latte:{n:'Tazza di latte',ic:'🥛',r:'carta',set:'casa',d:'Mani piene, e due in più.',x:'La nonna ti porta latte caldo e biscotti. Torni al vaso con le mani calde.',w:{Quiete:3,Mostri:2,'Società':2,Conflitti:2}},
@@ -168,7 +172,7 @@ function nottiSalto(){ const p=powerEnsure(), startN=lastN(), nb0=popups.filter(
   const eventi=sim.log.filter(e=>(e.n||0)>startN&&e.kind!=='azione'&&e.kind!=='meteorite'); persist(); return {passi,pausa,resto:p.resto,eventi}; }
 function usaSalto(){ donoPower(); const why=saltoWhy(); if(why) return {ok:false,why,passi:0,eventi:[]}; const p=G.power, t=todayIdx(); p.salto--; p.usate=(p.usate||0)+1; p.resto=POWER.giorni; calRow(t)[2]|=4; p.saltiOggi=(p.saltiOggi&&p.saltiOggi.t===t)?{t,n:p.saltiOggi.n+POWER.giorni}:{t,n:POWER.giorni}; return Object.assign({ok:true},nottiSalto()); } // niente nodo nell'albero: non è un evento del vaso, e 2 nodi al giorno gonfiano il salvataggio
 function riprendiSalto(){ const p=powerEnsure(); if(!(p.resto>0)||sim.pending.length||G.real.owed>0) return null; return nottiSalto(); }
-function afterDay(){ try{ missEv('notte'); }catch(e){} try{ treeDiff(); }catch(e){} try{ diarioDay(); }catch(e){} dueArrivals().forEach(a=>popups.push({t:'arrivo',id:a.id})); const d=sim.d; if(!G.ui.nextBiscotto) G.ui.nextBiscotto=d+14;
+function afterDay(){ try{ missEv('notte'); }catch(e){} try{ gamiDay(); }catch(e){ console.error('gami',e); } try{ treeDiff(); }catch(e){} try{ diarioDay(); }catch(e){} dueArrivals().forEach(a=>popups.push({t:'arrivo',id:a.id})); const d=sim.d; if(!G.ui.nextBiscotto) G.ui.nextBiscotto=d+14;
   if(d>=G.ui.nextBiscotto&&d>=10&&(G.ui.fase==null||G.ui.fase>=4)){ const st=G.ui.gatto||0; if(st===1||st>=5){ if(G.ui.gattoFine!=='guardiano') popups.push({t:'biscotto'}); } else popups.push({t:'gatto',s:st}); if(st<5) G.ui.gatto=st+1; G.ui.nextBiscotto=d+(st>=4?30:12)+((d*7)%7); } }
 
 // ===== L'albero del vaso: discendenze, scelte e strade non prese =====
@@ -220,7 +224,7 @@ function checkNewDay(){ const t=todayIdx(), s=slotIdx(), r=G.real; donoPower(); 
     if(elapsed>1){ r.leth=(r.leth||0)+Math.max(0,nuove-NOTTI_GIORNO); G.letargo={da:t-elapsed+1,giorni:(G.letargo?G.letargo.giorni:0)+elapsed-1}; G.ui.letargoN=(G.ui.letargoN||0)+1; } }
   r.owed=(r.owed||0)+nuove; r.lastSlot=s; catchUp(); updateCodex(); calRow(t)[2]|=1;
   const nuovi=sim.log.filter(e=>(e.n||0)>startN&&e.kind!=='azione'&&e.kind!=='meteorite').slice(-4);
-  if(newDay){ r.cure=Math.max(r.cure||0,maniMax()); G.req=makeRequest(); if(missed){ if(G.player.protezioni>0) popups.push({t:'serie'}); else G.player.serie=0; }
+  if(newDay){ try{ bigliettoEsito(); }catch(e){} r.cure=Math.max(r.cure||0,maniMax()); G.req=makeRequest(); if(missed){ if(G.player.protezioni>0) popups.push({t:'serie'}); else G.player.serie=0; }
     popups.unshift({t:'risveglio',eventi:nuovi,giorni:elapsed,notti:nuove}); try{ donoNonna(); }catch(e){} if((G.ui.fase==null||G.ui.fase>=3)){ const nb=pickNight(); if(nb) popups.push({t:'notte',id:nb}); } }
   else { refreshReq(); popups.push({t:'notte-ora',eventi:nuovi,notti:nuove}); }
   persist(); return {nuovi,notti:nuove}; }
@@ -280,7 +284,7 @@ function biscottoOutcome(choice){ if(G.ui.gattoFine==='guardiano'||G.ui.scudo){ 
   persist(); return {ok,text:ok?(choice==='davanzale'?B.davanzale:B.pallina)+' '+B.ok:(choice==='pallina'?B.pallinaNo+' ':'')+B.male}; }
 function resolveDecision(id,choice){ const p=sim.pending.find(x=>x.id===id); const r=resolveDecision0(id,choice); if(p&&!sim.pending.find(x=>x.id===id)){ try{ treeNode({k:'scelta',lane:'vaso',t:'Una decisione nel vaso',ch:CHL[choice]||choice,alt:choice==='separa'?'Lasciare fare':'Separarli',major:true}); treeDiff(); }catch(e){} } return r; }
 function resolveDecision0(id,choice){ const p=sim.pending.find(x=>x.id===id); if(!p) return; sim.resolve(id,choice); giveXP(5); updateCodex(); if(G.real.owed>0) catchUp(); riprendiSalto(); persist(); }
-function closeChapter(){ try{ treeDiff(); }catch(e){} const r=closeChapter0(); try{ treeNode({k:'capitolo',lane:'vaso',t:'Fine del capitolo: '+((T.FINALI[r.k]||{}).nome||r.k),major:true}); }catch(e){} r.vaso=archiviaVaso(r); return r; }
+function closeChapter(){ try{ treeDiff(); }catch(e){} const r=closeChapter0(); try{ treeNode({k:'capitolo',lane:'vaso',t:'Fine del capitolo: '+((T.FINALI[r.k]||{}).nome||r.k),major:true}); }catch(e){} try{ gEns().ered={opts:ereditaOpts(sim.view()),presa:null}; }catch(e){} r.vaso=archiviaVaso(r); if(G.gami&&G.gami.ered) popups.push({t:'eredita'}); return r; }
 function closeChapter0(){ const fp=sim.closeChapter(); const k=fp.finale; const first=!G.libro[k]; const v=sim.view(); const culto=(v.sp.find(x=>x.society)||{society:{}}).society.culto; G.libro[k]=G.libro[k]||{n:0,first:Date.now(),setup:v.setup,d:fp.d,chapter:fp.chapter}; G.libro[k].n++; addPage('fin-'+k+'-'+fp.chapter,T.FINALI[k].nome,S.epilogo(k,culto),false); giveXP(first?100:30); const dc=drawCard(k,'capitolo'); if(Object.keys(G.libro).length===1&&G.libro[k].n===1) ricordo('ric_finale'); persist(); return {k,first,culto,carta:dc.id,cartaNuova:dc.nuova}; }
 function newGame(name,setup){ const seed=1+Math.floor(Math.random()*99999); G=fresh(name,setup,seed); sim=T.createSim(setup,{seed,game:true,decisions:true,needs:true}); const pieno=setup.piante.length||setup.insetti.length; G.ui.fase=pieno?5:0; if(pieno) planArrivals(0); else sim.setNeeds({um:0,ter:0}); G.real.lastDay=todayIdx(); G.real.lastSlot=slotIdx(); G.ui.vasoN=1; G.ui.vasoDal=todayIdx(); G.vasi=[]; calEnsure(); calRow(todayIdx())[2]|=1; G.req=makeRequest(); updateCodex(); addPage('inizio',S.PAG.inizio[0],S.PAG.inizio[1],false); G.ui.nextBiscotto=sim.d+14; donoPower(); persist(); }
 // ---------- Missioni e gocce (docs/CONTRATTI.md «Missioni e gocce»): 3 missioni dal vaso reale → gocce → notti e salti in più ----------
@@ -309,7 +313,7 @@ function missFill(v){ const M=missEnsure(); let guard=6;
     if(!cand.length) break; const c=cand[(((G.seed||0)*7+M.n*13+sim.d)%cand.length+cand.length)%cand.length]; M.n++; const d=MDEF[c.k];
     M.att.push({k:c.k,x:c.x||null,p:0,n:d.n,g:d.g,base:d.base?d.base(v):0,nuova:1}); M.vista=false; } }
 function missRev(v){ const M=missEnsure(); let cambia=false;
-  M.att=M.att.filter(m=>{ const d=MDEF[m.k]; if(!d) return false; if(m.p>=m.n){ const t=missTitolo(m,v); M.gocce+=m.g; M.tot+=m.g; M.fatte++; missOggi().n++; M.recenti.unshift(m.k); M.recenti.length=Math.min(M.recenti.length,MISS.recenti); giveXP(5); popups.push({t:'missione',titolo:t.titolo,g:m.g}); cambia=true; return false; }
+  M.att=M.att.filter(m=>{ const d=MDEF[m.k]; if(!d) return false; if(m.p>=m.n){ const t=missTitolo(m,v); M.gocce+=m.g; M.tot+=m.g; M.fatte++; missOggi().n++; M.recenti.unshift(m.k); M.recenti.length=Math.min(M.recenti.length,MISS.recenti); giveXP(5); if(unaVolta('missione')) popups.push({t:'missione',titolo:t.titolo,g:m.g}); cambia=true; return false; }
     if(d.morta(v,m)){ M.cambiate++; cambia=true; return false; } return true; });
   missFill(v); return cambia; }
 function missEv(ev,arg){ if(!G||!sim||(G.ui.fase==null?5:G.ui.fase)<MISS.faseMin) return; const M=missEnsure(), v=sim.view();
@@ -322,7 +326,85 @@ function missSpendi(cosa){ const M=missEnsure(); if((G.ui.fase==null?5:G.ui.fase
   if(M.gocce<c) return {ok:false,why:'gocce'}; M.gocce-=c; M.compri[cosa]=(M.compri[cosa]||0)+1; if(cosa==='avanza') M.pronte=(M.pronte||0)+1; else powerEnsure().salto++; persist(); return {ok:true}; }
 function missCambia(i){ const M=missEnsure(); if(!M.att[i]) return false; const k=M.att[i].k; M.att.splice(i,1); M.recenti.unshift(k); M.recenti.length=Math.min(M.recenti.length,MISS.recenti); M.cambiate++; missFill(sim.view()); persist(); return true; }
 function missVista(){ const M=missEnsure(); if(!M.vista||M.att.some(m=>m.nuova)){ M.vista=true; M.att.forEach(m=>{ m.nuova=0; }); persist(); } }
-window.__app={MISS,missioni,missSpendi,missCambia,missVista,missEv,AVANZA,donoNonna,avanzaNotte,avanzaInfo,POWER,powerCards,usaSalto,riprendiSalto,donoPower,wipeGlass,treeDiff,nightFx,gattoChoice,nightCtx,pickNight,bumpNeeds,skipStart,forceArrival,passaNotte,catchUp,autoCare,demoDay,CARTE,SET_CARTE,mazzoTot,drawCard,giveCard,cardOdds,cardImg,canPlay,playCard,regen,mani,maniMax,donoSalti,orologio,calendario,calRow,calEnsure,archiviaVaso,diarioDay,pullArrival,refreshReq,nowMs,slotIdx,localMs,isoOf,SLOT_MS,NOTTI_GIORNO,T,S,esc,XPT,lvlOf,LIM,CULTICON,store,todayIdx,lvl,rank,fresh,persist,loadSave,newGame,giveXP,addPage,updateCodex,makeRequest,reqCheck,dueArrivals,takeArrival,inbox,toast,doAct,osserva,queueDecisions,checkNewDay,biscottoOutcome,resolveDecision,closeChapter,lastN,
+// ---------- Oggi: Atlante, biglietto di domani, Lente, festa del popolo, eredità (docs/CONTRATTI.md «Atlante, biglietto, Lente, festa, eredità») ----------
+// Un solo stato, G.gami, creato al bisogno (i salvataggi vecchi restano validi). Nessuna scadenza, nessuna serie, nessun acquisto.
+const GAMI={fase:4,festaOgni:30,lenteGiorni:2,soglie:[6,14,22,32],ricordoAtlante:14,biglOpz:3,biglGocce:1,festaRicordi:3};
+function gEns(){ return G.gami||(G.gami={atl:{},bil:null,bh:[],bopz:null,lente:null,lenteT:null,festa:{ultima:null,n:0,vaso:0},ered:null,avv:{},novita:0,init:0}); }
+const gFase=()=>G.ui.fase==null?5:G.ui.fase;
+const unaVolta=tipo=>{ const g=gEns(), t=todayIdx(); if(g.avv[tipo]===t) return false; g.avv[tipo]=t; return true; };   // al massimo un avviso per tipo al giorno reale
+const lc=s=>String(s).toLowerCase();
+// --- Atlante: 32 pagine (6 creature, 5 piante, 7 mutazioni, 8 eventi, 6 schede della Lente) ---
+const atlTot=()=>Object.keys(T.SPECIE).length+Object.keys(T.PIANTE).length+Object.keys(T.MUT).length+Object.keys(S.ATL.ev).length+Object.keys(S.SCHEDE).length;
+function atlanteScan(v){ const g=gEns(), nuove=[], add=id=>{ if(!g.atl[id]){ g.atl[id]=sim.d+1; nuove.push(id); } };
+  if(!g.init){ g.init=1; Object.keys(G.codex.specie||{}).forEach(id=>{ add('sp:'+id); (G.codex.specie[id].mut||[]).forEach(m=>add('mu:'+m)); }); }
+  v.sp.forEach(s=>{ if(s.alive) add('sp:'+s.id); s.mut.forEach(m=>add('mu:'+m)); if(s.society) add('ev:popolo'); if(s.monster) add('ev:gigante'); });
+  v.plants.forEach(p=>add('pl:'+p.id)); if(v.wars.length) add('ev:guerra');
+  const b=v.bio; if(b){ if(b.formiche&&b.formiche.regina) add('ev:regina'); if(b.formiche&&b.formiche.covata&&b.formiche.covata.uova>=.5) add('ev:covata'); if(b.termiti&&(b.termiti.sciame||b.termiti.fondati>0)) add('ev:sciame'); if(b.collemboli>=8) add('ev:collemboli'); }
+  try{ if(micro&&micro.view().giungla>0) add('ev:giungla'); }catch(e){}
+  const n=Object.keys(g.atl).length; if(nuove.length&&g.init===1&&nuove.length<n){ g.novita=1; if(unaVolta('atlante')) toast(S.OGGI.atlante.nuova+' ('+n+'/'+atlTot()+')'); }
+  if(n>=GAMI.ricordoAtlante) ricordo(S.OGGI.rangoRicordo); return nuove; }
+function atlRango(n){ const s=GAMI.soglie; let r=-1; s.forEach((x,i)=>{ if(n>=x) r=i; }); return r; }
+function atlante(){ const g=gEns(), A0=S.OGGI.atlante, n=Object.keys(g.atl).length, r=atlRango(n), ev=S.ATL.ev;
+  const sez=[{k:'sp',voci:Object.keys(T.SPECIE).map(id=>({id,nome:T.SPECIE[id].nome,icon:T.SPECIE[id].icon,visto:!!g.atl['sp:'+id],testo:T.SPECIE[id].nota,sch:!!g.atl['sc:'+id]}))},
+    {k:'pl',voci:Object.keys(T.PIANTE).map(id=>({id,nome:T.PIANTE[id].nome,icon:T.PIANTE[id].icon,visto:!!g.atl['pl:'+id],testo:S.ATL.pl[id]}))},
+    {k:'mu',voci:Object.keys(T.MUT).map(id=>({id,nome:T.MUT[id].nome,icon:'✨',visto:!!g.atl['mu:'+id],testo:S.ATL.mu[id]}))},
+    {k:'ev',voci:Object.keys(ev).map(id=>({id,nome:ev[id][0],icon:'🔎',visto:!!g.atl['ev:'+id],testo:ev[id][1]}))},
+    {k:'sc',voci:Object.keys(S.SCHEDE).map(id=>({id,nome:T.SPECIE[id].nome,icon:T.SPECIE[id].icon,visto:!!g.atl['sc:'+id],testo:S.SCHEDE[id].fatti.join(' ')}))}];
+  return {n,tot:atlTot(),rango:r>=0?A0.rango[r]:null,prossimo:GAMI.soglie.find(x=>x>n)||null,sez}; }
+// --- Il biglietto di domani: una previsione scritta la sera; il giorno dopo la casella si colora se è successa (+1 goccia). Mai «non ce l'hai fatta». ---
+const bNome=id=>lc((T.SPECIE[id]||{}).nome||id);
+function bCands(v){ const c=[]; v.sp.filter(s=>s.alive&&s.pop>=3).forEach(s=>c.push({k:'pop',x:s.id})); if(v.bio&&v.bio.formiche&&v.bio.formiche.regina) c.push({k:'regina'}); if(v.bio&&v.bio.collemboli>=5) c.push({k:'collemboli'});
+  v.plants.forEach(p=>c.push({k:'pianta',x:p.id})); if(v.needs.um>=.45) c.push({k:'umido'}); if(v.sp.some(s=>s.alive&&s.mut.length<2)) c.push({k:'muta'}); c.push({k:'arrivo'},{k:'quieto'}); return c; }
+function bBase(b,v){ if(b.k==='pop'){ const s=v.sp.find(x=>x.id===b.x); return s?Math.round(s.pop*100)/100:0; } if(b.k==='collemboli') return v.bio?Math.round(v.bio.collemboli*100)/100:0; if(b.k==='pianta'){ const p=v.plants.find(x=>x.id===b.x); return p?Math.round(p.v*1000)/1000:0; } if(b.k==='muta') return mMut(v); if(b.k==='arrivo') return inbox().length; return 0; }
+function bOk(b,v){ if(b.k==='pop'){ const s=v.sp.find(x=>x.id===b.x); return !!s&&s.alive&&s.pop>b.b; } if(b.k==='regina') return !!(v.bio&&v.bio.formiche&&v.bio.formiche.covata&&v.bio.formiche.covata.uova>0); if(b.k==='collemboli') return !!v.bio&&v.bio.collemboli>b.b;
+  if(b.k==='pianta'){ const p=v.plants.find(x=>x.id===b.x); return !!p&&p.v>b.b; } if(b.k==='umido') return v.needs.um>=.4; if(b.k==='muta') return mMut(v)>b.b; if(b.k==='arrivo') return inbox().length>b.b; if(b.k==='quieto') return !v.pending.length&&!v.wars.length; return false; }
+function bTesto(b){ const K=S.OGGI.bigl; return b.k==='pop'?K.t.pop(bNome(b.x)):b.k==='pianta'?K.t.pianta(K.art[b.x]||'la pianta'):K.t[b.k]?K.t[b.k]():''; }
+function bOpzioni(v){ const g=gEns(), t=todayIdx(); if(g.bopz&&g.bopz.t===t) return g.bopz.l; const salt=((G.seed||0)*31+t*17)|0, h=(i,c)=>(((i+1)*2654435761+salt*40503+(c.x?c.x.length*7:0))>>>0)%1000;
+  const c=bCands(v).map((x,i)=>({x,o:h(i,x)})).sort((a,b)=>a.o-b.o), seen=new Set(), l=[]; c.forEach(e=>{ if(l.length<GAMI.biglOpz&&!seen.has(e.x.k)){ seen.add(e.x.k); l.push(e.x); } }); g.bopz={t,l}; return l; }
+function bigliettoEsito(){ if(!G||!sim) return null; const g=gEns(), b=g.bil, t=todayIdx(); if(!b||b.es!=null||t<=b.t||sim.d<=b.d) return null; const ok=bOk(b,sim.view()); b.es=ok?1:0; b.vis=0;
+  g.bh.push([b.t,b.es]); if(g.bh.length>14) g.bh.splice(0,g.bh.length-14); if(ok){ missGoccia(GAMI.biglGocce); giveXP(5); } g.novita=1; persist(); return {ok}; }
+function biglietto(){ const g=gEns(), t=todayIdx(), K=S.OGGI.bigl; try{ bigliettoEsito(); }catch(e){} const v=sim.view(), on=gFase()>=GAMI.fase, b=g.bil, scritto=!!b&&b.t===t&&b.es==null;
+  return {on,stato:!on?'aspetta':scritto?'scritto':'scrivi',opz:on&&!scritto?bOpzioni(v).map((o,i)=>({i,testo:bTesto(o)})):[],scritto:scritto?bTesto(b):null,
+    esito:b&&b.es!=null?{ok:!!b.es,testo:bTesto(b)}:null,caselle:g.bh.slice(-7).map(x=>x[1]),goccia:GAMI.biglGocce}; }
+function bigliettoScrivi(i){ const g=gEns(), t=todayIdx(); if(gFase()<GAMI.fase) return {ok:false,why:'inizio'}; if(g.bil&&g.bil.t===t&&g.bil.es==null) return {ok:false,why:'scritto'};
+  const v=sim.view(), o=bOpzioni(v)[i]; if(!o) return {ok:false,why:'opzione'}; const b=Object.assign({},o,{t,d:sim.d,es:null,vis:0}); b.b=bBase(b,v); g.bil=b; g.bopz=null; persist(); return {ok:true,testo:bTesto(b)}; }
+// --- La Lente: una creatura osservata da vicino per due giorni → scheda macro con fatti veri → una pagina dell'Atlante ---
+function lente(){ const g=gEns(), v=sim.view(), L=g.lente, on=gFase()>=GAMI.fase;
+  if(L){ const sp=T.SPECIE[L.x], man=Math.max(0,L.da+GAMI.lenteGiorni-sim.d); return {on,attiva:true,x:L.x,nome:sp.nome,icon:sp.icon,mancano:man,pronta:man===0,scelte:[],riposo:false}; }
+  return {on,attiva:false,x:null,mancano:0,pronta:false,riposo:g.lenteT===todayIdx(),scelte:v.sp.filter(s=>s.alive&&S.SCHEDE[s.id]).map(s=>({id:s.id,nome:s.nome,icon:s.icon,fatta:!!g.atl['sc:'+s.id]}))}; }
+function lenteScegli(id){ const g=gEns(), l=lente(); if(!l.on) return {ok:false,why:'inizio'}; if(l.attiva) return {ok:false,why:'attiva'}; if(l.riposo) return {ok:false,why:'riposo'}; const s=sim.view().sp.find(x=>x.id===id&&x.alive); if(!s||!S.SCHEDE[id]) return {ok:false,why:'vuoto'};
+  g.lente={x:id,da:sim.d,p0:Math.round(s.pop)}; try{ missEv('osserva'); }catch(e){} persist(); return {ok:true}; }
+function lenteScheda(){ const g=gEns(), L=g.lente; if(!L||sim.d<L.da+GAMI.lenteGiorni) return null; const sp=T.SPECIE[L.x], F=S.SCHEDE[L.x], K=S.OGGI.lente.visto, s=sim.view().sp.find(x=>x.id===L.x), nuova=!g.atl['sc:'+L.x];
+  const ora=s&&s.alive?Math.round(s.pop):0, visto=!ora?K.via():Math.abs(ora-L.p0)<=1?K.pari(ora):ora>L.p0?K.su(L.p0,ora):K.giu(L.p0,ora);
+  g.atl['sc:'+L.x]=sim.d+1; g.lente=null; g.lenteT=todayIdx(); g.avv.atlante=todayIdx(); giveXP(nuova?15:5); addPage('lente-'+L.x,'Da vicino: '+lc(sp.nome),F.macro+' '+F.fatti[0],false); atlanteScan(sim.view()); persist();
+  return {x:L.x,nome:sp.nome,icon:sp.icon,macro:F.macro,fatti:F.fatti,visto,nuova}; }
+// --- La festa del popolo: ogni 30 notti, finché c'è un popolo. Un evento (foglio con luci), una pagina, una carta ricordo (le prime tre). ---
+function festaCheck(v){ const g=gEns(), f=g.festa, vn=G.ui.vasoN||1, p=v.sp.find(s=>s.alive&&s.society); if(!p) return; if(f.ultima==null||f.vaso!==vn){ f.ultima=sim.d; f.vaso=vn; f.n=0; return; } if(sim.d-f.ultima<GAMI.festaOgni) return;
+  f.ultima=sim.d; f.n++; const K=S.OGGI.festa, cult=p.society.cult, nome=p.society.name||p.nome;
+  addPage('festa-'+vn+'-'+f.n,K.titolo,K.pagina(lc(nome)),false); popups.push({t:'festa',cult,nome,n:f.n}); if(f.n<=GAMI.festaRicordi) ricordo(K.ric[f.n]); }
+function festaInfo(){ const g=gEns(), f=g.festa, v=sim.view(), p=v.sp.find(s=>s.alive&&s.society); if(!p||f.vaso!==(G.ui.vasoN||1)||f.ultima==null) return null; return {mancano:Math.max(0,f.ultima+GAMI.festaOgni-sim.d),n:f.n,nome:p.society.name||p.nome}; }
+// --- Una cosa da portare nel vaso nuovo: a fine vaso scegli 1 tra 3 eredità; parte con te nel vaso nuovo (con la prima creatura) ---
+const DOMESTICA={gigantismo:x=>{ x.size*=1.4; },radioattivo:x=>{ x.tol.r+=.3; },intelligenza:x=>{ x.intBonus+=.25; },corazza:x=>{ x.suscept*=.6; },velenoso:x=>{ x.suscept*=.75; },iperfertilita:x=>{ x.rep*=1.3; },bioluminescenza:()=>{}};   // il vantaggio senza il costo: «addomesticata»
+function ereditaOpts(v){ const piante=v.plants.filter(p=>['fungo','succulenta','carnivora'].includes(p.id)&&p.v>.25).map(p=>({tipo:'pianta',id:p.id}));
+  const specie=v.sp.filter(s=>s.alive&&s.pop>=3&&s.id!=='formiche').sort((a,b)=>b.pop-a.pop).map(s=>({tipo:'specie',id:s.id}));
+  const so=v.sp.find(s=>s.society), og=[...new Set([].concat(v.setup.oggetti||[],so&&CULTOGG[so.society.cult]?[CULTOGG[so.society.cult]]:[]))].filter(o=>T.OGGETTI[o]).map(id=>({tipo:'oggetto',id}));
+  const mut=v.sp.filter(s=>s.alive&&s.mut.length).map(s=>({tipo:'mutazione',id:s.id,m:s.mut[0]})); const out=[], liste=[mut,og,specie,piante];
+  liste.forEach(l=>{ if(l.length&&out.length<3) out.push(l[0]); }); liste.forEach(l=>l.slice(1).forEach(c=>{ if(out.length<3) out.push(c); }));
+  ['libro','orologio','specchio','candela'].forEach(id=>{ if(out.length<3&&!out.some(c=>c.tipo==='oggetto'&&c.id===id)) out.push({tipo:'oggetto',id}); }); return out; }
+function ereditaDesc(c){ const K=S.OGGI.ered; if(c.tipo==='pianta'){ const p=T.PIANTE[c.id]; return {etichetta:K.pianta,nome:p.nome,icon:p.icon,testo:K.testo.pianta(p.nome)}; } if(c.tipo==='specie'){ const s=T.SPECIE[c.id]; return {etichetta:K.specie,nome:s.nome,icon:s.icon,testo:K.testo.specie(lc(s.nome))}; }
+  if(c.tipo==='oggetto'){ const o=T.OGGETTI[c.id]; return {etichetta:K.oggetto,nome:o.nome,icon:o.icon,testo:K.testo.oggetto(o.nome)}; } const s=T.SPECIE[c.id]; return {etichetta:K.mutazione,nome:s.nome+' · '+T.MUT[c.m].nome,icon:s.icon,testo:K.testo.mutazione(s.nome,lc(T.MUT[c.m].nome))}; }
+function eredita(){ const e=gEns().ered; if(!e||e.presa!=null) return null; return {opts:e.opts.map((c,i)=>Object.assign({i},c,ereditaDesc(c)))}; }
+function ereditaScegli(i){ const g=gEns(), e=g.ered; if(!e||e.presa!=null) return {ok:false}; if(i>=0&&!e.opts[i]) return {ok:false}; e.presa=i; popups=popups.filter(q=>q.t!=='eredita'); persist(); return {ok:true,scelta:i>=0?e.opts[i]:null}; }
+function ereditaApplica(){ const g=gEns(), e=g.ered; if(!e) return false; g.ered=null; const c=e.presa!=null&&e.presa>=0?e.opts[e.presa]:null; if(!c) return false; let ok=false;
+  if(c.tipo==='pianta') ok=sim.addPlant(c.id); else if(c.tipo==='specie') ok=sim.addSpecies(c.id); else if(c.tipo==='oggetto') ok=sim.addObject(c.id);
+  else { sim.addSpecies(c.id); const x=sim.sp.find(s=>s.id===c.id&&s.alive); if(x&&!x.mut.includes(c.m)&&x.mut.length<2&&DOMESTICA[c.m]){ x.mut.push(c.m); DOMESTICA[c.m](x); ok=true; } }
+  if(ok){ const d=ereditaDesc(c), K=S.OGGI.ered; addPage('ered-'+(G.ui.vasoN||1),K.pagina.t,K.pagina.x(lc(d.nome)),false); toast(K.preso); } return ok; }
+function gamiFase4(){ try{ ereditaApplica(); }catch(e){ console.error('eredita',e); } }
+function gamiDay(){ if(gFase()<GAMI.fase) return; const g=gEns(), v=sim.view(); atlanteScan(v); festaCheck(v); const L=g.lente; if(L&&sim.d>=L.da+GAMI.lenteGiorni&&!L.avv){ L.avv=1; g.novita=1; } }
+// Un solo punto d'ingresso: la scheda «Oggi» del quaderno. La pastiglia si accende per qualunque novità (missioni, biglietto, Lente, Atlante, eredità).
+function oggiNuovo(){ if(!G||!sim) return false; const g=G.gami||{}, M=G.miss; if(g.ered&&g.ered.presa==null) return true; if(gFase()<GAMI.fase) return false; return !!((M&&!M.vista)||g.novita||(g.bil&&g.bil.es!=null&&!g.bil.vis)); }
+function oggiVisto(){ const g=gEns(), M=missEnsure(); let ch=false; if(!M.vista||M.att.some(m=>m.nuova)){ M.vista=true; M.att.forEach(m=>{ m.nuova=0; }); ch=true; } if(g.novita){ g.novita=0; ch=true; } if(g.bil&&g.bil.es!=null&&!g.bil.vis){ g.bil.vis=1; ch=true; } if(ch) persist(); }
+window.__app={GAMI,atlanteScan,atlante,biglietto,bigliettoScrivi,bigliettoEsito,lente,lenteScegli,lenteScheda,festaInfo,eredita,ereditaScegli,ereditaApplica,oggiNuovo,oggiVisto,gamiDay,MISS,missioni,missSpendi,missCambia,missVista,missEv,AVANZA,donoNonna,avanzaNotte,avanzaInfo,POWER,powerCards,usaSalto,riprendiSalto,donoPower,wipeGlass,treeDiff,nightFx,gattoChoice,nightCtx,pickNight,bumpNeeds,skipStart,forceArrival,passaNotte,catchUp,autoCare,demoDay,CARTE,SET_CARTE,mazzoTot,drawCard,giveCard,cardOdds,cardImg,canPlay,playCard,regen,mani,maniMax,donoSalti,orologio,calendario,calRow,calEnsure,archiviaVaso,diarioDay,pullArrival,refreshReq,nowMs,slotIdx,localMs,isoOf,SLOT_MS,NOTTI_GIORNO,T,S,esc,XPT,lvlOf,LIM,CULTICON,store,todayIdx,lvl,rank,fresh,persist,loadSave,newGame,giveXP,addPage,updateCodex,makeRequest,reqCheck,dueArrivals,takeArrival,inbox,toast,doAct,osserva,queueDecisions,checkNewDay,biscottoOutcome,resolveDecision,closeChapter,lastN,
  get G(){return G;},get sim(){return sim;},get popups(){return popups;},set popups(v){popups=v;}};
 // ===== Microclima (ecologo, docs/ecologia/modello.md §8). Blocco unico: avvolge le funzioni sopra senza cambiarle. =====
 // G.micro = micro.save() (+ ofs: ora reale del primo passo); un passo di 6 ore reali per ogni giorno del vaso; cure → bagna/nutri/terra/pulisci; vetro → asciuga.
