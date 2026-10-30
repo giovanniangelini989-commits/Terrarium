@@ -180,7 +180,38 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   P.G.power.salto=P.MISS.tetti.salto; t('spesa: tetto dei salti',P.missSpendi('salto').why==='tetto');
   P.G.miss.pronte=0; P.G.dev.offset+=1; P.checkNewDay(); P.popups.length=0; P.sim.pending.length=0; P.G.real.owed=0; P.G.power.resto=0; P.G.letargo=null; P.G.ui.avanza={n:P.AVANZA.max,visto:P.nowMs()}; t('avanza: tetto raggiunto senza notti comprate',P.avanzaInfo().why==='tetto');
   P.G.miss.gocce=10; P.missSpendi('avanza'); const n0=P.G.ui.avanza.n; const ra=P.avanzaNotte(); t('avanza: una notte comprata supera il tetto, senza cambiare il contatore di visita',ra.ok&&P.G.ui.avanza.n===n0&&P.G.miss.pronte===0,JSON.stringify(ra)+P.G.miss.pronte);
-  t('missioni: salvataggio leggero',JSON.stringify(P.G.miss).length<700,JSON.stringify(P.G.miss).length);
+  t('missioni: salvataggio leggero',JSON.stringify(P.G.miss).length<900,JSON.stringify(P.G.miss).length);
+}
+// 10b) missioni visibili: pillola, popup al ritmo giusto, tetto 4 al giorno, accodamento, «Fallo», missioni brevi, missione grande
+{ const P=window.__app, S2=window.__story; P.newGame('M2',JSON.parse(JSON.stringify(su))); P.popups.length=0; P.G.ui.fase=5; P.G.arrivi={list:[],n:0}; P.G.miss=null;
+  const pops=()=>P.popups.filter(p=>p.t==='miss-nuova'), M=()=>P.G.miss;
+  let m0=P.missioni(); t('visibili: all’inizio nessuna è annunciata, la pillola mostra la missione grande',m0.att.every(a=>!a.ann)&&m0.vicina&&m0.vicina.k==='grande'&&m0.grande.n>=4,JSON.stringify(m0.vicina));
+  P.missTick(); t('ritmo: la prima missione arriva subito come popup',pops().length===1&&M().rit.n===1&&P.missioni().att.filter(a=>a.ann).length===1);
+  t('pillola: dopo l’annuncio mostra una missione vera con progresso',P.missioni().vicina.k!=='grande'&&P.missioni().vicina.n>=1);
+  P.popups.length=0; P.missTick(); P.missTick(); t('ritmo: niente popup prima di 3 ore',pops().length===0&&M().rit.n===1);
+  M().rit.u-=P.MISS.ogniMs+1000; P.missTick(); t('ritmo: dopo 3 ore ne arriva una nuova',pops().length===1&&M().rit.n===2);
+  // accodamento: mai due popup di missione insieme, e dietro agli altri popup
+  P.popups.length=0; P.popups.push({t:'levelup'}); M().rit.u-=P.MISS.ogniMs+1000; P.missTick(); t('accodamento: il popup si mette in coda dietro agli altri',P.popups.length===2&&P.popups[0].t==='levelup'&&P.popups[1].t==='miss-nuova');
+  M().rit.u-=P.MISS.ogniMs+1000; P.missTick(); t('accodamento: mai due popup di missione in coda',pops().length===1);
+  // tetto 4 al giorno
+  P.popups.length=0; M().rit.n=P.MISS.popGiorno; M().rit.u-=P.MISS.ogniMs+1000; M().att.forEach(a=>{ a.ann=0; }); P.missTick(); t('tetto: al massimo '+P.MISS.popGiorno+' popup di missione al giorno',pops().length===0);
+  P.G.dev.offset+=1; M().att.forEach(a=>{ a.ann=0; }); M().rit.u=0; P.missTick(); t('tetto: il giorno dopo si riparte',pops().length===1&&M().rit.n===1);
+  // assenza: all'apertura dopo un'assenza arriva una missione anche prima delle 3 ore
+  P.popups.length=0; M().att.forEach(a=>{ a.ann=0; }); M().rit.u=P.nowMs()-60000; M().rit.v=P.nowMs()-P.MISS.assenzaMs-5000; P.missApri(); P.missTick(); t('assenza: dopo un’assenza la missione nuova arriva all’apertura',pops().length===1);
+  // completamento: la prossima arriva subito (dopo la pausa breve), con il tetto
+  P.popups.length=0; M().rit.n=0; M().att.forEach(a=>{ a.ann=0; }); M().att[0]={k:'cure',x:null,p:2,n:3,g:1,base:0,ann:1}; M().rit.u=P.nowMs()-60000; P.G.real.cure=9; P.doAct('acqua'); t('completamento: popup di missione compiuta e proposta della prossima',P.popups.some(p=>p.t==='missione')&&pops().length===1,JSON.stringify(P.popups));
+  // «Fallo» porta all'azione: ogni missione ha un'azione e la pillola punta alla missione vera
+  const v=P.missioni(); t('fallo: la pillola indica un indice valido o la grande',(v.vicina.i>=0&&!!M().att[v.vicina.i])||v.vicina.k==='grande');
+  // missioni brevi dallo stato vero del vaso
+  P.sim.setNeeds({pul:.5,um:.4}); M().att=[]; M().oggi={t:P.todayIdx(),n:0}; M().recenti=[]; M().n=0; let visti=new Set(); for(let i=0;i<40;i++){ M().att=[]; M().recenti=[]; M().n=i; P.missioni(); M().att.forEach(a=>visti.add(a.k)); }
+  t('brevi: con vetro sporco e terra asciutta compaiono pulisci/acqua',visti.has('vetro')&&visti.has('acqua')&&visti.has('dormi')&&visti.has('tocca'),[...visti].join());
+  M().att=[{k:'vetro',x:'v',p:0,n:1,g:1,base:0,ann:1}]; const gv=M().gocce; P.G.real.cure=9; P.doAct('pulisci'); t('brevi: «Pulisci il vetro» si compie con la cura',M().gocce>=gv+1&&M().fatte>=1);
+  const sp=P.sim.view().sp.find(s=>s.alive); M().att=[{k:'tocca',x:sp.id,p:0,n:3,g:1,base:0,ann:1}]; P.missEv('tocca',sp.id); P.missEv('tocca','nessuno'); P.missEv('tocca',sp.id); const tk=()=>M().att.find(a=>a.k==='tocca'); t('brevi: «Tocca 3» conta solo la specie giusta',tk()&&tk().p===2); P.missEv('tocca',sp.id); t('brevi: terzo tocco compie la missione',!tk()&&M().recenti[0]==='tocca');
+  // la grande: sempre attiva, una volta per giorno reale, si rinnova, senza scadenze
+  M().grande=null; const g=P.missioni().grande; const ev=P.GRANDI[M().grande.v].ev; const gg=M().gocce; for(let i=0;i<g.n;i++){ P.missEv(ev); P.missEv(ev); P.G.dev.offset+=1; }
+  t('grande: un solo avanzamento al giorno reale, dopo '+g.n+' giorni dà le gocce e si rinnova',M().gocce>=gg+g.g&&M().grande&&M().grande.p<M().grande.n&&P.missioni().grande.titolo!==undefined,gg+' '+M().gocce);
+  M().grande.p=2; P.G.dev.offset+=30; P.missTick(); t('grande: nessuna scadenza, nessun azzeramento dopo 30 giorni',M().grande.p>=2);
+  t('visibili: salvataggio ancora leggero',JSON.stringify(M()).length<1000,JSON.stringify(M()).length);
 }
 // 11) gamification: Atlante, biglietto di domani, Lente, festa del popolo, cosa portare nel vaso nuovo, un solo punto d'ingresso
 { const P=window.__app; const nuovo=()=>{ P.newGame('G',JSON.parse(JSON.stringify(su))); P.popups.length=0; P.G.ui.fase=5; P.G.arrivi={list:[],n:0}; };
@@ -228,7 +259,7 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   P.G.gami.ered={opts:[{tipo:'oggetto',id:'libro'},{tipo:'pianta',id:'carnivora'},{tipo:'specie',id:'ragni'}],presa:null}; P.G.ui.fase=0; P.ereditaScegli(-1); P.G.ui.fase=0; P.skipStart(); t('eredita: «niente» non aggiunge nulla',!P.sim.view().setup.oggetti.includes('libro'));
   for(const [tp,idx] of [['oggetto',0],['pianta',1],['specie',2]]){ P.G.ui.fase=0; P.G.gami.ered={opts:[{tipo:'oggetto',id:'libro'},{tipo:'pianta',id:'carnivora'},{tipo:'specie',id:'ragni'}],presa:idx}; P.sim.removeSpecies('ragni'); P.sim.removePlant('carnivora'); P.skipStart(); const v=P.sim.view(); t('eredita: '+tp+' portato nel vaso nuovo',tp==='oggetto'?v.setup.oggetti.includes('libro'):tp==='pianta'?v.plants.some(x=>x.id==='carnivora'):v.sp.some(x=>x.id==='ragni')); }
   // un solo punto d'ingresso
-  nuovo(); P.G.miss=null; P.missioni(); t('oggi: le missioni nuove accendono la pastiglia',P.oggiNuovo()); P.oggiVisto(); t('oggi: guardata, si spegne',!P.oggiNuovo());
+  nuovo(); P.G.miss=null; P.missioni(); P.missPop(); t('oggi: le missioni nuove accendono la pastiglia',P.oggiNuovo()); P.oggiVisto(); t('oggi: guardata, si spegne',!P.oggiNuovo());
   const av=P.G.gami.avv; delete av.atlante; P.G.gami.atl={'sp:formiche':1}; P.G.gami.init=1; let tc=0; const tt=global.document.body.appendChild; P.atlanteScan(P.sim.view()); t('oggi: un avviso per tipo al giorno (atlante)',av.atlante===P.todayIdx());
 }
 // biologia di fondo (motore): collemboli, regina e covata, sciame, larve di mosca

@@ -332,3 +332,24 @@ body.v3load .stage.full .vasebox.hero::before{content:'';position:absolute;left:
 body:has(.stage.full) .toast{bottom:calc(env(safe-area-inset-bottom) + 170px)}
 /* con i controlli della modalità test accesi la notifica sale sopra di loro (non li copre) */
 body:has(.demoov.on) .toast{bottom:calc(env(safe-area-inset-bottom) + 250px)}
+
+/* ===== Missioni visibili (pillola sul vaso, popup, guida, volo delle gocce). Si animano solo transform e opacity. ===== */
+.mpill{position:absolute;left:0;right:0;margin:0 auto;bottom:calc(env(safe-area-inset-bottom) + 156px);z-index:4;width:min(344px,calc(100% - 28px));display:flex;align-items:center;gap:6px;padding:4px 4px 4px 4px;border-radius:999px;background:rgba(10,15,21,.66);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1.5px solid rgba(168,139,255,.55);color:#fff}
+.mpill .mp-body{flex:1;min-width:0;display:flex;align-items:center;gap:9px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;padding:3px 4px 3px 8px;min-height:40px;transition:transform .12s ease-out}
+.mpill .mp-body:active{transform:scale(.97)}
+.mpill .mp-ic{flex:none;font-size:19px;line-height:1}
+.mpill .mp-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.mpill .mp-t b{font:700 12.5px/1.15 'Instrument Sans',system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.mpill .mp-t i{display:block;height:4px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}
+.mpill .mp-t u{display:block;height:100%;width:100%;background:#7CF5C8;transform-origin:left;text-decoration:none}
+.mpill .mp-n{flex:none;font:800 11.5px 'Instrument Sans',system-ui,sans-serif;font-variant-numeric:tabular-nums;color:#cfd8e0}
+.mpill .mp-go{flex:none;border:0;border-radius:999px;background:#A88BFF;color:#14101f;font:800 13px 'Instrument Sans',system-ui,sans-serif;padding:0 18px;min-height:40px;transition:transform .12s ease-out}
+.mpill .mp-go:active{transform:scale(.94)}
+body:has(.mpill) .stage.full .vcap{bottom:calc(env(safe-area-inset-bottom) + 212px)}
+body:has(.mpill) .toast{bottom:calc(env(safe-area-inset-bottom) + 218px)}
+.mi-ill{font-size:52px;line-height:1;text-align:center;margin:6px 0 2px}
+.mi-prem{text-align:center;margin:2px 0 6px;font:800 13px 'Instrument Sans',system-ui,sans-serif;color:#A88BFF;letter-spacing:.02em}
+.gfly{position:fixed;z-index:60;pointer-events:none;padding:5px 12px;border-radius:999px;background:rgba(18,32,28,.9);border:1.5px solid #7CF5C8;color:#7CF5C8;font:800 13px 'Instrument Sans',system-ui,sans-serif;white-space:nowrap;transform:translate(-50%,0)}
+.rb.guida::before{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid #A88BFF;box-shadow:0 0 18px rgba(168,139,255,.55);opacity:0;pointer-events:none;animation:guidap 1.4s ease-in-out 3}
+@keyframes guidap{0%,100%{opacity:0;transform:scale(.94)}50%{opacity:1;transform:scale(1.06)}}
+@media (prefers-reduced-motion: reduce){.rb.guida::before{animation:none;opacity:1}.mpill .mp-body,.mpill .mp-go{transition:none}}
