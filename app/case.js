@@ -16,13 +16,16 @@ window.__CASE=function(THREE,env){
   const fbm=(x,y,z,s)=>(vn(x+s,y+s*1.7,z-s)*.6+vn(x*2.1+s,y*2.1,z*2.1+s)*.3+vn(x*4.3,y*4.3+s,z*4.3)*.1)-.5;
   // ---------- materiali: foto vere quando ci sono, altrimenti il colore di ripiego ----------
   const MATS=[]; let lvl=0;
-  function apply(e){ const M=e.F.maps(lvl); if(!M) return; const m=e.m; m.map=M.map||null; m.normalMap=M.normalMap||null; m.roughnessMap=(lvl<1&&M.roughnessMap)||null; m.color.set(e.o.tint==null?0xffffff:e.o.tint); m.needsUpdate=true; }
+  function apply(e){ const M=e.F.maps(lvl); if(!M) return; const m=e.m; m.map=M.map||null; m.normalMap=e.o.tri?null:(M.normalMap||null); m.roughnessMap=(lvl<1&&M.roughnessMap)||null; m.color.set(e.o.tint==null?0xffffff:e.o.tint); m.needsUpdate=true; }
   function pm(id,o){ o=o||{}; const F=FOTO?FOTO.mat(id):null, m=new THREE.MeshStandardMaterial({color:o.fb==null?0x6b5440:o.fb,roughness:o.rough==null?.95:o.rough,metalness:0,side:o.side||THREE.FrontSide,vertexColors:!!o.vc});
-    const lift=o.lift||0; if(lift){ m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n diffuseColor.rgb=min(vec3(1.),diffuseColor.rgb*'+lift.toFixed(2)+');'); }; m.customProgramCacheKey=()=>'case'+lift; }
+    const lift=o.lift||0; if(o.tri){ m.onBeforeCompile=sh=>{ sh.vertexShader=sh.vertexShader.replace('void main() {','varying vec3 vTP; varying vec3 vTN;\nvoid main() {').replace('#include <begin_vertex>','#include <begin_vertex>\n vTP=position; vTN=normal;');
+      sh.fragmentShader=sh.fragmentShader.replace('void main() {','varying vec3 vTP; varying vec3 vTN;\nvoid main() {').replace('#include <map_fragment>','#ifdef USE_MAP\n { vec3 w=pow(abs(normalize(vTN)),vec3(4.)); w/=(w.x+w.y+w.z); float k=2.8; vec4 tc=texture2D(map,vTP.zy*k)*w.x+texture2D(map,vTP.xz*k)*w.y+texture2D(map,vTP.xy*k)*w.z; diffuseColor*=tc; }\n#endif\n diffuseColor.rgb=min(vec3(1.),diffuseColor.rgb*'+lift.toFixed(2)+');'); }; m.customProgramCacheKey=()=>'tri'+lift; } else if(lift){ m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n diffuseColor.rgb=min(vec3(1.),diffuseColor.rgb*'+lift.toFixed(2)+');'); }; m.customProgramCacheKey=()=>'case'+lift; }
     if(F){ const e={m,F,o}; MATS.push(e); F.when(()=>apply(e)); } return m; }
   const mk={}; // materiali condivisi tra le case (creati una volta)
   function mats(){ if(mk.ok) return mk; mk.ok=1;
     mk.suolo=pm('terriccio',{fb:0x4a3624,tint:0xe9dccd,lift:1.6,rough:.97});          // terra smossa del formicaio
+    mk.suoloV=pm('terriccio',{fb:0x6a5240,tint:0xffffff,lift:2.6,rough:.97,vc:true,tri:true,side:THREE.DoubleSide});
+    mk.lettiera=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.92,metalness:0,side:THREE.DoubleSide});
     mk.suoloC=pm('terriccio',{fb:0x7a6048,tint:0xd8c6ad,lift:2.5,rough:.97});         // terra battuta, più chiara
     mk.argilla=pm('terriccio',{fb:0x9a6f3c,tint:0xf0b970,lift:3.4,rough:.92});        // argilla ocra del termitaio
     mk.umido=pm('terriccio',{fb:0x2b2019,tint:0x9a8a80,rough:.4});                    // terra bagnata e lucida
@@ -32,7 +35,7 @@ window.__CASE=function(THREE,env){
     mk.legno=pm('legno',{fb:0x8a6a48,tint:0xc8a880,rough:.8});
     mk.legnoScuro=pm('legno',{fb:0x2a1a10,tint:0x3a2616,rough:.9});
     mk.guscio=pm('legno',{fb:0xd8a868,tint:0xe8b878,rough:.45});
-    mk.foglia=pm('muschio_secco',{fb:0xa07848,tint:0xb08a58,rough:.9,side:THREE.DoubleSide});
+    mk.foglia=pm('muschio_secco',{fb:0x9a6a3c,tint:0x9a7c52,rough:.9,side:THREE.DoubleSide});
     mk.muschio=pm('muschio',{fb:0x4f6a2a,tint:0xffffff,rough:1});
     mk.frutto=pm('terriccio',{fb:0x5a1a40,tint:0xffffff,lift:3.2,rough:.32,vc:true});
     mk.muffa=pm('muffa',{fb:0xcfd2c8,tint:0xffffff,lift:1.5,rough:1});
@@ -57,7 +60,7 @@ window.__CASE=function(THREE,env){
     const nrm=d=>new V3(d.x/rx,d.y/ry,d.z/rz).normalize();
     return {g,surf,nrm}; }
   // torre rugosa (termitaio, spire, camini): profilo r(t) con ondulazioni
-  function tower(rb,rt,h,ws,hs,rf,seed,sc){ const pos=[],uv=[],idx=[]; for(let j=0;j<=hs;j++){ const t=j/hs, y=t*h; let r=lp(rb,rt,Math.pow(t,.85))*(1+.35*Math.pow(1-t,4))+rf*Math.sin(t*15+seed)*rb*.35; if(j===hs) r*=.12;
+  function tower(rb,rt,h,ws,hs,rf,seed,sc){ const pos=[],uv=[],idx=[]; for(let j=0;j<=hs;j++){ const t=j/hs, y=t*h; let r=lp(rb,rt,Math.pow(t,.85))*(1+.12*Math.pow(1-t,4))+rf*Math.sin(t*15+seed)*rb*.35; if(j===hs) r*=.12;
       for(let i=0;i<=ws;i++){ const a=i/ws*TAU, c=Math.cos(a), s=Math.sin(a), n=1+rf*2.4*fbm(c*2.2,y*9,s*2.2,seed); const rr=Math.max(.002,r*n); pos.push(c*rr,y,s*rr); uv.push(i/ws*TAU*rb/(sc||.4),y/(sc||.4)); } }
     for(let j=0;j<hs;j++) for(let i=0;i<ws;i++){ const a=j*(ws+1)+i, b=a+ws+1; idx.push(a,b,a+1,a+1,b,b+1); }
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.computeVertexNormals(); return g; }
@@ -66,21 +69,35 @@ window.__CASE=function(THREE,env){
     for(let i=0;i<n-1;i++){ const a=i*2; idx.push(a,a+1,a+2,a+1,a+3,a+2); }
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.computeVertexNormals(); return g; }
   // guscio di lumaca: spirale che cresce, aperta sull'imboccatura; cut<1 = guscio rotto
-  function shell(R,s,cut,seed){ const N=14,M=6,turns=2.4,pos=[],uv=[],idx=[], tc=[]; const ct=t=>{ const th=t*turns*TAU, rr=s*.55*Math.exp(.34*th/ (TAU)*1.0); return [rr*Math.cos(th)*.62, s*.28*t, rr*Math.sin(th)*.62]; };
-    const cmax=cut; for(let i=0;i<=N;i++){ const t=i/N*cmax, rad=s*(.06+.36*Math.pow(t,1.15)), th=t*turns*TAU, c=ct(t), nx=Math.cos(th), nz=Math.sin(th);
-      for(let j=0;j<=M;j++){ const b=j/M*TAU, ox=Math.cos(b)*rad, oy=Math.sin(b)*rad, n=1+.06*fbm(i*.7,j*.7,seed,seed); pos.push(c[0]+(nx*ox)*n,c[1]+oy*n,c[2]+(nz*ox)*n); uv.push(t*6,j/M*1.2); } }
-    for(let i=0;i<N;i++) for(let j=0;j<M;j++){ const a=i*(M+1)+j,b=a+M+1; idx.push(a,a+1,b,a+1,b+1,b); }
+  function shell(R,s,cut,seed){ const N=18,M=7,k=.14,TH=2.3*TAU, cE=Math.exp(k*TH), sc=s/(cE*1.5),pos=[],uv=[],idx=[];
+    for(let i=0;i<=N;i++){ const t=i/N*cut, th=t*TH, c=Math.exp(k*th)*sc, rad=Math.max(.0015,c*.5), nx=Math.cos(th), nz=Math.sin(th), cy=th*.012*sc*3;
+      for(let j=0;j<=M;j++){ const b=j/M*TAU, ox=Math.cos(b)*rad, oy=Math.sin(b)*rad, n=1+.05*fbm(i*.7,j*.7,seed,seed); pos.push((c*nx+nx*ox)*1, cy+oy*n, c*nz+nz*ox); uv.push(t*8,j/M*1.2); } }
+    for(let i=0;i<N;i++) for(let j=0;j<M;j++){ const a=i*(M+1)+j,b=a+M+1; idx.push(a,b,a+1,a+1,b,b+1); }
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.computeVertexNormals(); return g; }
   // ---------- istanze ----------
+  function polarUV(g){ const p=g.attributes.position, uv=new Float32Array(p.count*2); for(let i=0;i<p.count;i++){ const x=p.getX(i),y=p.getY(i),z=p.getZ(i), s=Math.hypot(x,z)+y*.9; uv[i*2]=Math.atan2(z,x)/TAU*6; uv[i*2+1]=s/.3; } g.setAttribute('uv',new THREE.BufferAttribute(uv,2)); }
   const _m=new THREE.Matrix4(), _q=new Q(), _s=new V3(), _c=new THREE.Color();
   function inst(parent,geo,mat,items,detail){ if(!items.length) return null; const im=new THREE.InstancedMesh(geo,mat,items.length);
     items.forEach((it,i)=>{ _q.copy(it.q||_q.identity()); const sc=it.s==null?1:it.s; if(typeof sc==='number') _s.set(sc,sc,sc); else _s.copy(sc); _m.compose(it.p,it.q||new Q(),_s); im.setMatrixAt(i,_m); if(it.c!=null){ _c.set(it.c); im.setColorAt(i,_c); } });
     im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; im.frustumCulled=false; im.userData.detail=!!detail; parent.add(im); return im; }
   const alongQ=(dir)=>new Q().setFromUnitVectors(UP,dir.clone().normalize());
   // ---------- le sei case ----------
+  // formicaio di Giovanni (assets/modelli/formicaio/stadi.glb): quattro stadi, parti _soil (terra → terriccio fotografico) e _litter (aghi, colori dei vertici)
+  const FORM={}; let onForm=()=>{};
+  (async()=>{ const b64=window.__FORMICAIO; if(!b64) return; try{ const GL=(await import('https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/loaders/GLTFLoader.js')).GLTFLoader, bin=Uint8Array.from(atob(b64),c=>c.charCodeAt(0)).buffer;
+    const gl=await new Promise((res,rej)=>new GL().parse(bin,'',res,rej)); const take=(name)=>{ let g=null; gl.scene.traverse(o=>{ if(o.name===name&&(o.isMesh||o.children.length===0)&&o.geometry) g=o.geometry; if(!g&&o.isMesh&&o.name===name) g=o.geometry; }); return g; };
+    for(let i=1;i<=4;i++){ const so=take('stage_'+i+'_soil'), li=take('stage_'+i+'_litter'); if(!so) continue; const prep=g=>{ g=g.clone(); const c=g.attributes.color; if(c&&c.itemSize===4){ const a=new Float32Array(c.count*3); for(let k=0;k<c.count;k++){ a[k*3]=c.getX(k); a[k*3+1]=c.getY(k); a[k*3+2]=c.getZ(k); } g.setAttribute('color',new THREE.BufferAttribute(a,3)); } return g; };
+      const gs=prep(so); polarUV(gs); if(!gs.attributes.normal) gs.computeVertexNormals(); const gli=li?prep(li):null; if(gli&&!gli.attributes.normal) gli.computeVertexNormals(); FORM[i]={soil:gs,litter:gli}; }
+    onForm(); }catch(e){ console.warn('formicaio glb non caricato',e&&e.message); } })();
   const B={};
   // FORMICAIO ---------------------------------------------------------------
-  B.formiche=function(st,ctx){ const g=new THREE.Group(), M=mats(), R=rngS(101), i4=st-1, r=[.07,.11,.15,.19][i4], h=[.035,.07,.12,.18][i4], nh=[1,2,3,5][i4], fx=[];
+  B.formiche=function(st,ctx){ const F=FORM[st]; if(F) return formGlb(st,F); return formProc(st,ctx); };
+  function formGlb(st,F){ const g=new THREE.Group(), M=mats(), R=rngS(101), fx=[], so=new THREE.Mesh(F.soil,M.suoloV); so.castShadow=so.receiveShadow=true; g.add(so);
+    if(F.litter){ const li=new THREE.Mesh(F.litter,M.lettiera); li.castShadow=li.receiveShadow=true; g.add(li); }
+    { const p=F.soil.attributes.position, nrm=F.soil.attributes.normal, cap=new THREE.SphereGeometry(.014,6,3,0,TAU,0,Math.PI/2), it=[]; for(let k=0,tries=0;k<10&&tries<200;tries++){ const i=Math.floor(R()*p.count); if(nrm.getY(i)<.3||p.getY(i)<.01) continue; k++; it.push({p:new V3(p.getX(i),p.getY(i)+.004,p.getZ(i)),q:new Q().setFromUnitVectors(UP,new V3(nrm.getX(i),nrm.getY(i),nrm.getZ(i))),s:.5+R()*.9}); }
+      const f=new THREE.Group(); inst(f,cap,M.luce,it); g.add(f); fx.push(f); }
+    return {g,fx,rad:[.17,.21,.25,.27][st-1]}; }
+  function formProc(st,ctx){ const g=new THREE.Group(), M=mats(), R=rngS(101), i4=st-1, r=[.07,.11,.15,.19][i4], h=[.035,.07,.12,.18][i4], nh=[1,2,3,5][i4], fx=[];
     const D=dome(r,h,r*.92,30,12,.1+.03*i4,3,2.4); const cup=new THREE.Mesh(D.g,M.suolo); cup.castShadow=cup.receiveShadow=true; g.add(cup);
     // fori d'ingresso: il primo guarda il vetro dove corrono le gallerie
     const toGal=Math.atan2(ctx.gx-ctx.x,ctx.gz-ctx.z);
@@ -105,7 +122,7 @@ window.__CASE=function(THREE,env){
     // funghi della mutazione, minuscoli, sul bordo della cupola
     { const cap=new THREE.SphereGeometry(.014,6,3,0,TAU,0,Math.PI/2), it=[]; for(let k=0;k<10;k++){ const az=R()*TAU, el=.1+R()*.9, d=new V3(Math.sin(az)*Math.cos(el),Math.sin(el),Math.cos(az)*Math.cos(el)); it.push({p:D.surf(d).addScaledVector(D.nrm(d),.006),q:new Q().setFromUnitVectors(UP,D.nrm(d)),s:.5+R()*.9}); }
       const f=new THREE.Group(); inst(f,cap,M.luce,it); g.add(f); fx.push(f); }
-    return {g,fx,rad:r*1.5+.06}; };
+    return {g,fx,rad:r*1.5+.06}; }
   // TERMITAIO ---------------------------------------------------------------
   B.termiti=function(st,ctx){ const g=new THREE.Group(), M=mats(), R=rngS(202), fx=[], i4=st-1;
     if(st===1){ const D=dome(.085,.05,.075,22,8,.14,5,3); g.add(Object.assign(new THREE.Mesh(D.g,M.argilla),{castShadow:true,receiveShadow:true}));
@@ -119,21 +136,21 @@ window.__CASE=function(THREE,env){
     { const cap=new THREE.SphereGeometry(.012,6,3,0,TAU,0,Math.PI/2), it=[]; for(let k=0;k<9;k++){ const a=R()*TAU, rr=.1+R()*.07; it.push({p:new V3(Math.sin(a)*rr,.004,Math.cos(a)*rr),q:new Q(),s:.6+R()}); }
       const f=new THREE.Group(); inst(f,cap,M.luce,it); g.add(f); fx.push(f); }
     // briciole di argilla attorno alla base
-    { const gg=new THREE.OctahedronGeometry(.006,0), it=[], n=[14,22,30,40][i4]; for(let k=0;k<n;k++){ const a=R()*TAU, rr=.1+R()*.14; it.push({p:new V3(Math.sin(a)*rr,.003,Math.cos(a)*rr),q:new Q().setFromEuler(new THREE.Euler(R()*6,R()*6,R()*6)),s:.7+R()*1.3}); } inst(g,gg,M.argilla,it,true); }
+    { const gg=new THREE.OctahedronGeometry(.009,0), it=[], n=[14,22,30,40][i4]; for(let k=0;k<n;k++){ const a=R()*TAU, rr=.1+R()*.14; it.push({p:new V3(Math.sin(a)*rr,.003,Math.cos(a)*rr),q:new Q().setFromEuler(new THREE.Euler(R()*6,R()*6,R()*6)),s:.7+R()*1.3}); } inst(g,gg,M.argilla,it,true); }
     return {g,fx,rad:[.13,.16,.17,.2][i4]}; };
   // RIFUGIO DELLE LUMACHE ------------------------------------------------------
-  B.lumache=function(st,ctx){ const g=new THREE.Group(), M=mats(), R=rngS(303), fx=[], i4=st-1, W=[.18,.26,.34,.42][i4], Wd=[.14,.2,.27,.33][i4], Ht=[.045,.07,.1,.13][i4];
+  B.lumache=function(st,ctx){ const g=new THREE.Group(), M=mats(), R=rngS(303), fx=[], i4=st-1, W=[.18,.26,.34,.42][i4], Wd=[.14,.2,.27,.33][i4], Ht=[.04,.055,.075,.09][i4];
     // zona umida e scura
     { const dg=new THREE.CircleGeometry(.3*Wd*2.6/1.0*.5+.05,22); dg.rotateX(-Math.PI/2); const p=dg.attributes.position; for(let i=0;i<p.count;i++){ p.setY(i,.0035+.003*fbm(p.getX(i)*9,0,p.getZ(i)*9,2)); p.setX(i,p.getX(i)*1.15); } surfUV(dg,1,.4); dg.computeVertexNormals(); const dm=new THREE.Mesh(dg,M.umido); dm.receiveShadow=true; g.add(dm); }
     // foglia secca curva: tetto ad arco, bordo frastagliato
     { const NU=16, NV=10, pos=[],uv=[],idx=[]; for(let i=0;i<=NU;i++){ const u=i/NU*2-1, hw=Wd*Math.pow(Math.max(0,1-u*u),.62)+.002;
-        for(let j=0;j<=NV;j++){ const v=j/NV*2-1, edge=1+.07*fbm(u*5,v*3,0,9), x=u*W/2, z=v*hw*edge, y=Ht*(1-v*v)*(1-.35*u*u)+.003+.012*fbm(u*6,v*6,1,4)+.014*Math.abs(v)*Math.sin(u*9)*.5; pos.push(x,y,z); uv.push(x*2.2,z*2.2); } }
+        for(let j=0;j<=NV;j++){ const v=j/NV*2-1, edge=1+.07*fbm(u*5,v*3,0,9), x=u*W/2, z=v*hw*edge, y=Ht*(1-v*v)*(1-.35*u*u)+.003+.012*fbm(u*6,v*6,1,4)+.014*Math.abs(v)*Math.sin(u*9)*.5+Ht*1.1*(1-v)/2; pos.push(x,y,z); uv.push(x*2,z*2); } }
       for(let i=0;i<NU;i++) for(let j=0;j<NV;j++){ const a=i*(NV+1)+j,b=a+NV+1; idx.push(a,b,a+1,a+1,b,b+1); }
       const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); lg.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); lg.setIndex(idx); lg.computeVertexNormals(); const lf=new THREE.Mesh(lg,M.foglia); lf.castShadow=lf.receiveShadow=true; g.add(lf); }
     // gusci vuoti: per stadio 1,2,3,5 (alcuni rotti)
     { const cfg=[[[.0,0,.05,1,0]],[[-.04,.03,.055,1,.5],[.07,-.02,.04,.65,2]],[[-.07,.02,.06,1,0],[.05,.04,.05,1,1.7],[.0,-.04,.045,.7,3.3]],
         [[-.12,.02,.075,1,.2],[.1,.05,.06,1,1.9],[-.02,-.05,.05,.7,3.1],[.18,-.03,.045,1,4.4],[-.2,-.05,.05,.62,5.5]]][i4];
-      cfg.forEach((c,k)=>{ const sg=new THREE.Mesh(shell(R,c[2]*1.5,c[3],k+4),M.guscio); sg.rotation.set(Math.PI*.5*(k%2?.7:-.2)+R()*.4,c[4],Math.PI/2*(k%3?0:1)); sg.updateMatrixWorld(); const bb=new THREE.Box3().setFromObject(sg); sg.position.set(c[0],-bb.min.y+.002,c[1]); sg.castShadow=true; sg.receiveShadow=true; g.add(sg); }); }
+      cfg.forEach((c,k)=>{ const sg=new THREE.Mesh(shell(R,c[2]*.9,c[3],k+4),M.guscio); sg.rotation.set(Math.PI*.5*(k%2?.7:-.2)+R()*.4,c[4],Math.PI/2*(k%3?0:1)); sg.updateMatrixWorld(); const bb=new THREE.Box3().setFromObject(sg); sg.position.set(c[0],-bb.min.y+.002,c[1]+.12); sg.castShadow=true; sg.receiveShadow=true; g.add(sg); }); }
     // muschio al margine
     if(st>=3){ const n=st===3?3:5; for(let k=0;k<n;k++){ const a=R()*TAU, D=dome(.025+R()*.03,.016+R()*.012,.03,10,5,.35,20+k,4); const mm=new THREE.Mesh(D.g,M.muschio); mm.position.set(Math.sin(a)*(.12+R()*.1)*(W/.42)*1.2,0,Math.cos(a)*(.1+R()*.06)); g.add(mm); } }
     // scie di bava argentea
@@ -141,20 +158,20 @@ window.__CASE=function(THREE,env){
         const tr=new THREE.Mesh(ribbon(pts,.012,.006,.0065),M.bava); tr.renderOrder=2; f.add(tr); } g.add(f); fx.push(f); }
     return {g,fx,rad:W*.62+.04}; };
   // FRUTTO + PUPE DELLE MOSCHE ---------------------------------------------------
-  B.mosche=function(st,ctx){ const g=new THREE.Group(), M=mats(), R=rngS(404), fx=[], i4=st-1, rf=[.085,.08,.075,.07][i4], sq=[1,.88,.78,.55][i4], dent=[.03,.1,.14,.28][i4];
-    const fg=new THREE.SphereGeometry(1,22,13), p=fg.attributes.position, cols=new Float32Array(p.count*3), fresh=new THREE.Color(0x6a1c4a), ripe=new THREE.Color(0x4a1034), pulp=new THREE.Color(0xc04a5c), dry=new THREE.Color(0x2c1a1a), tmp=new THREE.Color(), cut=new V3(.55,.55,.6).normalize();
+  B.mosche=function(st,ctx){ const g=new THREE.Group(), M=mats(), R=rngS(404), fx=[], i4=st-1, rf=[.13,.125,.115,.105][i4], sq=[1,.88,.78,.55][i4], dent=[.03,.1,.14,.28][i4];
+    const fg=new THREE.SphereGeometry(1,22,13), p=fg.attributes.position, cols=new Float32Array(p.count*3), fresh=new THREE.Color(0x9a2a5c), ripe=new THREE.Color(0x7a2250), pulp=new THREE.Color(0xd05a6c), dry=new THREE.Color(0x5a3030), tmp=new THREE.Color(), cut=new V3(.55,.55,.6).normalize();
     for(let i=0;i<p.count;i++){ let x=p.getX(i),y=p.getY(i),z=p.getZ(i); const drup=.035*Math.abs(Math.sin(x*21)*Math.sin(y*19+z*8)), n=1+dent*2*fbm(x*2.2,y*2.2,z*2.2,7)-drup*(st<4?1:.4), k=rf*n; let yy=y*k*sq; if(yy<-rf*.55*sq) yy=-rf*.55*sq+(yy+rf*.55*sq)*.2;
       p.setXYZ(i,x*k,yy+rf*sq*.55,z*k); const d=new V3(x,y,z).normalize().dot(cut); tmp.copy(st===1?fresh:st===2?ripe:st===3?ripe:dry); if(st===3&&d>.62){ const t=clamp((d-.62)*6); tmp.lerp(pulp,t); if(t>.5){ const q=p.getX(i),rr=p.getY(i); p.setXYZ(i,x*k-cut.x*.012*t,yy+rf*sq*.55-cut.y*.012*t,z*k-cut.z*.012*t); } } if(st>=2) tmp.multiplyScalar(.85+.3*vn(x*5,y*5,z*5)); cols[i*3]=tmp.r; cols[i*3+1]=tmp.g; cols[i*3+2]=tmp.b; }
     fg.setAttribute('color',new THREE.BufferAttribute(cols,3)); surfUV(fg,1,.4); fg.computeVertexNormals(); const fm=new THREE.Mesh(fg,M.frutto); fm.castShadow=fm.receiveShadow=true; g.add(fm);
     const pivot=new THREE.Group(); // picciolo
     if(st<4){ const sg=new THREE.CylinderGeometry(.004,.006,.04,5,1,true), sm_=new THREE.Mesh(sg,M.rametto); sm_.position.set(0,rf*sq*1.1+.015,0); sm_.rotation.z=.25; g.add(sm_); }
     // pupe: ovali marrone-rossicci, lucidi, mezze interrate
-    { const np=[0,3,8,15][i4], pg=new THREE.SphereGeometry(1,7,5), it=[], it2=[]; for(let k=0;k<np;k++){ const a=k*2.4+R(), rr=rf*1.25+.03+R()*.1*(1+i4*.35), open=st===4&&k%4===3, e=new THREE.Euler((R()-.5)*.8,R()*TAU,(R()-.5)*.6+Math.PI/2);
-        (open?it2:it).push({p:new V3(Math.sin(a)*rr,.002+.002*R(),Math.cos(a)*rr),q:new Q().setFromEuler(e),s:new V3(.0105,.0052,.0052)}); }
+    { const np=[0,3,8,15][i4], pg=new THREE.SphereGeometry(1,7,5), it=[], it2=[]; for(let k=0;k<np;k++){ const a=k*2.4+R(), rr=rf*1.15+.03+R()*.07*(1+i4*.3), open=st===4&&k%4===3, e=new THREE.Euler((R()-.5)*.8,R()*TAU,(R()-.5)*.6+Math.PI/2);
+        (open?it2:it).push({p:new V3(Math.sin(a)*rr,.002+.002*R(),Math.cos(a)*rr),q:new Q().setFromEuler(e),s:new V3(.026,.013,.013)}); }
       inst(g,pg,M.pupa,it,true); inst(g,pg,M.pupaV,it2,true);
       if(st===4){ const wg=new THREE.PlaneGeometry(.022,.009), wi=[]; for(let k=0;k<6;k++){ const a=R()*TAU, rr=rf*1.2+R()*.2; wi.push({p:new V3(Math.sin(a)*rr,.003,Math.cos(a)*rr),q:new Q().setFromEuler(new THREE.Euler(-Math.PI/2,0,R()*TAU)),s:.7+R()*.6}); } const wm=inst(g,wg,M.seta,wi,true); } }
     // muffa e bagliore sul frutto che avvizzisce
-    if(st>=3){ const mg=new THREE.SphereGeometry(1,7,4), it=[], f=new THREE.Group(); for(let k=0;k<(st===3?4:8);k++){ const d=new V3(R()-.5,R()*.6+.1,R()-.5).normalize(); it.push({p:new V3(d.x*rf*.98,d.y*rf*sq*.98+rf*sq*.55,d.z*rf*.98),q:new Q(),s:new V3(.014+R()*.012,.006,.014+R()*.01)}); }
+    if(st>=3){ const mg=new THREE.SphereGeometry(1,7,4), it=[], f=new THREE.Group(); for(let k=0;k<(st===3?3:5);k++){ const d=new V3(R()-.5,R()*.6+.1,R()-.5).normalize(); it.push({p:new V3(d.x*rf*.98,d.y*rf*sq*.98+rf*sq*.55,d.z*rf*.98),q:new Q(),s:new V3(.014+R()*.01,.005,.014+R()*.01)}); }
       inst(g,mg,M.muffa,it); const lm=[]; it.forEach(o=>lm.push({p:o.p.clone().add(new V3(0,.004,0)),q:new Q(),s:new V3(.7,.7,.7).multiplyScalar(.01)})); inst(f,new THREE.SphereGeometry(1,6,4),M.luce,lm); g.add(f); fx.push(f); }
     return {g,fx,rad:[.17,.18,.2,.24][i4]}; };
   // RAGNI: rifugio di seta nella foglia arrotolata, in alto contro il vetro -------------------
@@ -181,13 +198,13 @@ window.__CASE=function(THREE,env){
     { const th0=Math.PI/2-(TAU+arc)/2, gapA=Math.PI/2, gw=(TAU-arc)/2, bg=new THREE.CylinderGeometry(r,r*.98,L,26,8,true,th0,arc), p=bg.attributes.position, uv=bg.attributes.uv; for(let i=0;i<p.count;i++){ const x=p.getX(i),y=p.getY(i),z=p.getZ(i), k=1+.1*fbm(x*18,y*5,z*18,2)+.05*Math.sin(y*40+z*30); p.setXYZ(i,x*k,y,z*k); uv.setXY(i,uv.getX(i)*arc*r*2,y*2+L); } bg.rotateZ(Math.PI/2); bg.computeVertexNormals(); const bm=new THREE.Mesh(bg,M.corteccia); bm.castShadow=bm.receiveShadow=true; log.add(bm);
       // gallerie scavate nel legno scoperto
       const ng=[0,2,5,8][i4], gm=[]; for(let k=0;k<ng;k++){ const P=[]; let xx=-L*.42+R()*L*.3, aa=gapA+(R()-.5)*gw*.8; for(let i=0;i<22;i++){ const rr=r*.97; P.push(new V3(xx,Math.sin(aa)*rr,Math.cos(aa)*rr)); xx+=.008+.006*R(); aa=clamp(aa+(R()-.5)*.6,gapA-gw+.25,gapA+gw-.25); }
-        const tg=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(P),24,.0042+.0016*R(),4,false); log.add(new THREE.Mesh(tg,M.legnoScuro)); gm.push(P[8]); }
+        const tg=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(P),24,.003+.0012*R(),4,false); log.add(new THREE.Mesh(tg,M.legnoScuro)); gm.push(P[8]); }
       // fori d'uscita sulla corteccia
       const nh=[1,1,2,4][i4]; for(let k=0;k<nh;k++){ const a=th0+arc*(.15+.7*R()), x=-L*.4+R()*L*.8, nn=new V3(0,Math.sin(a),Math.cos(a)), c=new THREE.Mesh(new THREE.CircleGeometry(.0075+.003*R(),9),M.buco); c.position.set(x,Math.sin(a)*r*1.06,Math.cos(a)*r*1.06); c.quaternion.setFromUnitVectors(new V3(0,0,1),nn); log.add(c); }
       // funghetti luminosi nelle gallerie (mutazione)
       const cap=new THREE.SphereGeometry(.007,6,3,0,TAU,0,Math.PI/2), it=[]; gm.forEach(pp=>{ const nn=new V3(0,pp.y,pp.z).normalize(); it.push({p:pp.clone().addScaledVector(nn,.003),q:new Q().setFromUnitVectors(UP,nn),s:1+R()*.6}); }); const fg=new THREE.Group(); inst(fg,cap,M.luce,it); log.add(fg); fx.push(fg); }
     // rosura chiara e pallina di terra
-    { const gg=new THREE.OctahedronGeometry(.005,0), it=[], n=[0,8,22,44][i4]; for(let k=0;k<n;k++){ const x=(R()-.5)*L*.9, side=R()<.5?1:-1, dz=r*(.9+R()*1.6)*side; it.push({p:new V3(x,.003,dz),q:new Q().setFromEuler(new THREE.Euler(R()*6,R()*6,R()*6)),s:.6+R()*1.3,c:[0xd8c49a,0xc9b080,0xe6d8b4,0xb8a070][k&3]}); } const mm=pm('terriccio',{fb:0xd8c49a,tint:0xffffff,lift:3.6,rough:1}); inst(g,gg,mm,it,true); }
+    { const gg=new THREE.OctahedronGeometry(.009,0), it=[], n=[0,8,22,44][i4]; for(let k=0;k<n;k++){ const x=(R()-.5)*L*.9, side=R()<.5?1:-1, dz=r*(.9+R()*1.6)*side; it.push({p:new V3(x,.003,dz),q:new Q().setFromEuler(new THREE.Euler(R()*6,R()*6,R()*6)),s:.6+R()*1.3,c:[0xd8c49a,0xc9b080,0xe6d8b4,0xb8a070][k&3]}); } const mm=pm('terriccio',{fb:0xd8c49a,tint:0xffffff,lift:3.6,rough:1}); inst(g,gg,mm,it,true); }
     if(st===4){ const bg=new THREE.SphereGeometry(.03,12,8), p=bg.attributes.position; for(let i=0;i<p.count;i++){ const k=1+.12*fbm(p.getX(i)*30,p.getY(i)*30,p.getZ(i)*30,5); p.setXYZ(i,p.getX(i)*k,p.getY(i)*k*.95,p.getZ(i)*k); } surfUV(bg,1,.15); bg.computeVertexNormals(); const bm=new THREE.Mesh(bg,M.suolo); bm.position.set(L*.5+.06,.027,.06); bm.castShadow=bm.receiveShadow=true; g.add(bm);
       const tk=ribbon([[L*.5+.03,.06],[L*.5-.04,.05],[L*.5-.1,.07]],.006,.004,.004); g.add(new THREE.Mesh(tk,M.suoloC)); }
     return {g,fx,rad:L*.6+.03}; };
@@ -215,6 +232,7 @@ window.__CASE=function(THREE,env){
     let o; try{ o=B[id](st,{x:pos[0],z:pos[1],gx:GAL[0],gz:GAL[1]}); }catch(e){ console.warn('casa',id,e&&e.message); o={g:new THREE.Group(),fx:[],rad:.2}; }
     H.inner=o.g; H.fx=o.fx||[]; H.rad=o.rad; H.high=!!o.high; H.w.add(o.g); if(H.st!==st&&!first) H.t0=performance.now()/1000; H.st=st; H.key=key; H.w.rotation.y=id==='formiche'?0:(id==='ragni'?0:(id.length*1.7)%TAU);
     o.g.traverse(m=>{ if(m.isInstancedMesh&&m.userData.detail) m.visible=detail; }); return H; }
+  onForm=()=>{ const H=HOUSES.formiche; if(H){ H.key=''; placeKey=''; } };
   const api={g:root,houses:HOUSES,
     get force(){ return force; }, set force(v){ force=v; placeKey=''; },
     level(l){ lvl=l; MATS.forEach(e=>{ if(e.F.ready) apply(e); }); detail=l<2; Object.values(HOUSES).forEach(H=>H.inner&&H.inner.traverse(m=>{ if(m.isInstancedMesh&&m.userData.detail) m.visible=detail; })); },

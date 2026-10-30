@@ -29,7 +29,9 @@ if os.path.exists(_LU+'/close.glb'):
         mk=_I.open(_LU+'/maschera_emissiva_'+t+'.png').convert('L').filter(_F.GaussianBlur(rad))
         a=_np.clip((_np.asarray(mk,dtype=_np.float32)/255-.11)/.24,0,1)
         GLBX['lumache']['glow_'+t]=_webp(_I.fromarray((a*255).astype('uint8')).resize((sz,sz),_I.BILINEAR).convert('RGB'),85)
+FORM_B64=_b64('assets/modelli/formicaio/stadi.glb') if os.path.exists('assets/modelli/formicaio/stadi.glb') else ''
 glb='window.__GLB='+json.dumps(GLB,separators=(',',':'))+';'
+glb+='window.__FORMICAIO='+json.dumps(FORM_B64)+';'
 glb+='window.__GLBX='+json.dumps(GLBX,separators=(',',':'))+';'
 # Scenografia del video iniziale (app/apertura.js, agente finali): stessi file e stesso formato di __GLB ({id:{close}}),
 # in una chiave a parte perché non sono specie. Il meteorite entra qui (solo close, mai hero: DECISIONI §5).
