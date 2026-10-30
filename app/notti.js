@@ -2,15 +2,16 @@
 (function(){
 const nd=(v,k,d)=>(v.needs&&v.needs[k]!=null)?v.needs[k]:d, ogg=(v,id)=>v.setup.oggetti.includes(id), giu=(A,k,q)=>{ const n=A.sim.view().needs, o={}; o[k]=Math.max(0,Math.min(1,n[k]+q)); A.sim.setNeeds(o); };
 const has=(v,id)=>v.sp.some(x=>x.id===id&&x.alive), hasP=(v,id)=>v.setup.piante.includes(id), soc=v=>v.sp.find(x=>x.alive&&x.society), mut=(v,m)=>v.sp.some(x=>x.alive&&(x.mut||[]).includes(m));
+const vr=(v,a)=>a[(((v&&v.d)||0)%a.length+a.length)%a.length];
 const NOTTI=[
  {id:'luna',ic:'🌕',w:2,c:v=>hasP(v,'muschio'),x:'C’è la luna piena. Entra dal vetro e fa brillare il muschio bagnato, goccia per goccia.'},
  {id:'temporale',ic:'⛈️',w:2,c:()=>true,x:'Fuori piove forte. Il vetro trema a ogni tuono e dentro si forma la condensa.',fx:A=>A.bumpNeeds({um:.15})},
  {id:'graffio',ic:'🔦',w:3,c:v=>has(v,'formiche'),x:'Senti un graffio leggero sul vetro. Accendi la torcia?',ch:[{l:'Accendi la torcia',o:'Una fila di formiche lavora al buio. Non si fermano neanche per te.',fx:A=>A.giveXP(10)},{l:'Lascia stare',o:'Torni a dormire. Il graffio continua, piano, fino all’alba.'}]},
  {id:'sogno',ic:'💤',w:2,c:()=>true,x:'Sogni il sasso che ti parla. Non capisci le parole, ma sai che ha fame di luce.',fx:A=>A.sim.charge(10)},
- {id:'nonna',ic:'✉️',w:2,c:(v,G)=>(G.ui.fase||0)>=4,x:'Sul comodino c’è un biglietto della nonna: «Domani ti porto una cosa per il tuo mondo».',fx:A=>A.pullArrival&&A.pullArrival()},
+ {id:'nonna',ic:'✉️',w:2,c:(v,G)=>(G.ui.fase||0)>=4,x:v=>vr(v,['Sul comodino c’è un biglietto della nonna: «Domani ti porto una cosa per il tuo mondo».','Un biglietto sotto la lampada, scritto in fretta: «Domani passo dal vaso, e ti lascio una sorpresa».','La nonna ha lasciato due righe sul cuscino: «Ho visto qualcosa che piacerà al tuo mondo. A domani».']),fx:A=>A.pullArrival&&A.pullArrival()},
  {id:'lampi',ic:'⚡',w:2,c:v=>v.setup.oggetti.length>0,x:v=>'Il sasso fa tre lampi uno dopo l’altro, tutti verso '+v.__ogg+'.',fx:A=>A.sim.charge(15)},
  {id:'silenzio',ic:'🌫️',w:2,c:v=>v.vit<45&&v.sp.some(x=>x.alive),x:'Stanotte il vaso è silenzioso. Nessuno si muove, come se aspettassero qualcosa da te.'},
- {id:'sete',ic:'🥛',w:3,c:v=>v.needs.um<.5,x:'Ti svegli con la gola secca e pensi al vaso. Gli porti un goccio d’acqua?',ch:[{l:'Sì, un goccio',o:'La terra beve in silenzio. Torni a letto col cuore leggero.',fx:A=>A.bumpNeeds({um:.2})},{l:'Domani',o:'Ti rigiri nel letto. Domani, promesso.'}]},
+ {id:'sete',ic:'🥛',w:3,c:v=>v.needs.um<.5,x:v=>vr(v,['Ti svegli con la gola secca e pensi al vaso. Gli porti un goccio d’acqua?','Bevi un bicchiere in cucina e ti viene in mente il vaso: avrà sete anche lui? Gli porti un goccio?','Nel buio senti il bisogno di bere, e subito pensi alla terra del vaso. Un goccio per lei?']),ch:[{l:'Sì, un goccio',o:'La terra beve in silenzio. Torni a letto col cuore leggero.',fx:A=>A.bumpNeeds({um:.2})},{l:'Domani',o:'Ti rigiri nel letto. Domani, promesso.'}]},
  {id:'lucciola',ic:'✨',w:2,c:v=>mut(v,'bioluminescenza')||!!soc(v),x:'Una lucciola si posa sul vetro, fuori. Dentro, qualcuno si gira a guardarla.'},
  {id:'canto',ic:'🎶',w:2,c:v=>!!soc(v),x:'Dal vaso arriva un ronzio regolare, quasi una canzone. Stanno celebrando qualcosa.'},
  {id:'ombra',ic:'✋',w:1,c:v=>v.sp.some(x=>x.alive),x:'Un’ombra grande passa sul vetro. Era solo la tua mano, ma dentro si sono nascosti tutti.'},

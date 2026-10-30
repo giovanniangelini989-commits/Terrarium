@@ -31,6 +31,9 @@ const ARR={
 // REQ[kind] resta [testo, pulsante] (firma invariata per app3.js), ma ogni lettura sceglie una variante
 // legata a ciò che c'è nel vaso. La scelta resta ferma finché la richiesta è la stessa (giorno + richieste fatte).
 const vivo=(v,id)=>v.sp.some(x=>x.id===id&&x.alive), pianta=(v,id)=>v.setup.piante.includes(id), popolo=v=>v.sp.find(x=>x.alive&&x.society);
+// Preposizioni articolate: prep('a','le formiche') → «alle formiche», prep('di','l’acqua') → «dell’acqua». Senza articolo restano separate («a Marta»).
+const PREP_T={di:{il:'del',lo:'dello',la:'della','l’':'dell’',i:'dei',gli:'degli',le:'delle'},a:{il:'al',lo:'allo',la:'alla','l’':'all’',i:'ai',gli:'agli',le:'alle'},da:{il:'dal',lo:'dallo',la:'dalla','l’':'dall’',i:'dai',gli:'dagli',le:'dalle'},in:{il:'nel',lo:'nello',la:'nella','l’':'nell’',i:'nei',gli:'negli',le:'nelle'},su:{il:'sul',lo:'sullo',la:'sulla','l’':'sull’',i:'sui',gli:'sugli',le:'sulle'}};
+function prep(p,sint){ const t=PREP_T[p], str=String(sint||''); if(!t) return p+' '+str; const m=/^(il|lo|la|i|gli|le)\s+(.*)$/i.exec(str); if(m){ const a=m[1].toLowerCase(); return t[a]+' '+m[2]; } const e=/^(l[’'])(.*)$/i.exec(str); if(e) return t['l’']+e[2]; return p+' '+str; }
 const OGG_BREVE={statuina:'la statuina',orologio:'l’orologio',giocattolo:'l’orso di stoffa',specchio:'lo specchietto',libro:'il librino',moneta:'la moneta',radio:'la radiolina',candela:'la candela'};
 const REQV={
  pulisci:[
@@ -68,7 +71,7 @@ const REQV={
   {c:v=>!!popolo(v),x:'Stanotte il popolo ha spostato qualcosa. Vuoi vedere cosa.',b:'Guarda da vicino'},
   {c:v=>v.sp.some(x=>x.alive&&x.mut.length),x:'Uno di loro cammina in modo diverso dagli altri. Vuoi guardarlo da vicino.',b:'Osserva il vaso'},
   {c:v=>v.E>60,x:'Il sasso batte forte, stamattina. Chi gli sta vicino si comporta in modo strano?',b:'Osserva il vaso'},
-  {c:v=>v.setup.oggetti.length>0&&v.sp.some(x=>x.alive),x:v=>'Qualcuno gira intorno a '+(OGG_BREVE[v.setup.oggetti[0]]||'qualcosa')+' da ieri. Vuoi sapere perché.',b:'Guarda da vicino'},
+  {c:v=>v.setup.oggetti.length>0&&v.sp.some(x=>x.alive),x:v=>'Qualcuno gira intorno '+prep('a',OGG_BREVE[v.setup.oggetti[0]]||'qualcosa')+' da ieri. Vuoi sapere perché.',b:'Guarda da vicino'},
   {c:v=>v.wars.length>0,x:'Le due fazioni sono ferme da ore. Chi si muoverà per prima?',b:'Osserva il vaso'},
   {c:v=>v.sp.some(x=>x.alive&&x.monster),x:'La creatura più grande si è fermata contro il vetro. Sta guardando te?',b:'Guarda da vicino'},
   {c:v=>pianta(v,'felce'),x:'Sotto la felce c’è un’ombra che si muove. Vuoi sapere chi ci abita.',b:'Osserva il vaso'},
@@ -76,7 +79,7 @@ const REQV={
   {c:v=>vivo(v,'ragni'),x:'Il ragno non si muove da stamattina. Sta aspettando qualcosa.',b:'Osserva il vaso'},
   {c:v=>v.sp.filter(x=>x.alive).length>=2,x:v=>{ const a=v.sp.filter(x=>x.alive); return cap(the(a[0].nome))+' e '+the(a[1].nome)+' si incrociano sul muschio. Si conoscono?'; },b:'Guarda da vicino'},
   {x:'Il vaso sembra fermo. Ma niente, qui dentro, è fermo davvero.',b:'Osserva il vaso'}],
- // il pulsante notte non c'è più: le notti passano da sole (o con la carta «Salta 2 giorni»)
+ // il pulsante notte non c'è più: le notti passano da sole (o con una notte di scorta)
  notte:[
   {x:'Il vaso ha bisogno di tempo. Le notti passano da sole: domani troverai qualcosa di nuovo.',b:'Osserva il vaso'},
   {x:'Adesso tocca al vaso. Mentre dormi, qualcuno lì dentro lavora.',b:'Osserva il vaso'}]
@@ -258,7 +261,7 @@ const SALTO_NO={
  letargo:'Il vaso dorme. Sveglialo con una cura, poi salta.',
  finale:'Il vaso ha trovato la sua strada. Prima chiudi il capitolo.',
  decisione:'Qualcosa nel vaso aspetta una tua decisione.'};
-const SALTO_DONO=n=>!(n>0)?'':n===1?'Sul comodino trovi una carta nuova: «Salta 2 giorni».':'Sul comodino trovi '+n+' carte nuove: «Salta 2 giorni».';
+const SALTO_DONO=n=>!(n>0)?'':n===1?'Sul comodino trovi una notte di scorta.':'Sul comodino trovi '+n+' notti di scorta.';
 const SALTO_FATTO='Chiudi gli occhi. Quando li riapri, nel vaso sono passati due giorni.';
 // ---------- atti ----------
 function atto(v){ if(v.finalePending) return {n:4,t:'Il destino',x:'Il vaso ha trovato la sua strada. Manca solo da decidere se chiudere il capitolo.'};
@@ -268,16 +271,16 @@ function atto(v){ if(v.finalePending) return {n:4,t:'Il destino',x:'Il vaso ha t
 function biscotto(){ return {intro:'Un’ombra sul muro. Poi una zampa sul coperchio. Biscotto ha deciso che il barattolo è suo.',pallina:'Biscotto insegue la pallina e dimentica il vaso. Tu respiri.',pallinaNo:'Biscotto ignora la pallina e dà una zampata al coperchio.',davanzale:'Sposti il vaso sul davanzale, fuori portata. Qui il sole è più forte: il sasso lo sente.',ok:'Il vaso è salvo. Per questa volta.',male:'Il barattolo cade sul ripiano. Non si rompe, ma il vetro si scheggia: per qualche giorno entrerà meno luce.'}; }
 // ---------- tempo, mani, calendario, fine del vaso (bozze in seconda persona; motore + storia) ----------
 // Ritorno e dono della nonna (docs/CONTRATTI.md «Ritorno…»). Seconda persona, mai un obbligo.
-const RITORNO={notti:n=>n===1?'È passata una notte.':'Sono passate '+n+' notti.',titolo:'Mentre non c’eri',buongiorno:'Buongiorno',guarda:'Guarda il vaso',avanza:'Avanza di una notte',avanzaTetto:'Per ora basta notti: il vaso ha bisogno di respirare.',avanzaDone:'Una notte passa. Il sasso batte, il muschio respira.',dono:'Sul davanzale'};
+const RITORNO={notti:n=>n===1?'È passata una notte.':'Sono passate '+n+' notti.',titolo:'Mentre non c’eri',buongiorno:'Buongiorno',guarda:'Guarda il vaso',avanza:'Avanza di una notte',avanzaDue:'Tieni premuto per due notti',avanzaTetto:'Non hai più notti gratis e ti mancano gocce: il vaso ha bisogno di respirare.',avanzaDone:'Una notte passa. Il sasso batte, il muschio respira.',dono:'Sul davanzale'};
 // Missioni (seconda persona, gentili: niente scadenze). Le gocce sono «gocce di rugiada».
 const MISS={art:{coleotteri:'i',ragni:'i'},gocce:'gocce di rugiada',titolo:'Missioni',riposo:'Per oggi basta così: domani arrivano missioni nuove.',vuoto:'Per ora nessuna missione: il vaso deve prima riempirsi.',cambia:'Cambia',cambiata:'Una missione non era più possibile: ne è arrivata un’altra.',fatta:'Missione compiuta',guarda:'Guarda le missioni',
-  spendi:{avanza:'Una notte in più',salto:'Un Salta 2 in più'},spendiSotto:{avanza:'Oltre il tetto di questa visita.',salto:'Si aggiunge alle tue carte.'},ok:{avanza:'Hai una notte in più da usare.',salto:'Hai un Salta 2 in più.'},no:{gocce:'Ti servono ancora un po’ di gocce.',tetto:'Ne hai già abbastanza da parte.',inizio:'Il vaso deve prima riempirsi.'},
+  spendi:{avanza:'Una notte in più',carta:'Pesca una carta',nonna:'Un altro dono della nonna'},spendiSotto:{avanza:'Oltre le tre gratis di questa visita.',carta:'Una carta del mazzo, una al giorno.',nonna:'Un secondo regalo sul davanzale, oggi.'},ok:{avanza:'Hai una notte in più da usare.',carta:'Una carta nuova ti aspetta.',nonna:'La nonna ha lasciato qualcosa.'},no:{gocce:'Ti servono ancora un po’ di gocce.',tetto:'Ne hai già abbastanza da parte.',oggi:'Per oggi basta così: domani si può ancora.',inizio:'Il vaso deve prima riempirsi.'},cambiaCosto:n=>'Cambia · '+n+(n===1?' goccia':' gocce'),
   grandi:[{t:'Cinque giorni con il vaso',s:'Una cura in cinque giorni diversi. Niente fretta: i giorni si sommano, non si perdono.',f:'Passa a trovare il vaso in cinque giorni diversi. Basta una cura, quando vuoi tu.'},
     {t:'Cinque giorni di sguardi',s:'Osserva il vaso in cinque giorni diversi. I giorni si sommano.',f:'Fermati a guardare il vaso in cinque giorni diversi. Ogni giorno ti mostra qualcosa.'},
     {t:'Quattro notti in più',s:'Fai passare almeno una notte in quattro giorni diversi.',f:'Lascia che il vaso viva quattro notti, in quattro giorni diversi. Il tempo lavora per te.'}],
   altre:'Le prossime arrivano col tempo.',nuova:'Una nuova missione',falla:'Fallo ora',dopo:'Più tardi',fallo:'Fallo',piu:'In più giorni',tutte:'Le tue missioni',chiudi:'Chiudi',
   guida:{acqua:'Tocca Acqua',pulisci:'Tocca Pulisci',nutri:'Tocca Nutri',notte:'Tocca la luna per far passare una notte',tocca:'Tocca le creature nel vaso',attendi:'Basta aspettare: ci pensa il tempo.',quaderno:'Guarda nel quaderno.'},
-  vivi:{t:(n,a)=>'Tieni in vita '+a+' '+n+' per 3 giorni',s:'Basta che ci siano ancora, giorno dopo giorno.',f:(n,a)=>'Resta accanto a '+a+' '+n+' per tre giorni. Non devi fare altro che esserci.'},
+  vivi:{t:(n,a)=>'Tieni in vita '+a+' '+n+' per 3 giorni',s:'Basta che ci siano ancora, giorno dopo giorno.',f:(n,a)=>'Resta accanto '+prep('a',a+' '+n)+' per tre giorni. Non devi fare altro che esserci.'},
   pota:{t:'Pota la felce prima che copra il muschio',s:'Quando la felce cresce troppo, compare il tasto Pota.',f:'Una fronda sta per toccare il vetro. Prendi le forbici e falla tornare al suo posto.'},
   osserva:{t:(n,a)=>'Osserva da vicino '+a+' '+n,s:'Tocca Osserva mentre sono nel vaso.',f:(n,a)=>'Avvicinati al vetro: '+a+' '+n+' hanno qualcosa da farti vedere.'},
   umidita:{t:'Tieni l’umidità giusta per 2 giorni',s:'Né secco né zuppo. I giorni buoni si sommano.',f:'Senti l’aria del vaso: né secca né zuppa. Tienila così per due giorni.'},
@@ -352,5 +355,5 @@ const ATL={
  pl:{muschio:'Il muschio non ha vere radici: beve con le foglie e ama l’aria umida.',felce:'Le felci si riproducono con le spore, non con i semi.',fungo:'Il fungo che vedi è solo il frutto: il corpo vero è una rete di fili sotto terra, il micelio.',succulenta:'Conserva l’acqua nelle foglie: troppa acqua la fa marcire.',carnivora:'Prende dagli insetti l’azoto che la terra povera non le dà.'},
  mu:{gigantismo:'Gli insetti respirano con piccoli tubi, le trachee: per questo non diventano mai troppo grandi, e un gigante paga un prezzo.',radioattivo:'Alcuni animali resistono alle radiazioni perché riparano il DNA più in fretta. Nessuno emette radiazioni: la resistenza è l’unico tratto vero.',intelligenza:'Le formiche non diventano intelligenti da sole: la loro forza è lavorare in gruppo, e chi vive in gruppo impara.',corazza:'Un guscio più spesso protegge, ma pesa e costa energia a ogni muta.',velenoso:'Molte creature piccole hanno veleno e colori vivi che avvisano: «non mangiarmi».',iperfertilita:'Fare molte uova piccole funziona finché c’è cibo; poi il numero crolla.',bioluminescenza:'Alcuni funghi brillano davvero, con un orologio interno; gli insetti di casa quasi mai.'},
  ev:{regina:['La prima regina','Una colonia ha una regina che depone tutte le uova.'],covata:['La prima covata','Uova, larve e pupe stanno nel nido: vanno tenute al caldo e all’umido giusti.'],sciame:['Il primo sciame','Le termiti alate sciamano dopo l’umido, per fondare nuove colonie.'],collemboli:['Il primo collembolo','I collemboli sono pulitori minuscoli: mangiano muffa e detriti, e saltano con una piccola molla.'],giungla:['La prima giungla','Quando le piante crescono senza freni fanno ombra e le più piccole soffrono: serve potare.'],popolo:['Il primo popolo','Il popolo è la parte fantastica del meteorite: nessun insetto vero costruisce statuine.'],gigante:['Il primo gigante','Gli insetti veri non crescono così: qui è colpa del sasso.'],guerra:['La prima guerra','In natura le colonie di formiche si combattono per il territorio.']}};
-window.__story={RITORNO,OGGI,SCHEDE,ATL,NONNA,MISS,TEMPO,CAL,the,cap,pick,TITOLI,PRO,OGG_VOCE,ARR,REQ,REQV,narra,osserva,ambient,PAG,DIARIO,diario,MITO,EPI,epilogo,atto,biscotto,MUTMAP,MUTFX,LETARGO,letargo,SALTO_NO,SALTO_DONO,SALTO_FATTO,FILM_FEDE};
+window.__story={prep,RITORNO,OGGI,SCHEDE,ATL,NONNA,MISS,TEMPO,CAL,the,cap,pick,TITOLI,PRO,OGG_VOCE,ARR,REQ,REQV,narra,osserva,ambient,PAG,DIARIO,diario,MITO,EPI,epilogo,atto,biscotto,MUTMAP,MUTFX,LETARGO,letargo,SALTO_NO,SALTO_DONO,SALTO_FATTO,FILM_FEDE};
 })();

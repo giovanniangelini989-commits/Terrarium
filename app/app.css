@@ -374,3 +374,6 @@ body:has(.mpill) .toast{bottom:calc(env(safe-area-inset-bottom) + 218px)}
 .gsp{position:fixed;z-index:9994;width:8px;height:8px;border-radius:50%;background:#CFFFF1;box-shadow:0 0 8px #7CF5C8;pointer-events:none}
 .gring{position:fixed;z-index:9993;width:90px;height:90px;border-radius:50%;border:3px solid #7CF5C8;box-shadow:0 0 24px rgba(124,245,200,.6);pointer-events:none}
 @media (prefers-reduced-motion:reduce){.rb.av.lit::after{animation-duration:.4s;animation-iteration-count:1}}
+/* Notte: tieni premuto = due notti. Niente menu di sistema sul tocco lungo; l'effetto e' solo transform e torna a riposo. */
+.rb.av{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+.rb.av.hold{transform:scale(.94);transition:transform .12s cubic-bezier(.22,1,.36,1)}
