@@ -378,3 +378,16 @@ body:has(.mpill) .toast{bottom:calc(env(safe-area-inset-bottom) + 218px)}
 .rb.sk{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
 .rb.sk small{top:auto;bottom:-3px}
 .rb.sk:active{transform:scale(.94)}
+
+/* Riscuoti: missione completata, premio da ritirare (verde menta, un solo accento) */
+.nf.rc{border-color:rgba(124,245,200,.85)}
+.nf small.rcb{background:#7CF5C8;color:#0d241c;gap:1px;padding:0 5px 0 3px}
+.nf small.rcb svg{width:10px;height:10px;display:block}
+.mi.done{border-color:rgba(124,245,200,.7)}
+.mi .rcdone{color:#7CF5C8;font-weight:800}
+.mi .rcbtn{width:auto;flex:none;min-height:0;padding:6px 18px;font-size:13px;background:#7CF5C8;color:#0d241c;border-color:transparent;transition:transform .12s ease-out}
+.mi .rcbtn:active{transform:scale(.94)}
+.mpill.ok{box-shadow:0 0 0 1px rgba(124,245,200,.7)}
+.mpill.ok .mp-n{color:#7CF5C8}
+.mpill .mp-go.rc{background:#7CF5C8;color:#0d241c}
+@media (prefers-reduced-motion: reduce){.mi .rcbtn{transition:none}}
