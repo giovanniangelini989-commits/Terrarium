@@ -110,13 +110,16 @@ with sync_playwright() as p:
     # osserva con zoom
     pg.evaluate('window.__fast=false'); pg.click('[data-a=osserva]'); pg.wait_for_timeout(1900); t('zoom cinematografico attivo',pg.locator('#cine .cstage canvas').count()==1); pg.screenshot(path=f'screenshots/{tag}_g3_zoom.png'); pg.click('#cine'); pg.wait_for_timeout(700); pg.evaluate('window.__fast=true')
     t('finito lo zoom il vaso torna in home',pg.locator('#cine').count()==0 and pg.locator('#vb canvas').count()==1)
-    # Notte SENZA __fast (bug del 30 ottobre: con le animazioni vere il giorno non avanzava). Tocco = una notte, tieni premuto = due.
-    drain(); goto('vaso'); pg.evaluate('window.__fast=false; __app.G.ui.avanza={n:0,visto:__app.nowMs()}; __app.sim.pending.length=0; __app.G.real.owed=0; __app.G.letargo=null'); pg.wait_for_timeout(300)
-    dn0=pg.evaluate("__app.sim.d"); pg.click('.rb.av'); pg.wait_for_timeout(1100); pg.screenshot(path=f'screenshots/{tag}_notte_buio.png'); pg.wait_for_timeout(2800)
-    t('Notte senza __fast: il giorno avanza di uno (transizione al buio)',pg.evaluate("__app.sim.d")==dn0+1 and pg.locator('.nite').count()==0,(dn0,pg.evaluate("__app.sim.d")))
-    drain(); pg.evaluate('__app.sim.pending.length=0; __app.G.real.owed=0'); dn1=pg.evaluate("__app.sim.d"); bb=pg.locator('.rb.av').bounding_box(); pg.mouse.move(bb['x']+bb['width']/2,bb['y']+bb['height']/2); pg.mouse.down(); pg.wait_for_timeout(700); pg.mouse.up(); pg.wait_for_timeout(3600)
-    t('Notte tenuta premuta: due notti di fila',pg.evaluate("__app.sim.d")>=dn1+2 and pg.locator('.nite').count()==0,(dn1,pg.evaluate("__app.sim.d")))
-    t('niente pulsante Salta 2',pg.locator('.rb.pw').count()==0 and pg.locator('[data-a=salto]').count()==0)
+    # Salta SENZA __fast (bug del 30 ottobre: con le animazioni vere il giorno non avanzava). Un tocco = 2 giorni; senza cariche né gocce non avanza.
+    drain(); goto('vaso'); pg.evaluate('window.__fast=false; __app.powerCards(); __app.G.power.salto=3; __app.G.power.resto=0; __app.sim.pending.length=0; __app.G.real.owed=0; __app.G.letargo=null; __ui.render()'); pg.wait_for_timeout(300)
+    t('un solo pulsante del tempo: Salta c\'è, Notte no',pg.locator('.rb.sk').count()==1 and pg.locator('[data-a=avanza]').count()==0 and 'Notte' not in pg.inner_text('.toolbar'))
+    t('Salta mostra le cariche (3/6)','3/6' in pg.inner_text('.rb.sk'),pg.inner_text('.rb.sk'))
+    dn0=pg.evaluate("__app.sim.d"); pg.click('.rb.sk'); pg.wait_for_timeout(1000); pg.screenshot(path=f'screenshots/{tag}_salta_buio.png'); pg.wait_for_timeout(3000)
+    t('Salta senza __fast: un tocco avanza di 2 giorni (transizione al buio)',pg.evaluate("__app.sim.d")==dn0+2 and pg.locator('.nite').count()==0 and pg.evaluate('__app.G.power.salto')==2,(dn0,pg.evaluate("__app.sim.d")))
+    drain(); pg.evaluate('__app.G.power.salto=0; __app.G.miss.gocce=0; __app.G.power.ultimoDono=__app.todayIdx(); __app.sim.pending.length=0; __app.G.real.owed=0; __app.G.power.resto=0; __app.G.letargo=null'); goto('vaso'); pg.wait_for_timeout(300); dn1=pg.evaluate("__app.sim.d"); pg.click('.rb.sk'); pg.wait_for_timeout(1500)
+    t('Salta senza cariche né gocce: non avanza',pg.evaluate("__app.sim.d")==dn1 and pg.locator('.nite').count()==0,(dn1,pg.evaluate("__app.sim.d")))
+    pg.evaluate('__app.G.miss.gocce=6'); goto('vaso'); pg.wait_for_timeout(300); pg.click('.rb.sk'); pg.wait_for_timeout(4000)
+    t('Salta con 6 gocce e nessuna carica: avanza di 2 e spende le gocce',pg.evaluate('__app.G.miss.gocce')==0 and (pg.evaluate("__app.sim.d")==dn1+2 or (pg.evaluate("__app.sim.d")==dn1+1 and pg.evaluate('__app.G.power.resto')==1)),(dn1,pg.evaluate("__app.sim.d")))
     # «Mentre non c'eri»: ogni avviso nomina la cura e ha il suo pulsante
     pg.wait_for_timeout(1500); drain(); pg.wait_for_timeout(400); drain(); pg.evaluate("document.querySelectorAll('.nite,#reveal').forEach(e=>e.remove())"); pg.evaluate("__app.sim.setNeeds({um:.15,ter:.2}); __app.popups.length=0; __app.popups.push({t:'risveglio',eventi:[],giorni:3,notti:12}); __ui.popup()"); pg.wait_for_timeout(700)
     t('riepilogo: bisogni bassi con la cura nominata e il pulsante',pg.locator('.sheet [data-a=cura-qui]').count()>=1 and 'tocca' in pg.inner_text('.sheet').lower() and 'dell’acqua' in pg.inner_text('.sheet').lower(),pg.inner_text('.sheet')[:200] if pg.locator('.sheet').count() else 'nessuna scheda'); pg.screenshot(path=f'screenshots/gameplay-fix/{tag}_riepilogo-cure.png')
