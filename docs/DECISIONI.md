@@ -46,4 +46,4 @@ L'ambiente del vaso (acqua, luce, temperatura, umidità, condensa, terra, piante
 
 
 ## Case delle specie (Giovanni, 30 ottobre 2026)
-Niente capanne uguali per tutti: ogni specie abita come in natura. Formiche: formicaio scavato; termiti: termitaio a torre; lumache: rifugio di gusci vuoti sotto una foglia; mosche: frutto che matura con le pupe; ragni: tana di seta a imbuto; coleotteri: legno scavato. Quattro stadi di crescita ciascuno. Prompt in `docs/modelli/case-specie-prompt.md`.
+Niente capanne uguali per tutti: ogni specie abita come in natura. Formiche: formicaio scavato; termiti: termitaio a torre; lumache: rifugio di gusci vuoti sotto una foglia; mosche: frutto che matura con le pupe; ragni: grande ragnatela orbicolare tesa in alto, tra vetro, rametti e coperchio, mai a terra; coleotteri: legno scavato. Quattro stadi di crescita ciascuno. Prompt in `docs/modelli/case-specie-prompt.md`.

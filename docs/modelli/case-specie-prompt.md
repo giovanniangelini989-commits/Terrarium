@@ -74,8 +74,8 @@ Oggetto: il NIDO DELLE MOSCHE: le mosche non costruiscono, si radunano dove c'è
 Chiama il file nido_mosche.glb.
 ```
 
-## 5. Ragni: la tana di seta
-Nome del file da chiedere: `tana_ragni.glb`
+## 5. Ragni: la grande ragnatela in alto
+Nome del file da chiedere: `ragnatela.glb`
 ```
 Sei un modellatore 3D tecnico. Scrivi ed ESEGUI tu stesso uno script Python (trimesh, numpy, PIL per le texture) che crea il modello 3D descritto sotto e consegnami il file .glb da scaricare.
 
@@ -87,9 +87,9 @@ Requisiti tecnici obbligatori:
 - Fai 4 STADI DI CRESCITA dello stesso oggetto, come nodi separati chiamati stage_1, stage_2, stage_3, stage_4, affiancati lungo l'asse X a 0,6 unità di distanza (stage_1 = appena iniziato, stage_4 = completo).
 - Alla fine mostrami 2 anteprime (tre quarti e dall'alto) su sfondo grigio, controlla che i 4 stadi siano diversi e credibili, correggi se serve, poi dammi il file .glb.
 
-Oggetto: la TANA DEL RAGNO: una ragnatela a imbuto tesa tra due rametti e il terreno, fili sottilissimi e semitrasparenti (materiale con alpha), che termina in un rifugio a tubo di seta bianca rivestito di frammenti di foglia e terra, con un paio di prede avvolte nella seta (piccoli bozzoli allungati). Larghezza 0,4 unità a stadio 4. Stadio 1: pochi fili tra due rametti. Stadio 2: tela piatta. Stadio 3: tela a imbuto con il rifugio. Stadio 4: tela grande con rugiada sui fili, rifugio rivestito e 2 prede avvolte.
+Oggetto: la GRANDE RAGNATELA di un ragno tessitore (come Araneus o Zygiella), tesa IN ALTO nella parte superiore del barattolo, NON a terra. Ragnatela orbicolare a spirale con raggi, fili sottilissimi e semitrasparenti (materiale con alpha), ancorata con fili di sostegno lunghi a tre punti alti (immagina due punti sulla parete di vetro e uno su un rametto alto o sotto il coperchio); in un angolo in alto un piccolo rifugio di seta arrotolato in una foglia secca, da cui parte un filo segnale verso il centro della tela. Diametro della tela 0,6 unità a stadio 4; il punto più basso della tela a 1,2 unità da terra. Stadio 1: tre fili di sostegno e pochi raggi. Stadio 2: telaio e raggi completi. Stadio 3: spirale completa. Stadio 4: tela grande con gocce di rugiada sui fili, il rifugio nella foglia e due piccole prede avvolte nella seta appese alla tela.
 
-Chiama il file tana_ragni.glb.
+Chiama il file ragnatela.glb.
 ```
 
 ## 6. Coleotteri: il ceppo scavato
