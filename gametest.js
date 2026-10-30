@@ -182,6 +182,55 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   P.G.miss.gocce=10; P.missSpendi('avanza'); const n0=P.G.ui.avanza.n; const ra=P.avanzaNotte(); t('avanza: una notte comprata supera il tetto, senza cambiare il contatore di visita',ra.ok&&P.G.ui.avanza.n===n0&&P.G.miss.pronte===0,JSON.stringify(ra)+P.G.miss.pronte);
   t('missioni: salvataggio leggero',JSON.stringify(P.G.miss).length<700,JSON.stringify(P.G.miss).length);
 }
+// 11) gamification: Atlante, biglietto di domani, Lente, festa del popolo, cosa portare nel vaso nuovo, un solo punto d'ingresso
+{ const P=window.__app; const nuovo=()=>{ P.newGame('G',JSON.parse(JSON.stringify(su))); P.popups.length=0; P.G.ui.fase=5; P.G.arrivi={list:[],n:0}; };
+  const notte=(n=1)=>{ for(let i=0;i<n;i++){ P.autoCare(); P.passaNotte(); P.sim.pending.length=0; P.popups.length=0; } };
+  const noM=()=>{ if(P.G.miss){ P.G.miss.att=[]; P.G.miss.oggi={t:P.todayIdx(),n:P.MISS.alGiorno}; } };
+  const giorno=()=>{ noM(); P.G.dev.offset+=1; P.checkNewDay(); P.sim.pending.length=0; P.popups.length=0; P.G.letargo=null; };
+  // Atlante
+  nuovo(); P.atlanteScan(P.sim.view()); let a=P.atlante(); t('atlante: 32 pagine in 5 sezioni',a.tot===32&&a.sez.length===5&&a.sez.reduce((n,x)=>n+x.voci.length,0)===32,a.tot);
+  t('atlante: formiche, muschio e funghi scoperti subito, il resto nascosto',a.sez[0].voci.find(x=>x.id==='formiche').visto&&a.sez[1].voci.find(x=>x.id==='muschio').visto&&!a.sez[0].voci.find(x=>x.id==='ragni').visto&&a.n>=4,JSON.stringify(a.sez[0].voci.map(x=>x.visto))+a.n);
+  const n0=a.n; P.atlanteScan(P.sim.view()); t('atlante: nessun doppione',P.atlante().n===n0);
+  P.sim.setRegina(true); P.sim.steps(2); P.atlanteScan(P.sim.view()); t('atlante: prima regina',P.G.gami.atl['ev:regina']!=null);
+  P.G.ui.fase=3; t('atlante: la pastiglia Oggi non si accende prima della fase 4',!P.oggiNuovo()); P.G.ui.fase=5;
+  // Biglietto di domani (senza missioni nuove, per contare solo le gocce del biglietto)
+  const AG=P.MISS.alGiorno; P.MISS.alGiorno=0;
+  nuovo(); let b=P.biglietto(); t('biglietto: tre previsioni diverse, scritte in frasi',b.stato==='scrivi'&&b.opz.length===3&&new Set(b.opz.map(o=>o.testo)).size===3&&b.opz.every(o=>/^Domani /.test(o.testo)),JSON.stringify(b.opz));
+  const sc=P.bigliettoScrivi(0); t('biglietto: si scrive',sc.ok&&P.biglietto().stato==='scritto'&&P.biglietto().scritto===sc.testo); t('biglietto: uno solo al giorno',P.bigliettoScrivi(1).why==='scritto');
+  P.G.gami.bil={k:'umido',t:P.todayIdx(),d:P.sim.d,b:0,es:null,vis:0}; P.sim.setNeeds({um:.6}); noM(); notte(); noM(); const g0=P.G.miss?P.G.miss.gocce:0; giorno();
+  t('biglietto: se succede, la casella si colora e arriva una goccia',P.G.gami.bil.es===1&&P.G.miss.gocce===g0+1&&P.biglietto().esito.ok&&P.biglietto().caselle.slice(-1)[0]===1,JSON.stringify(P.G.gami.bil)+' g0='+g0+' ora='+P.G.miss.gocce+' ok='+P.biglietto().esito.ok);
+  t('biglietto: ne puoi scrivere uno nuovo il giorno dopo',P.biglietto().stato==='scrivi'&&P.bigliettoScrivi(0).ok);
+  P.G.gami.bil={k:'muta',t:P.todayIdx(),d:P.sim.d,b:99,es:null,vis:0}; noM(); const g1=P.G.miss.gocce; notte(); noM(); giorno();
+  const ex=P.biglietto().esito; t('biglietto: se non succede, nessuna goccia e parole gentili',P.G.gami.bil.es===0&&(P.G.miss.gocce===g1||console.log('G1',g1,P.G.miss.gocce))&&ex&&!ex.ok&&!/non ce l|perso|fallit|sbagli/i.test(JSON.stringify(window.__story.OGGI.bigl)),JSON.stringify(ex));
+  t('biglietto: nel salvataggio resta leggero',JSON.stringify(P.G.gami).length<1500,JSON.stringify(P.G.gami).length);
+  nuovo(); P.G.ui.fase=3; t('biglietto: prima della fase 4 non c\'è',P.biglietto().stato==='aspetta'&&!P.bigliettoScrivi(0).ok); P.G.ui.fase=5;
+  P.MISS.alGiorno=AG;
+  // Lente
+  nuovo(); let L=P.lente(); t('lente: scelte solo tra creature vive con scheda',L.on&&!L.attiva&&L.scelte.some(x=>x.id==='formiche')&&L.scelte.every(x=>window.__story.SCHEDE[x.id]));
+  t('lente: scegli una creatura',P.lenteScegli('formiche').ok&&P.lente().attiva&&P.lente().mancano===2&&P.lenteScegli('formiche').why==='attiva'); t('lente: la scheda non c\'è ancora',P.lenteScheda()===null);
+  notte(2); t('lente: dopo due notti la scheda è pronta',P.lente().pronta&&P.oggiNuovo(),JSON.stringify(P.lente()));
+  const sch=P.lenteScheda(); t('lente: scheda con macro, tre fatti, riga dal vivo',sch&&sch.macro.length>20&&sch.fatti.length===3&&sch.visto.length>10&&sch.nuova);
+  t('lente: pagina dell\'Atlante e del quaderno',P.G.gami.atl['sc:formiche']!=null&&P.G.quaderno.some(p=>p.id==='lente-formiche'));
+  t('lente: una al giorno reale',P.lenteScegli('formiche').why==='riposo'); giorno(); t('lente: il giorno dopo si può ancora',P.lenteScegli('formiche').ok);
+  // Festa del popolo
+  nuovo(); P.sim.sp.find(x=>x.id==='formiche').society={cult:'sacro',name:'Formiche sacre',since:P.sim.d,culto:'x'}; notte(); const f0=P.G.gami.festa; t('festa: parte a contare quando c\'è un popolo',f0.ultima!=null);
+  notte(28); t('festa: non prima delle 30 notti',!P.popups.some(q=>q.t==='festa')); P.popups.length=0; let fp=false; for(let i=0;i<4&&!fp;i++){ P.autoCare(); P.passaNotte(); P.sim.pending.length=0; fp=P.popups.some(q=>q.t==='festa'); if(fp) break; }
+  t('festa: dopo 30 notti c\'è la festa, con ricordo e pagina',fp&&P.G.album&&P.G.album.ric_festa1&&P.G.quaderno.some(p=>/^festa-/.test(p.id)),JSON.stringify(P.G.gami.festa)); const fn=P.G.gami.festa.n; P.popups.length=0; notte(5); t('festa: una sola per volta',P.G.gami.festa.n===fn);
+  t('festa: nessun testo rotto per nessun culto',['sacro','sapere','commercio','gioco','mistero','comunicazione','fuoco','agricoltura','guerra','tribale'].every(c=>{ const x=window.__story.OGGI.festa.t[c]('Le formiche'); return x.length>40&&!/undefined/.test(x); }));
+  // Cosa portare nel vaso nuovo
+  nuovo(); { let g=0; while(!P.sim.finalePending&&g++<500){ P.autoCare(); P.passaNotte(); P.sim.pending.length&&P.resolveDecision(P.sim.pending[0].id,P.sim.pending[0].type==='mutazione'?'proteggi':'lascia'); P.popups.length=0; } }
+  t('eredita: si arriva a un finale',!!P.sim.finalePending);
+  if(!P.sim.sp.find(x=>x.id==='formiche').mut.length) P.sim.sp.find(x=>x.id==='formiche').mut.push('corazza'); const rr=P.closeChapter(); const E=P.eredita(); t('eredita: tre scelte dal vaso finito, popup in coda',E&&E.opts.length===3&&E.opts.every(o=>o.nome&&o.testo&&o.icon)&&P.popups.some(q=>q.t==='eredita'),JSON.stringify(E&&E.opts.map(o=>o.tipo+':'+o.id)));
+  t('eredita: c\'è una mutazione addomesticata tra le scelte',E.opts.some(o=>o.tipo==='mutazione'&&o.id==='formiche'));
+  const iM=E.opts.findIndex(o=>o.tipo==='mutazione'); P.ereditaScegli(iM); t('eredita: scelta registrata, popup tolto',P.G.gami.ered.presa===iM&&!P.popups.some(q=>q.t==='eredita')&&P.eredita()===null);
+  t('eredita: il vaso nuovo non ce l\'ha ancora (parte con la prima creatura)',P.sim.view().sp.length===0); P.skipStart(); const fx=P.sim.view().sp.find(x=>x.id==='formiche'); t('eredita: la formica addomesticata parte con te (vantaggio senza costo)',fx&&fx.mut.includes(E.opts[iM].m),JSON.stringify(fx&&fx.mut));
+  t('eredita: pagina nel quaderno e scelta consumata',P.G.quaderno.some(p=>/^ered-/.test(p.id))&&!P.G.gami.ered);
+  P.G.gami.ered={opts:[{tipo:'oggetto',id:'libro'},{tipo:'pianta',id:'carnivora'},{tipo:'specie',id:'ragni'}],presa:null}; P.G.ui.fase=0; P.ereditaScegli(-1); P.G.ui.fase=0; P.skipStart(); t('eredita: «niente» non aggiunge nulla',!P.sim.view().setup.oggetti.includes('libro'));
+  for(const [tp,idx] of [['oggetto',0],['pianta',1],['specie',2]]){ P.G.ui.fase=0; P.G.gami.ered={opts:[{tipo:'oggetto',id:'libro'},{tipo:'pianta',id:'carnivora'},{tipo:'specie',id:'ragni'}],presa:idx}; P.sim.removeSpecies('ragni'); P.sim.removePlant('carnivora'); P.skipStart(); const v=P.sim.view(); t('eredita: '+tp+' portato nel vaso nuovo',tp==='oggetto'?v.setup.oggetti.includes('libro'):tp==='pianta'?v.plants.some(x=>x.id==='carnivora'):v.sp.some(x=>x.id==='ragni')); }
+  // un solo punto d'ingresso
+  nuovo(); P.G.miss=null; P.missioni(); t('oggi: le missioni nuove accendono la pastiglia',P.oggiNuovo()); P.oggiVisto(); t('oggi: guardata, si spegne',!P.oggiNuovo());
+  const av=P.G.gami.avv; delete av.atlante; P.G.gami.atl={'sp:formiche':1}; P.G.gami.init=1; let tc=0; const tt=global.document.body.appendChild; P.atlanteScan(P.sim.view()); t('oggi: un avviso per tipo al giorno (atlante)',av.atlante===P.todayIdx());
+}
 // biologia di fondo (motore): collemboli, regina e covata, sciame, larve di mosca
 { const mk=(ins,o)=>S.createSim(Object.assign({luce:1,acqua:1,meteorite:1,piante:['muschio','felce'],insetti:ins,oggetti:[]},o||{}),{seed:4,game:true,needs:true});
   const txt=(sim,re)=>sim.log.some(l=>re.test(l.text));

@@ -1,3 +1,17 @@
+# Proposte di gameplay: giro gamification (30 ottobre 2026)
+
+**Costruito in questo giro** (ramo motore/gamification, contratto in `docs/CONTRATTI.md` «Atlante, biglietto, Lente, festa, eredità»): una cosa da portare nel vaso nuovo, il biglietto di domani, la festa del popolo ogni 30 notti, la Lente con la scheda macro, l'Atlante del vaso (32 pagine, titoli a 6/14/22/32), una sola scheda «Oggi» nel quaderno con una sola pastiglia. Resta fuori: «le promesse della settimana». Nuove proposte, per impatto:
+
+1. **Le promesse della settimana** (obiettivo a medio termine scelto da te). Ogni 7 giorni reali il quaderno propone tre promesse legate al vaso («far nascere un popolo tra le termiti», «tre specie vive»), ne scegli una; se la mantieni, carta ricordo con la foto; se no sparisce in silenzio. Perché: è l'unico pezzo del documento di gamification che manca, e l'Atlante dà già il vocabolario (le promesse possono puntare alle pagine mancanti: «trova il primo collembolo»). Rischi: nessuno se resta senza barre rosse né «fallito». Costo: medio (1 giorno motore/logica, 20 frasi di storia, riga in «Oggi»). Chi: motore + storia.
+2. **Il vaso cambia con l'Atlante** (ricompensa che cambia il vaso). A 14, 22 e 32 pagine una cosa si aggiunge al vetro: un'etichetta scritta a mano, una lucciola, un lume sul davanzale. Perché: oggi il titolo è solo testo; Neko Atsume e Viridi premiano con oggetti che si vedono (docs/ricerca/). Rischi: nessuno (niente acquisti). Costo: medio, quasi tutto 3D/luci. Chi: tre-d + luci; il motore espone `atlante().rango`.
+3. **Cartolina del vaso** (condivisione per 9+, senza account). Un'immagine esportata con la foto del vaso, il giorno, il titolo dell'Atlante e una riga del quaderno. Perché: l'analista segnala «nessuna condivisione»; una cartolina non richiede login né classifiche. Rischi: bassi (nessun dato personale, nome del bambino opzionale). Costo: basso-medio. Chi: interfaccia.
+4. **La Lente che trattiene** (gestione del tempo, il gemello di «Salta 2»). Mentre guardi una creatura, per 2 notti non muta e non cala: una pausa per capire. Oggi la Lente è solo osservazione; la versione forte tocca `sim.step` (attivo solo con `needs`, equiv invariato). Rischi: il testo resti descrittivo, mai «se non la usi muore». Costo: medio (motore 1 giorno). Chi: motore.
+5. **Biglietto con la voce del bambino**: oltre alla frase scelta, una riga libera nel quaderno («Secondo me le termiti sciameranno»), corretta dal vaso con parole gentili. Perché: la voce del bambino è il momento più citato come bello. Rischi: moderazione (testo libero locale, non esce dal telefono). Costo: basso. Chi: interfaccia + storia.
+
+Misure del giro (bot, 8 setup × 8 semi × 100 giorni): attivo = Atlante 24,5/32, 3,7 schede Lente, 7,9 biglietti veri su 14, 1,1 feste, 3 eredità per profilo; ritmo e finali invariati entro il rumore dei bot.
+
+---
+
 # Proposte di gameplay (agente motore, 24 ottobre 2026)
 
 Cinque meccaniche nello spirito delle power card «Salta 2 giorni»: gestione del tempo, ritorno quotidiano gentile, scelte che contano, obiettivi a medio termine, ricompense che cambiano il vaso. Ordinate per impatto stimato. Nessuna è decisa: le approva Giovanni.
