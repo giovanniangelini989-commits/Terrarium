@@ -389,7 +389,7 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
     const pulse=.5+.5*Math.sin(t*(2.2+v.E*.03)), fl=S.flash; S.flash=Math.max(0,S.flash-dt*1.4);
     stoneG.position.set(0,S.soilTop+.13,0); stoneMat.emissiveIntensity=.3+(v.E/100)*1.5*pulse+fl*2.2; if(S.metMat) S.metMat.emissiveIntensity=(v.E/100)*(1.2+1.8*pulse)+fl*3; LU.meteora(S.soilTop+.5,.2+1.3*(v.E/100)*pulse+fl*5);
     // piante
-    plantsG.children.forEach((g,i)=>{ g.position.y=S.soilTop; }); if(CS){ try{ CS.g.position.y=S.soilTop; CS.tick(dt,t,v,caseOccupied()); }catch(e){ if(!CS.err){ CS.err=1; console.warn('case',e&&e.message); } } } if(PL){ if(PL.setDist) PL.setDist(cam.dist/fitDist()); PL.tick(dt,t,v,plantObjs); } else v.plants.forEach(p=>{ const o=plantObjs[p.id]; if(!o) return; const key=Math.round(p.v*40)+':'+Math.round(S.dry*40)+':'+(S.v&&S.v.R>.6?1:0); if(o.key!==key){ o.key=key; o.upd(p.v,S.dry); } });
+    plantsG.children.forEach((g,i)=>{ g.position.y=S.soilTop; }); if(CS){ try{ CS.g.position.y=S.soilTop; CS.tick(dt,t,v,caseOccupied(),camera.position); }catch(e){ if(!CS.err){ CS.err=1; console.warn('case',e&&e.message); } } } if(PL){ if(PL.setDist) PL.setDist(cam.dist/fitDist()); PL.tick(dt,t,v,plantObjs); } else v.plants.forEach(p=>{ const o=plantObjs[p.id]; if(!o) return; const key=Math.round(p.v*40)+':'+Math.round(S.dry*40)+':'+(S.v&&S.v.R>.6?1:0); if(o.key!==key){ o.key=key; o.upd(p.v,S.dry); } });
     // oggetti
     objG.children.forEach(s=>{ s.position.y=S.soilTop; });
     // insediamenti
