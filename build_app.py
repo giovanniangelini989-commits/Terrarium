@@ -58,7 +58,7 @@ print('modelli incorporati:',{k:sorted(v) for k,v in GLB.items()},'base64',len(g
 # Icone delle creature (assets/icone, da Giovanni): 128 px WebP in base64 -> window.__ICONE={id:dataURI}; le altre specie restano emoji
 from PIL import Image
 ICONE={}
-for _id in ('formiche','lumache','orologio'):
+for _id in ('formiche','lumache','orologio','termiti','coleotteri','ragni','mosche','collemboli','felce'):
     _f='assets/icone/'+_id+'.webp'
     if os.path.exists(_f):
         _im=Image.open(_f).convert('RGBA'); _im.thumbnail((128,128),Image.LANCZOS); _b=io.BytesIO(); _im.save(_b,'WEBP',quality=82,method=6)
