@@ -5,7 +5,7 @@
    Emoji senza icona: puntino (mai il glifo del sistema). Dentro option/title/attributi le emoji si tolgono.
    Livello di risposta: nessuna animazione propria (eredita quella dell'elemento che le contiene). */
 (function(){
-  const PH={'\u{1F41C}':'formiche','\u{1F40C}':'lumache','⏱':'orologio','⏰':'orologio','\u{1F570}':'orologio','⏳':'orologio','\u{1F41B}':'termiti','\u{1FAB2}':'coleotteri','\u{1F577}':'ragni','\u{1FAB0}':'mosche','\u{1F343}':'felce'};
+  const PH={'\u{1F41C}':'formiche','\u{1F40C}':'lumache','⏱':'orologio','⏰':'orologio','\u{1F570}':'orologio','⏳':'orologio','\u{1F41B}':'termiti','\u{1FAB2}':'coleotteri','\u{1F577}':'ragni','\u{1FAB0}':'mosche','\u{1F343}':'felce','\u{1F33F}':'muschio','\u{1F335}':'succulenta','\u{1F344}':'fungo','\u{1FAB4}':'carnivora'};
   const P=(d,c)=>'<path'+(c?' class="'+c+'"':'')+' d="'+d+'"/>', O=(x,y,r,c)=>'<circle'+(c?' class="'+c+'"':'')+' cx="'+x+'" cy="'+y+'" r="'+r+'"/>', R=(x,y,w,h,r)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+(r||2)+'"/>';
   const CLOUD='M7 15a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 8a3.5 3.5 0 0 1 .5 7z';
   const LIB={
