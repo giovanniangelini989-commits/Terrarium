@@ -49,7 +49,7 @@ for mid in sorted(os.listdir('assets/materiali')) if os.path.isdir('assets/mater
     os.makedirs('dist/materiali/'+mid, exist_ok=True); MATF[mid]={}
     for k in ('colore','normale','ruvidezza','altezza','maschera','panorama'):
         if os.path.exists(d+'/'+k+'.webp'):
-            shutil.copyfile(d+'/'+k+'.webp','dist/materiali/'+mid+'/'+k+'.webp'); MATF[mid][k]='materiali/'+mid+'/'+k+'.webp'
+            shutil.copyfile(d+'/'+k+'.webp','dist/materiali/'+mid+'/'+k+'.webp'); MATF[mid][k]='materiali/'+mid+'/'+k+'.webp?v='+__import__('hashlib').md5(open(d+'/'+k+'.webp','rb').read()).hexdigest()[:8]  # il telefono scarica di nuovo una foto solo quando cambia
 glb+='window.__MAT_FOTO='+json.dumps(MATF,separators=(',',':'))+';'
 print('materiali fotografici:',{k:sorted(v) for k,v in MATF.items()})
 print('scenografia apertura:',sorted(GLB_AP))
