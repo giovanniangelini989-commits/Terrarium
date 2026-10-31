@@ -22,5 +22,15 @@ Griglia a celle di 18 cm, raggio per specie (formica .03, ragno .055, coleottero
 ## Ragnatele
 Fino a 3 ragnatele sul vetro, una per ragno: 12 raggi + 7 spirali (~190 segmenti, un solo `LineSegments`) e rugiada (`Points`, solo di notte). Crescono con attributo per vertice `aG` e progresso per ragnatela (200 s di notte, 1200 s di giorno). Una mosca in volo che attraversa la rete (60 %/s) resta impigliata e si dimena; il ragno la raggiunge, la avvolge (la mosca si ferma, 25-50 s) e poi viene rilasciata. La sim non registra predazione dei ragni: resa solo visiva, senza effetto sul conteggio.
 
+## Sulle piante (felce, succulenta, carnivora)
+Fusti e fronde sono terreno percorribile: `PL.surf` (app/piante.js) campiona 9 punti per fronda (centro di ogni fascia lungo l'organo) e li riporta in mondo con la stessa matematica di `plantPos()` dello shader (apertura, piega, scala, notte, pressione): i punti seguono crescita e afflosciamento, e valgono anche per le copie satellite. Una creatura entra (modo 7, posa interpolata 1,4 s) quando passa a meno di 15 cm da una base e il dado (45 % + 40 % giungla) lo consente; più è giungla più creature stanno in alto, quindi visibili (i 20 individui restano tutti istanziati: tetto 24). Cammina a salti tra campioni vicini, appoggiata 8 mm sopra la superficie con ventre lungo la normale; scende lungo la fronda e rientra a terra con la posa interpolata. Separazione: chi si sovrappone viene spostato di lato sulla superficie (i pesanti cedono meno).
+| Creatura | Sulle piante |
+|---|---|
+| Lumaca | brucatrice: sosta 25-70 s su un punto (70 % sulle punte) e mangia; il morso `uBiteP` è locale (6 siti per pianta, raggio 1-11 mm, cresce piano e la foglia si rigenera in ore). Velocità .026 u/s a onde pedali |
+| Coleottero | come la lumaca ma più veloce e soste 10-30 s |
+| Formica | non mangia foglie. Il 50-90 % (più giungla) sono esploratrici: salgono, si fermano 3-8 s sui germogli (punte), oppure raccolgono un pezzetto di foglia secca o un seme (10 %, 40 % se la foglia è secca), scendono e lo portano al formicaio lungo la pista; consegnato, riprendono la pista o tornano a esplorare |
+| Termite | cammina e accudisce i germogli, non mangia |
+| Ragno | alcuni (25 % + giungla) nascono sulle fronde e vi aspettano 25-90 s per punto; poi scendono e vanno al vetro |
+
 ## Costo
 Nessuna geometria nuova pesante: 2 `Points` per la bava, 1 `LineSegments` e 1 `Points` per le ragnatele, 1 cilindro per le gallerie, 6 mesh per i cumuli (+3 chiamate di disegno circa 10). Triangoli aggiunti < 1000. CPU: una passata O(n) con griglia per fotogramma.

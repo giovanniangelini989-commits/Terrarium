@@ -347,7 +347,7 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
     objG.children.forEach(o=>{ _ob.setFromObject(o); if(_ob.isEmpty()) return; _ob.getSize(_os); L.push({x:(_ob.min.x+_ob.max.x)/2,z:(_ob.min.z+_ob.max.z)/2,r:Math.max(.05,Math.min(_os.x,_os.z)*.5+.02),h:_ob.max.y,t:'o'}); });
     Object.keys(plantObjs).forEach(k=>{ const g=plantObjs[k]&&plantObjs[k].g; if(!g) return; _ob.setFromObject(g); if(_ob.isEmpty()) return; L.push({x:g.position.x,z:g.position.z,r:.07,h:Math.min(1.9,_ob.max.y),t:'p'}); });
     return obsCache=L; }
-  const MOD=window.__MODELLI(THREE,{critG,S,KLEN,camera,viewH:()=>H,level:()=>level,anchorOf,kimiGeo,fallbackGeo:id=>(MODEL[id]||MODEL._)(),SIZE,obstacles:()=>obstacleList()}); const crt=MOD.crt;
+  const MOD=window.__MODELLI(THREE,{critG,S,KLEN,camera,viewH:()=>H,level:()=>level,anchorOf,kimiGeo,fallbackGeo:id=>(MODEL[id]||MODEL._)(),SIZE,obstacles:()=>obstacleList(),plantSurf:PL&&PL.surf||null}); const crt=MOD.crt;
   // meteorite di Kimi (assets/kimi/meteorite, tier close): scala a Ø 0,42 (Kimi l'ha consegnato a 0,60), appoggiato nella terra; le crepe viola sono nella emissiveTexture e si accendono con la carica
   MOD.ready.then(()=>{ const o=MOD.object('meteorite'); if(!o) return; const bb=o.box, ext=Math.max(bb.max.x-bb.min.x,bb.max.z-bb.min.z), k=.42/ext; o.mesh.scale.setScalar(k); o.mesh.position.set(-(bb.max.x+bb.min.x)/2*k,-.17,-(bb.max.z+bb.min.z)/2*k); o.mesh.castShadow=true; o.mesh.receiveShadow=true; o.mat.emissiveIntensity=0; stone.visible=false; stoneG.add(o.mesh); S.metMat=o.mat; }).catch(e=>console.warn('meteorite Kimi',e&&e.message));
   function syncCreatures(v){ MOD.sync(v); }
@@ -433,7 +433,7 @@ float ftMix(vec2 uv){ return smoothstep(.3,.7,ftNoise(uv*.43+vec2(3.7,1.3))); }
   const proj=p=>{ const q=p.clone().project(camera), r=canvas.getBoundingClientRect(); return {x:r.left+(q.x*.5+.5)*r.width,y:r.top+(-q.y*.5+.5)*r.height,z:q.z}; };
   function groups(){ const o={}; (S.v?S.v.sp:[]).forEach(x=>{ const c=center(x.id); if(c&&x.alive) o[x.id]={x:c.x,y:c.y,z:c.z}; }); return o; }
   const api={glassState:()=>glassFX.state(),terreno:()=>({wet:+S.wet.toFixed(3),wl:+S.wl.toFixed(3),rist:+S.rist.toFixed(3),moss:+S.moss.toFixed(3),level:terrainLvl,micro:!!S.m,soilTop:+S.soilTop.toFixed(3),water:water.visible}),terrainLevel,settle(n,cv){ if(cv) Object.keys(cv).forEach(k=>{ cam['g'+k]=cv[k]; }); for(let i=0;i<(n||30);i++){ try{ glassFX.tick(.5); }catch(e){} terrainTick(.5); } ['az','pol','dist','tx','ty','tz'].forEach(k=>{ cam[k]=cam['g'+k]; }); }, // settle: solo per test e schermate (porta subito a regime le transizioni)
-    snap,canvas,fit,zoomTo,bubble,groups,vaso:VASO,fx:fxStart,modelli:MOD,S,piante:PL,case:CS,dbg:{VASO,critG,plantsG,settleG,objG,LU},lid:corkMats,
+    snap,canvas,fit,zoomTo,bubble,groups,vaso:VASO,fx:fxStart,modelli:MOD,S,piante:PL,case:CS,dbg:{cam,VASO,critG,plantsG,settleG,objG,LU},lid:corkMats,
     start(){ if(running) return; running=true; setNight(!!(window.__vase&&window.__vase.isNight&&window.__vase.isNight())); fit(); home(); cam.az=cam.gaz; cam.pol=cam.gpol; cam.dist=cam.gdist; cam.tx=cam.gtx; cam.ty=cam.gty; cam.tz=cam.gtz; raf=requestAnimationFrame(frame); },
     stop(){ running=false; cancelAnimationFrame(raf); },
     reset(){ userT=0; home(); },
