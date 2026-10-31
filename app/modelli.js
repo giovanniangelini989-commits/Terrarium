@@ -7,7 +7,7 @@
    Specie senza GLB (termiti, coleotteri, …) usano ancora i modelli procedurali del pass 1, con lo stesso instancing 1:1. */
 window.__MODELLI=function(THREE,env){
 'use strict';
-const {critG,S,KLEN,camera,viewH,level,anchorOf,kimiGeo,fallbackGeo,SIZE}=env;
+const {critG,S,KLEN,camera,viewH,level,anchorOf,kimiGeo,fallbackGeo,SIZE}=env; const PS=env.plantSurf||null;
 const V3=THREE.Vector3, Col=THREE.Color, clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x)), rnd=(a,b)=>a+Math.random()*(b-a);
 const LOADER_URL='https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/loaders/GLTFLoader.js';
 const CAP=128;                 // il sim limita pop a 100 per specie
@@ -159,12 +159,14 @@ function physics(dt,t,v,dry){
   _dt=dt; const obs=env.obstacles?env.obstacles():[]; const st0=S.soilTop||.2;
   trG.m.uniforms.uTime.value=trS.m.uniforms.uTime.value=t; trG.m.uniforms.uPx.value=trS.m.uniforms.uPx.value=pxK; trG.m.uniforms.uLife.value=420*(1-.5*(dry||0)); trS.m.uniforms.uLife.value=240*(1-.5*(dry||0));
   const all=[]; Object.values(crt).forEach(c=>{ if(c.dying) return; c.items.forEach(it=>{ if(it.hid||it.st===5) return; it.id_=c.id; if(it.mode===undefined){ it.mode=0; it.blend=1; } all.push(it); }); });
-  const flies=all.filter(i=>i.id_==='mosche'), ground=[], wall=[]; ahTick(dt,t,v,st0); webTick(dt,t,all); wUni.uPx.value=pxK;
+  const flies=all.filter(i=>i.id_==='mosche'), ground=[], wall=[]; plantArr.length=0; entRefresh(t); ahTick(dt,t,v,st0); webTick(dt,t,all); wUni.uPx.value=pxK;
   all.forEach(it=>{ const id=it.id_; if(id==='mosche'){ flyLife(it,dt,t,obs,all,st0); return; }
+    if(PS&&it.mode===0&&id!=='mosche') plantTry(it,t,id);
+    if(it.mode===7){ plantLife(it,dt,t,id); plantArr.push(it); return; }
     if(it.mode===0&&(id==='lumache'||id==='ragni')) toWall(it,t,st0,id);
     if(id==='formiche'&&it.dig===undefined) it.dig=Math.random()<.3;
     if(it.mode===6){ tunLife(it,dt,t); if(it.mode===6) return; }
-    if(it.mode===1){ wallLife(it,dt,t,id,st0,flies); wall.push(it); } else { ground.push(it); if(id==='formiche'){ if(!it.goH) pista(it,t,v,obs); if(it.dig) digGo(it,t); } if(id==='coleotteri') flip(it,dt,t); } });
+    if(it.mode===1){ wallLife(it,dt,t,id,st0,flies); wall.push(it); } else { ground.push(it); if(id==='formiche'){ if(!it.goH&&!plExp(it)) pista(it,t,v,obs); if(it.dig) digGo(it,t); } if(id==='coleotteri') flip(it,dt,t); } });
   ground.forEach(it=>{ if(it.hold>t){ if(it.opx!==undefined){ it.px=it.opx; it.pz=it.opz; } it.st=it.holdSt||0; it.spd*=.5; } it.push=0; });
   sepPairs(ground,i=>i.px,i=>i.pz,(i,x,z)=>{ i.px=x; i.pz=z; },t);
   ground.forEach(it=>{ const ra=(RAD[it.id_]||.04)*it.sz; for(const ob of obs){ const dx=it.px-ob.x, dz=it.pz-ob.z, d=Math.hypot(dx,dz)||1e-4, mn=ob.r+ra; if(d<mn){ it.px=ob.x+dx/d*mn; it.pz=ob.z+dz/d*mn; it.push+=mn-d; } }
@@ -172,6 +174,7 @@ function physics(dt,t,v,dry){
     if(it.push>.004){ it.stuck=(it.stuck||0)+1; if(it.stuck>30){ it.stuck=0; if(it.nt<1e8) it.nt=0; else it.lane=rnd(-.08,.08); } } else if(it.stuck>0) it.stuck--;
     if(it.id_==='lumache'&&it.mode===0&&it.spd>.15){ const dx=it.px-(it.lx||0), dz=it.pz-(it.lz||0); if(dx*dx+dz*dz>.015*.015){ it.lx=it.px; it.lz=it.pz; emit(trS,it.px,st0+.03,it.pz,t,.08*it.sz); } }
     it.opx=it.px; it.opz=it.pz; });
+  plantSep(t);
   sepPairs(wall,i=>i.th*.97,i=>i.wy,(i,u,y)=>{ i.th=u/.97; i.wy=y; },t);
   wall.forEach(it=>{ wallPose(it); });
   all.forEach(it=>{ if(it.mode===0&&it.blend<1) groundBlend(it,dt); });
@@ -208,12 +211,60 @@ function wallPose(it){ const c=Math.cos(it.th), s=Math.sin(it.th), R=glassR(it.w
   it.px=p.x; it.pz=p.z; it.y=p.y; it.ang=Math.atan2(f.z,f.x); }
 function groundBlend(it,dt){ it.blend+=dt/2.5; const e=ease(it.blend); const q=new THREE.Quaternion().setFromEuler(_eu.set(0,-it.ang,0,'XYZ'));
   const p=new V3(it.px,it.y,it.pz); p.lerpVectors(it.from,p,e); it.q=(it.q||new THREE.Quaternion()).slerpQuaternions(it.fromQ,q,e); it.px=p.x; it.pz=p.z; it.y=p.y; if(it.blend>=1) it.q=null; }
+
+// ---- creature sulle piante (docs/ecologia/fisica-creature.md): fusti e fronde sono terreno percorribile (app/piante.js, PL.surf) ----
+const plantArr=[], PLW={formiche:{v:.07,pend:[40,110]},termiti:{v:.06,pend:[40,110]},coleotteri:{v:.05,pend:[60,160]},lumache:{v:.026,pend:[120,300]},ragni:{v:.07,pend:[120,400]}};
+const PLM={coleotteri:1,lumache:1}, PLR={formiche:.03,termiti:.03,coleotteri:.07,lumache:.095,ragni:.055}, PLEN=.15;
+let entL=[], entT=-9; const _P1=new V3(), _N1=new V3(), _P2=new V3(), _N2=new V3(), _F=new V3(), _Tg=new THREE.Quaternion();
+const gjv=()=>PS&&PS.gj?PS.gj():0;
+function entRefresh(t){ if(!PS||t-entT<1.5) return; entT=t; try{ entL=PS.entries(); }catch(e){ entL=[]; } }
+const plExp=it=>it.id_==='formiche'&&entL.length>0&&(it.exp===undefined&&(it.exp=Math.random()<.5+.4*gjv()),!!it.exp);
+// meta di un wander: una base di pianta (sempre se è un'esploratrice, altrimenti con probabilità crescente con la giungla)
+function plGoto(it){ if(!PS||!entL.length||it.id_==='ragni') return false; if(!(it.id_==='formiche'&&it.exp)&&Math.random()>.2+.55*gjv()) return false; const e=entL[Math.random()*entL.length|0]; it.tx=e.x+rnd(-.04,.04); it.tz=e.z+rnd(-.04,.04); return true; }
+function plantTry(it,t,id){ if(!PS||!entL.length||!PLW[id]||t<(it.plCool||0)||it.blend<1) return;
+  if(id==='ragni'){ if(it.plT===undefined){ it.plT=1; if(Math.random()<.25+.4*gjv()) plantEnter(it,t,id,entL[Math.random()*entL.length|0],true); } return; }
+  if(t<(it.plChk||0)) return; it.plChk=t+.4; let best=null,bd=PLEN; for(const e of entL){ const d=Math.hypot(e.x-it.px,e.z-it.pz); if(d<bd){ bd=d; best=e; } } if(!best) return;
+  if(id==='formiche'&&!it.exp&&Math.random()>.1) return; if(Math.random()<.45+.4*gjv()) plantEnter(it,t,id,best,false); }
+function plantEnter(it,t,id,e,spawn){ const ref=PS.ref(e,Math.random); if(!ref||!PS.pt(ref,_P1,_N1)) return;
+  if(spawn){ it.from=_P1.clone(); it.fromQ=new THREE.Quaternion(); it.blend=1; } else { it.from=new V3(it.px,it.y,it.pz); it.fromQ=(it.q?it.q.clone():new THREE.Quaternion().setFromEuler(_eu.set(0,-it.ang,0,'XYZ'))); it.blend=0; }
+  it.mode=7; it.pr=ref; it.pn=null; it.pu=0; it.pwait=t+rnd(.5,2); it.pwalk=0; it.peat=0; it.pend=t+rnd(...PLW[id].pend); it.pdown=0; it.poff=it.poff||new V3(); it.poff.set(0,0,0); it.pf=it.pf||new V3(1,0,0); it.pfirst=1; it.pbit=0; }
+function plantLeave(it,t,id,P){ it.mode=0; it.q=null; it.blend=0; it.from=new V3(it.px,it.y,it.pz); it.fromQ=it.qc?it.qc.clone():new THREE.Quaternion(); it.px=P.x; it.pz=P.z; const rr=Math.hypot(it.px,it.pz); if(rr>.84){ it.px*=.84/rr; it.pz*=.84/rr; }
+  it.plCool=t+rnd(25,70)*(1-.5*gjv()); it.pr=it.pn=null; it.pwalk=0; it.peat=0; it.ang=Math.atan2(it.pf.z,it.pf.x); it.tx=it.px; it.tz=it.pz; it.nt=t+1;
+  if(id==='formiche'&&it.carry){ it.exp=0; it.leg=1; it.nt=1e9; } }
+function plantLife(it,dt,t,id){ const W=PLW[id]; it.sz=it.sz||1;
+  if(!PS.pt(it.pr,_P1,_N1)){ // fronda sparita o richiusa: giù alla terra
+    plantLeave(it,t,id,_P1.set(it.px,it.y,it.pz)); return; }
+  let moving=false; _F.set(0,0,0);
+  if(it.pn){ if(!PS.pt(it.pn,_P2,_N2)){ it.pn=null; }
+    else { const L=Math.max(.01,_P1.distanceTo(_P2)); let v=W.v; if(id==='lumache') v*=.55+.45*Math.sin(t*5.2+it.ph*3); it.pu=Math.min(1,it.pu+v*dt*(it.pfirst?1:1)/L); moving=true; _F.subVectors(_P2,_P1); _P1.lerp(_P2,it.pu); _N1.lerp(_N2,it.pu).normalize();
+      if(it.pu>=1){ it.pr=it.pn; it.pn=null; it.pu=0; plantArrive(it,t,id); moving=false; } } }
+  else if(t>=it.pwait){ if(it.peat&&PLM[id]) it.peat=0; if(!it.pdown&&t>it.pend) it.pdown=1;
+    const n=PS.next(it.pr,it.pdown,Math.random); if(n){ it.pn=n; it.pu=0; it.pwalk=1; it.peat=0; }
+    else if(it.pdown){ plantLeave(it,t,id,_P1); return; } else it.pwait=t+rnd(2,6); }
+  it.pwalk=moving?1:0;
+  if(!moving&&it.pwait>t&&PLM[id]&&it.peat) PS.bite(it.pr,_P1,dt*(id==='lumache'?.018:.03));
+  // posa: sopra la superficie (mai dentro la foglia), orientata nel verso di marcia, morbida
+  if(_F.lengthSq()>1e-8){ it.pf.copy(_F).normalize(); }
+  it.poff.addScaledVector(_N1,-it.poff.dot(_N1)); it.poff.multiplyScalar(Math.max(0,1-dt*.8)); _P1.add(it.poff); _P1.addScaledVector(_N1,.008*it.sz);
+  _F.copy(it.pf).addScaledVector(_N1,-it.pf.dot(_N1)); if(_F.lengthSq()<1e-6) _F.set(Math.cos(it.ang),0,Math.sin(it.ang)).addScaledVector(_N1,-_N1.y*Math.cos(it.ang)); _F.normalize(); it.pf.copy(_F);
+  basis(_Tg,_F,_N1); if(!it.qc) it.qc=new THREE.Quaternion(); if(it.blend<1){ const e=ease(it.blend); it.blend+=dt/1.4; it.qc.slerpQuaternions(it.fromQ,_Tg,e); _P1.lerpVectors(it.from,_P1,e); } else if(it.pfirst){ it.pfirst=0; it.qc.copy(_Tg); } else it.qc.slerp(_Tg,Math.min(1,dt*6));
+  it.q=it.qc; it.px=_P1.x; it.y=_P1.y; it.pz=_P1.z; it.ang=Math.atan2(it.pf.z,it.pf.x); }
+// all'arrivo su un campione: cosa fa ciascuna specie (docs/ecologia/fisica-creature.md)
+function plantArrive(it,t,id){ const r=it.pr, tip=PS.tip(r), R=Math.random();
+  if(id==='lumache'||id==='coleotteri'){ if(R<(tip?.7:.45)){ it.peat=1; it.pwait=t+(id==='lumache'?rnd(25,70):rnd(10,30)); } else it.pwait=t+rnd(.5,3); }
+  else if(id==='formiche'||id==='termiti'){ if(tip&&R<.6){ it.peat=1; it.pwait=t+rnd(3,8); }   // accudisce il germoglio
+    else if(!it.carry&&id==='formiche'&&(R<.1||(PS.dry(r)>.25&&R<.4))){ it.peat=1; it.pwait=t+rnd(2,4); it.carry=true; it.pend=Math.min(it.pend,t+1); }   // raccoglie un pezzetto secco o un seme e rientra
+    else it.pwait=t+rnd(0,.6); }
+  else it.pwait=t+rnd(25,90); }
+// separazione sulle piante: chi si sovrappone viene spostato di lato sulla superficie (i pesanti cedono meno)
+function plantSep(t){ const n=plantArr.length; for(let i=0;i<n;i++){ const a=plantArr[i]; for(let j=i+1;j<n;j++){ const b=plantArr[j]; const dx=a.px-b.px, dy=a.y-b.y, dz=a.pz-b.pz, mn=((PLR[a.id_]||.04)*a.sz+(PLR[b.id_]||.04)*b.sz)*.8; const d2=dx*dx+dy*dy+dz*dz; if(d2>=mn*mn) continue; const d=Math.sqrt(d2)||1e-4, push=(mn-d)*.5, ma=MASS[a.id_]||1, mb=MASS[b.id_]||1, ka=mb/(ma+mb)*2, kb=ma/(ma+mb)*2;
+      _F.set(dx/d,dy/d,dz/d); a.poff.addScaledVector(_F,push*ka*.5); b.poff.addScaledVector(_F,-push*kb*.5); const la=a.poff.length(); if(la>.05) a.poff.multiplyScalar(.05/la); const lb=b.poff.length(); if(lb>.05) b.poff.multiplyScalar(.05/lb); if(!a.pn&&!b.pn&&Math.random()<.02){ b.pwait=Math.max(b.pwait,t+rnd(.5,1.5)); } } } }
 // ---- formiche: piste e fila ----
 function pista(it,t,v,obs){ if(v.wars.some(w=>w.includes('formiche'))){ if(it.nt>1e8) it.nt=0; return; }
   const A=anchorOf('formiche'); if(!_pistaF||_pistaF.a!==A){ let a=Math.atan2(A[1],A[0])+2.3, r=.55; let F=[Math.cos(a)*r,Math.sin(a)*r]; for(let k=0;k<8;k++){ if(!obs.some(o=>Math.hypot(F[0]-o.x,F[1]-o.z)<o.r+.12)) break; a+=.5; F=[Math.cos(a)*r,Math.sin(a)*r]; } _pistaF={a:A,F}; }
   const F=_pistaF.F; if(it.leg===undefined){ it.leg=Math.random()<.5?0:1; it.lane=rnd(-.03,.03); } it.nt=1e9;
   const tg=it.leg?A:F, dx=tg[0]-it.px, dz=tg[1]-it.pz, d=Math.hypot(dx,dz)||1;
-  if(d<.07){ it.leg^=1; it.carry=it.leg===1; }
+  if(d<.07){ it.leg^=1; it.carry=it.leg===1; if(it.leg===0&&PS) it.exp=Math.random()<.5+.4*(PS.gj?PS.gj():0); }
   it.tx=tg[0]-dz/d*it.lane; it.tz=tg[1]+dx/d*it.lane; }
 // ---- coleotteri: ogni tanto si ribaltano e si dimenano ----
 function flip(it,dt,t){ if(!it.flT) it.flT=t+rnd(90,420);
@@ -335,14 +386,14 @@ function move(dt,t,v,dry){ uni.uTime.value=t; uni.uDry.value=dry||0; uni.uCharge
   const H=viewH()||300, kpx=H/(2*Math.tan(camera.fov*Math.PI/360)); _c.copy(camera.position);
   Object.values(crt).forEach(c=>{ const x=c.x, id=c.id, fly=id==='mosche', soc=!!x.society&&!fly, an=soc?anchorOf(id):null, war=!c.dying&&v.wars.find(w=>w.includes(id)), wi=war?war.indexOf(id):0, sp=(fly?.55:id==='lumache'?.03:.28)*(war?2:1), mut=x.mut||[], mutK=mut.length?Math.min(1.3,.7+.2*mut.length):0, glb=c.kind==='glb';
     const tint=(x.monster?'m':'')+(glb?'':mut.join(',')); if(tint!==c.tint){ c.tint=tint; const col=new Col(1,1,1); if(x.monster) col.multiply(new Col(1,.55,.55)); if(!glb){ if(mut.includes('radioattivo')) col.multiply(new Col(.7,1.2,.7)); if(mut.includes('bioluminescenza')) col.multiply(new Col(.7,1,1.25)); if(mut.includes('velenoso')) col.multiply(new Col(1.1,.7,1.25)); } c.tiers.forEach(tr=>{ for(let i=0;i<CAP;i++) tr.im.setColorAt(i,col); tr.im.instanceColor.needsUpdate=true; }); }
-    const lim=glb?24:12; const sz=(c.final?(1+Math.min(.5,.12*Math.max(0,(x.size||1)-1))):SIZE(x))*(x.monster?1.7:1), vis=c.final?c.len*sz:sz;
+    const lim=24; const sz=(c.final?(1+Math.min(.5,.12*Math.max(0,(x.size||1)-1))):SIZE(x))*(x.monster?1.7:1), vis=c.final?c.len*sz:sz;
     c.items.forEach((it,ix)=>{ if(ix>=lim){ it.hid=1; return; } it.hid=0; const dead=it.st===5;
-      if(!dead&&t>it.nt){ if(soc){ if(war){ it.tx=(wi?.1:-.1)+rnd(-.1,.1); it.tz=an[1]*.4+rnd(-.12,.12); } else { const edge=Math.random()<.15; it.tx=edge?rnd(-.8,.8):an[0]+rnd(-.28,.28); it.tz=edge?rnd(-.5,.5):an[1]+rnd(-.2,.2); it.carry=!edge&&Math.random()<.4; } } else { const a=Math.random()*6.283,d=Math.sqrt(Math.random())*.78; it.tx=Math.cos(a)*d; it.tz=Math.sin(a)*d; it.carry=false; } it.nt=t+1.5+Math.random()*3.5; it.eat=Math.random()<.3?1:0; }
-      const dx=it.tx-it.px, dz=it.tz-it.pz, d=dead?0:Math.hypot(dx,dz)||1, mv=!dead&&d>.02, st0=dead?0:Math.min(d,sp*dt); if(mv){ it.px+=dx/d*st0; it.pz+=dz/d*st0; const rr=Math.hypot(it.px,it.pz); if(rr>.84){ it.px*=.84/rr; it.pz*=.84/rr; } const ta=Math.atan2(dz,dx); let da=ta-it.ang; while(da>Math.PI) da-=6.283; while(da<-Math.PI) da+=6.283; it.ang+=da*Math.min(1,dt*7); }
+      const pl=it.mode===7; if(!dead&&!pl&&t>it.nt){ if(soc){ if(war){ it.tx=(wi?.1:-.1)+rnd(-.1,.1); it.tz=an[1]*.4+rnd(-.12,.12); } else if(plExp(it)&&plGoto(it)){ it.carry=false; } else { const edge=Math.random()<.15; it.tx=edge?rnd(-.8,.8):an[0]+rnd(-.28,.28); it.tz=edge?rnd(-.5,.5):an[1]+rnd(-.2,.2); it.carry=!edge&&Math.random()<.4; } } else if(!plGoto(it)){ const a=Math.random()*6.283,d=Math.sqrt(Math.random())*.78; it.tx=Math.cos(a)*d; it.tz=Math.sin(a)*d; it.carry=false; } it.nt=t+1.5+Math.random()*3.5; it.eat=Math.random()<.3?1:0; }
+      const dx=it.tx-it.px, dz=it.tz-it.pz, d=dead?0:Math.hypot(dx,dz)||1, mv=pl?!!it.pwalk:!dead&&d>.02, st0=dead?0:Math.min(d,sp*dt); if(mv&&!pl){ it.px+=dx/d*st0; it.pz+=dz/d*st0; const rr=Math.hypot(it.px,it.pz); if(rr>.84){ it.px*=.84/rr; it.pz*=.84/rr; } const ta=Math.atan2(dz,dx); let da=ta-it.ang; while(da>Math.PI) da-=6.283; while(da<-Math.PI) da+=6.283; it.ang+=da*Math.min(1,dt*7); }
       // stato: 0 idle · 1 walk · 2 carry · 3 fight · 4 eat · 5 dead
-      const st=dead?5:war?3:mv?(it.carry?2:1):(it.eat&&!fly?4:0); if(st!==it.st){ it.st=st; it.tw=0; } it.tw+=dt;
+      const st=dead?5:war?3:mv?(it.carry?2:1):(pl?(it.peat?4:0):it.eat&&!fly?4:0); if(st!==it.st){ it.st=st; it.tw=0; } it.tw+=dt;
       const tsp=mv?(war?1.6:1)*(1-.3*(dry||0)):0; it.spd+=(tsp-it.spd)*Math.min(1,dt*8); it.gait=(it.gait+dt*4*it.spd)%1;
-      const y=fly?S.soilTop+.35+Math.sin(t*1.1+it.ph)*.3:S.soilTop+(glb?0:Math.abs(Math.sin(t*(war?9:4)+it.ph))*(war?.03:.006));
+      const y=pl?it.y:fly?S.soilTop+.35+Math.sin(t*1.1+it.ph)*.3:S.soilTop+(glb?0:Math.abs(Math.sin(t*(war?9:4)+it.ph))*(war?.03:.006));
       it.y=y; it.sz=sz; it.mut=mutK;
       if(it.carry&&mv&&!war&&crumbN<crumbCap){ _p.set(it.px,y+vis*.55,it.pz); _m.makeTranslation(_p.x,_p.y,_p.z); crumbs.setMatrixAt(crumbN++,_m); }
       if(c.tiers.length>1){ const dcam=Math.hypot(it.px-_c.x,y-_c.y,it.pz-_c.z); it.pxs=kpx*c.len*sz/Math.max(.05,dcam); cands.push(it); it.c=c; } else { it.c=c; it.tier=0; budget-=c.tiers[0].tris; } });
@@ -359,5 +410,5 @@ function move(dt,t,v,dry){ uni.uTime.value=t; uni.uDry.value=dry||0; uni.uCharge
 function object(id){ const m=models[id]; if(!m||!m.object) return null; const t=m.tiers.find(q=>q.name==='close')||m.tiers[0]; const mat=t.mat.clone(); const mesh=new THREE.Mesh(t.geo,mat); mesh.geometry.computeBoundingBox(); const o={mesh,mat,tris:t.tris,box:mesh.geometry.boundingBox}; objs[id]=o; return o; }
 const objs={};
 function stats(){ const o={}; Object.values(crt).forEach(c=>{ o[c.id]={n:c.items.length,kind:c.kind,tiers:{}}; c.tiers.forEach(tr=>{ o[c.id].tiers[tr.name]=tr.n||0; }); }); return o; }
-return {crt,sync,move,ready,stats,object,objs,trails:[trG,trS],ah:AH,ahCanvas,webs,get loaded(){ return loaded; },models};
+return {dbg:()=>({n:entL.length,t:entT,ps:!!PS}),crt,sync,move,ready,stats,object,objs,trails:[trG,trS],ah:AH,ahCanvas,webs,get loaded(){ return loaded; },models};
 };
