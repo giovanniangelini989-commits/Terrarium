@@ -36,9 +36,9 @@ const PIANTE={
 // r: crescita logistica per ora a condizioni ottime (la copertura totale limita tutte: 1-cop); alt: altezza relativa (chi è più alto ombreggia chi è più basso);
 // pal: appetibilità per lumache e coleotteri; b0: copertura iniziale
 // KT: scala del tempo di crescita (Giovanni 29 ott: «le piante non crescono abbastanza»; poi il vaso pieno arriva a fine prima settimana reale = ~28 notti, non in 8). Vedi modello.md §9.
-const KT=.3;
+const KT=.45;
 const BIO={ muschio:{r:.2*KT,alt:.1,pal:.3,b0:.15}, felce:{r:.4*KT,alt:1,pal:.5,b0:.08}, succulenta:{r:.1*KT,alt:.5,pal:.6,b0:.06}, fungo:{r:.2*KT,alt:.25,pal:.2,b0:.04}, carnivora:{r:.15*KT,alt:.55,pal:.3,b0:.06} };
-const GIUNGLA_DA=.7, GIUNGLA_PIENA=1.0, SOFFOCO=.8, BIO_MIN=.02, POTA_ORE=6, POTA_TAGLIO=.4, POTA_MAX=.3, BRUCA_G=.08*KT;
+const GIUNGLA_DA=.7, GIUNGLA_PIENA=1.0, SOFFOCO=.8, BIO_MIN=.02, POTA_ORE=6, POTA_TAGLIO=.4, POTA_MAX=.3, BRUCA_G=.1*KT;
 const nuovaPianta=(p,v)=>({vigore:v,crescita:0,biomassa:BIO[p].b0,ombra:0});
 // finestra di benessere: 1 in una fascia larga attorno all'ottimo, scende a 0 ai limiti
 function finestra(x,lo,opt,hi){ if(x<=lo||x>=hi) return 0; return x<opt?clamp((x-lo)/((opt-lo)*.6)):clamp((hi-x)/((hi-opt)*.6)); }
