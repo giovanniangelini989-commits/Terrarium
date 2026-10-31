@@ -69,8 +69,10 @@ const giorni=(m,n,f,a)=>{ const o=[]; for(let d=1;d<=n;d++){ if(f) f(d,m); o.pus
 { console.log('\n== Giungla: vaso lasciato a sé (48 giorni del vaso = 12 giorni reali)'); const m=M.create({piante:['muschio','felce']}); const o=giorni(m,48);
   const dS=o.findIndex(v=>v.soffocato)+1, dG=o.findIndex(v=>v.giungla>0)+1; console.log('  giungla dal giorno',dG,'· soffocato dal giorno',dS,'· copertura finale',o[47].copertura,'muschio',JSON.stringify(o[47].piante.muschio));
   ok(o[1].giungla===0&&o[1].copertura<.4,'al giorno 2 il vaso è ancora ordinato (copertura '+o[1].copertura+')');
-  ok(dG>=22&&dG<=30,'la giungla comincia tra il giorno 22 e 30 (6–7 giorni reali) (giorno '+dG+')');
-  ok(dS>=30&&dS<=40,'soffoca tra il giorno 30 e 40, a fine della prima settimana reale (28 notti) (giorno '+dS+')');
+  ok(dG>=12&&dG<=18,'la giungla comincia tra la notte 12 e 18 (3–4 giorni reali), piena a ~20 (notte '+dG+')');
+  ok(o[11].copertura>=.6&&o[11].copertura<.8,'alla notte 12 il vaso è pieno (copertura '+o[11].copertura+')');
+  ok(dS>=18&&dS<=26,'soffoca tra la notte 18 e 26 (5–6 giorni reali) (notte '+dS+')');
+  ok(o[19].giungla>.2&&o[19].piante.muschio.ombra>.4,'alla notte 20 giungla: il muschio sotto soffre (giungla '+o[19].giungla+', ombra muschio '+o[19].piante.muschio.ombra+')');
   ok(o[47].piante.muschio.vigore<.15&&o[47].piante.muschio.ombra>.7,'il muschio all’ombra della felce ingiallisce (vigore '+o[47].piante.muschio.vigore+', ombra '+o[47].piante.muschio.ombra+')');
   ok(o[47].piante.felce.ombra<.3,'la felce in cima resta in luce');
   ok(o[47].detrito>o[0].detrito+.15&&o[47].muffa.foglie>.45,'foglie morte → detrito ('+o[0].detrito+'→'+o[47].detrito+') → muffa sulle foglie ('+o[47].muffa.foglie+')'); }
