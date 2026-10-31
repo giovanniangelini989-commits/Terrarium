@@ -50,6 +50,16 @@ for mid in sorted(os.listdir('assets/materiali')) if os.path.isdir('assets/mater
     for k in ('colore','normale','ruvidezza','altezza','maschera','panorama'):
         if os.path.exists(d+'/'+k+'.webp'):
             shutil.copyfile(d+'/'+k+'.webp','dist/materiali/'+mid+'/'+k+'.webp'); MATF[mid][k]='materiali/'+mid+'/'+k+'.webp?v='+__import__('hashlib').md5(open(d+'/'+k+'.webp','rb').read()).hexdigest()[:8]  # il telefono scarica di nuovo una foto solo quando cambia
+# Fotogrammi dell'apertura (assets/storia, render di Giovanni): WebP max 1080 px, file a parte con ?v= come i materiali
+import hashlib as _hl
+STF={}; os.makedirs('dist/storia',exist_ok=True)
+for _f in sorted(os.listdir('assets/storia')) if os.path.isdir('assets/storia') else []:
+    if not _f.endswith('.webp'): continue
+    _im=_I.open('assets/storia/'+_f).convert('RGB'); _im.thumbnail((1080,1080),_I.LANCZOS); _o='dist/storia/'+_f[0]+'.webp'; _im.save(_o,'WEBP',quality=82,method=6)
+    STF[_f[0]]='storia/'+_f[0]+'.webp?v='+_hl.md5(open(_o,'rb').read()).hexdigest()[:8]
+_im=_I.open('assets/materiali/cielo_notte/sorgente.png').convert('RGB'); _im.thumbnail((1400,1400),_I.LANCZOS); _im.save('dist/storia/6.webp','WEBP',quality=80,method=6)
+STF['6']='storia/6.webp?v='+_hl.md5(open('dist/storia/6.webp','rb').read()).hexdigest()[:8]  # cielo: foto di Giovanni (Via Lattea sul giardino), 2:1
+glb+='window.__STORIA_FOTO='+json.dumps(STF,separators=(',',':'))+';'
 glb+='window.__MAT_FOTO='+json.dumps(MATF,separators=(',',':'))+';'
 print('materiali fotografici:',{k:sorted(v) for k,v in MATF.items()})
 print('scenografia apertura:',sorted(GLB_AP))

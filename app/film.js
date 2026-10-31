@@ -2,13 +2,22 @@
 'use strict';
 const A=window.__app, T=A.T, S=A.S, esc=A.esc, AU=window.__au;
 const OBJ4=['statuina','orologio','giocattolo','specchio'];
+// Le prime sei scene sono un film di fotografie (assets/storia, render di Giovanni): Ken Burns lento, dissolvenze di 600 ms, nessun gesto richiesto.
+// fx = punto focale orizzontale (0..1 della larghezza della foto) all'inizio e alla fine; z = zoom; oy = origine verticale dello zoom.
+// Sul telefono verticale la foto 16:9 è ritagliata: si vede una striscia larga circa un quarto, che scorre da un soggetto all'altro.
 const SCN=[
- {id:'cielo',lines:()=>S.PRO.cielo,hint:'Tocca la stella che brilla'},
- {id:'giardino',lines:()=>S.PRO.giardino,hint:'Tieni premuto sul sasso'},
- {id:'barattolo',lines:()=>S.PRO.barattolo,hint:'Trascina il sasso nel barattolo'},
+ {id:'cielo',foto:6,lines:()=>S.PRO.cielo,fx:[.62,.40],z:[1,1.08],oy:.4},
+ {id:'giardino',foto:1,lines:()=>S.PRO.giardino,fx:[.36,.58],z:[1,1.08],oy:.55},
+ {id:'scoperta',foto:2,lines:()=>S.PRO.scoperta,fx:[.45,.51],z:[1,1.08],oy:.45},
+ {id:'mano',foto:3,lines:()=>S.PRO.mano,fx:[.52,.45],z:[1,1.08],oy:.5},
+ {id:'vaso',foto:4,lines:()=>S.PRO.vaso,fx:[.46,.62],z:[1,1.08],oy:.5},
+ {id:'respiro',foto:5,lines:()=>S.PRO.respiro,fx:[.30,.40],z:[1,1.08],oy:.5},
  {id:'luce',lines:()=>S.PRO.posto,ctl:'luce'},
  {id:'legenda',lines:()=>S.PRO.legenda,hint:'Tocca il sasso: senti il battito'},
  {id:'nome',lines:()=>S.PRO.nome,ctl:'nome'}];
+const LUCE=SCN.findIndex(x=>x.id==='luce');
+let PL={}, vw=0, vh=0;
+const reduced=()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } };
 let el,cv,cx,w=0,h=0,dpr=1,u=1,raf=0,sc=-1,st={},lineI=0,lineTimer=0,P,nm='Piccolo Mondo',done=null,replay=false,ptr={x:0,y:0},pair=[];
 let R=null, R3=null, load3=null, mode='2d';   // R = lettore attivo (2D o 3D). Il 3D vive in app/apertura.js.
 const fast=()=>!!window.__fast;
@@ -65,16 +74,22 @@ function draw2(t){ const id=SCN[sc].id; cx.setTransform(1,0,0,1,0,0); cx.textAli
 function make2D(){ const c=document.createElement('canvas'); return {kind:'2d',canvas:c,fit(){ dpr=Math.min(2,window.devicePixelRatio||1); c.width=Math.round(innerWidth*dpr); c.height=Math.round(innerHeight*dpr); },size:()=>({w:c.width,h:c.height,dpr}),frame(t){ cx=c.getContext('2d'); draw2(t); },
   anchors(id){ const g=jarGeom(); return {center:{x:w*.5,y:h*.5},star:id==='cielo'?starPos2(performance.now()):null,stone:id==='giardino'?{x:w*.66,y:h*.84}:(st.stone||{x:g.cx,y:h*.2}),jar:g}; },dispose(){ c.remove(); }}; }
 // ---------- logica per fotogramma (uguale per 2D e 3D) ----------
-function tick(t){ const id=SCN[sc].id; const v=st.v=st.v||{};
+function layoutPhotos(){ vw=el.clientWidth; vh=el.clientHeight; Object.keys(PL).forEach(k=>{ const L=PL[k]; L.w=Math.max(vw,vh*L.ar); L.im.style.width=L.w+'px'; }); }
+function tickPhoto(t){ const s0=SCN[sc], L=PL[s0.foto]; if(!L) return; const k=Math.max(0,Math.min(1,(t-st.t0)/st.dur)), e=reduced()?.5:k;
+  const fx=lerp(s0.fx[0],s0.fx[1],e), z=lerp(s0.z[0],s0.z[1],e), tx=Math.max(vw-L.w,Math.min(0,vw/2-L.w*fx));
+  L.kb.style.transformOrigin='50% '+(s0.oy*100)+'%'; L.kb.style.transform='scale('+z.toFixed(4)+')'; L.im.style.transform='translate3d('+tx.toFixed(1)+'px,0,0)';
+  const star=$('.f-star'), gl=$('.f-glow'); if(star){ let on=0, go2=0; if(s0.id==='cielo'&&!reduced()){ const f=(k-.42)/.3; if(f>=0&&f<=1){ on=1; const q=f*f*(3-2*f), x0=vw*.88, y0=vh*.03, x1=vw*.5, y1=vh*.8, ang=Math.atan2(y1-y0,x1-x0)*57.3-90; star.style.opacity=Math.min(1,Math.sin(f*3.14)*2.2).toFixed(2); star.style.transform='translate3d('+(x0+(x1-x0)*q).toFixed(0)+'px,'+(y0+(y1-y0)*q).toFixed(0)+'px,0) rotate('+ang.toFixed(1)+'deg) translateY(-100%)'; } const g=(k-.72)/.25; if(g>=0&&g<=1){ go2=1; gl.style.opacity=(Math.sin(g*3.14)*.9).toFixed(2); gl.style.transform='translate3d(-50%,-50%,0) scale('+(.4+g*1.3).toFixed(2)+')'; } } if(!on) star.style.opacity=0; if(!go2) gl.style.opacity=0; }
+  if(k>=1&&!st.next&&!window.__holdFilm){ st.next=1; go(sc+1); } }
+function tick(t){ const id=SCN[sc].id; const v=st.v=st.v||{}; if(SCN[sc].foto){ tickPhoto(t); return; }
   if(id==='cielo'){ v.fall=st.fall==null?0:Math.min(1,(t-st.fall)/(fast()?200:1800)); if(st.fall!=null&&v.fall>=1&&!st.hit){ st.hit=t; AU.sfx('tonfo'); } if(st.hit&&!st.next&&t-st.hit>(fast()?200:1500)){ st.next=1; go(1); } }
   else if(id==='giardino'){ v.hold=st.hold?(t-st.hold)/(fast()?200:900):0; if(st.hold&&!st.lift&&v.hold>=1){ st.lift=t; st.hold=0; AU.sfx('arrivo'); try{ navigator.vibrate&&navigator.vibrate(40); }catch(e){} } v.lift=st.lift?ease((t-st.lift)/(fast()?150:1300)):0; if(st.lift&&v.lift>=1&&!st.next){ st.next=1; go(2); } }
   else if(id==='barattolo'){ if(st.drop){ v.drop=ease((t-st.drop)/(fast()?150:800)); if(v.drop>=1){ if(!st.thump){ st.thump=t; AU.sfx('tonfo'); try{ navigator.vibrate&&navigator.vibrate([30,60,30]); }catch(e){} } const k=(t-st.thump)/(fast()?300:1100); v.lid=Math.min(1,Math.max(0,(t-st.thump-(fast()?60:500))/(fast()?150:700))); if(k>1.3&&!st.next){ st.next=1; go(3); } } else v.lid=0; } else v.drop=0; }
   else if(id==='nome'){ v.end=st.end?(t-st.end)/(fast()?300:2400):0; const f=$('.f-fade'); if(f) f.style.opacity=Math.min(1,v.end); } }
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&el&&!raf) raf=requestAnimationFrame(draw); });
-function draw(t){ if(document.hidden){ raf=0; return; } raf=requestAnimationFrame(draw); if(!R||!SCN[sc]) return; tick(t); if(!el) return; try{ R.frame(t,{id:SCN[sc].id,st,P,lineI,fast:fast()}); }catch(e){ if(R.kind==='3d') fallback2D('errore'); } }
+function draw(t){ if(document.hidden){ raf=0; return; } raf=requestAnimationFrame(draw); if(!R||!SCN[sc]) return; tick(t); if(!el||SCN[sc].foto) return; try{ R.frame(t,{id:SCN[sc].id,st,P,lineI,fast:fast()}); }catch(e){ if(R.kind==='3d') fallback2D('errore'); } }
 // ---------- flusso ----------
 function sub(text){ const s=$('.f-sub'); s.classList.remove('in'); void s.offsetWidth; s.textContent=text; s.classList.add('in'); }
-function nextLine(){ clearTimeout(lineTimer); const L=SCN[sc].lines(); if(lineI>=L.length-1) return; lineI++; sub(L[lineI]); AU.say(L[lineI]); if(lineI===L.length-1) activate(); else lineTimer=setTimeout(nextLine,dur(L[lineI])); }
+function nextLine(){ clearTimeout(lineTimer); const L=SCN[sc].lines(); if(lineI>=L.length-1) return; lineI++; sub(L[lineI]); if(!SCN[sc].foto) AU.say(L[lineI]); if(lineI===L.length-1) activate(); else lineTimer=setTimeout(nextLine,dur(L[lineI])); }
 function setHint(t){ const e=$('.f-hint'); e.textContent=t||''; e.style.opacity=t?1:0; }
 function activate(){ const S0=SCN[sc]; st.active=true; if(S0.hint) setHint(S0.hint); if(S0.ctl) setCtl(S0.ctl); }
 function optBtn(k,i,em,lb,sm,on){ return '<button class="f-opt" data-f="pick" data-k="'+k+'" data-i="'+i+'" aria-pressed="'+on+'"><span>'+em+'</span><b>'+lb+'</b><small>'+sm+'</small></button>'; }
@@ -83,13 +98,13 @@ function setCtl(kind){ const c=$('.f-ctl'); let h2='';
   else if(kind==='nome') h2='<input class="fld f-nm" id="f-nm" maxlength="18" value="'+esc(nm)+'" aria-label="Nome del terrario"><div class="f-chips">'+['Lumen','Piccolo Mondo','Stellina','Casa'].map(n=>'<button class="chip" data-f="chip" data-n="'+n+'">'+n+'</button>').join('')+'</div><button class="btn" data-f="end">Chiudi il coperchio</button>';
   else if(kind==='avanti') h2='<button class="btn" data-f="next">Avanti</button>';
   c.innerHTML=h2; el.classList.toggle('hasctl',!!h2); }
-function enter(i){ clearTimeout(lineTimer); sc=i; st={t0:performance.now(),v:{}}; lineI=-1; setHint(''); setCtl(''); $('.f-skip').style.display=(i<=2||replay)?'':'none'; $('.f-skip').textContent=replay?'Chiudi ✕':'Salta ›'; nextLine(); }
-function go(i){ if(replay&&i>=SCN.length-1){ finish(); return; } cv.classList.add('out'); setTimeout(()=>{ enter(Math.min(i,SCN.length-1)); if(cv) cv.classList.remove('out'); },fast()?30:450); }
+function enter(i){ clearTimeout(lineTimer); sc=i; const S0=SCN[i]; let dd=0; if(S0.foto){ const L=S0.lines(); dd=fast()?1500:Math.max(5000,Math.min(7500,L.slice(0,-1).reduce((a,x)=>a+dur(x),0)+dur(L[L.length-1])*.9)); } st={t0:performance.now(),v:{},dur:dd}; lineI=-1; setHint(''); setCtl(''); el.classList.toggle('ph',!!S0.foto); Object.keys(PL).forEach(k=>PL[k].d.classList.toggle('on',+k===S0.foto)); ['.f-star','.f-glow'].forEach(q=>{ const e=$(q); if(e) e.style.opacity=0; }); $('.f-skip').style.display=(S0.foto||replay)?'':'none'; $('.f-skip').textContent=replay?'Chiudi ✕':'Salta ›'; nextLine(); }
+function go(i){ if(replay&&i>=SCN.length-1){ finish(); return; } if(SCN[i].foto||(SCN[sc]&&SCN[sc].foto)){ enter(Math.min(i,SCN.length-1)); return; } cv.classList.add('out'); setTimeout(()=>{ enter(Math.min(i,SCN.length-1)); if(cv) cv.classList.remove('out'); },fast()?30:450); }
 function finish(res){ cancelAnimationFrame(raf); raf=0; clearTimeout(lineTimer); AU.stopVoice(); const e=el; el=null; e.classList.add('out'); const r=R; R=null; setTimeout(()=>{ e.remove(); if(r&&r.kind==='3d') r.dispose(); },500); const d=done; done=null; if(d) d(res); }
 function setPtr(e){ const r=cv.getBoundingClientRect(); ptr={x:(e.clientX-r.left)*dpr,y:(e.clientY-r.top)*dpr}; }
 function pulse(){ (st.rings=st.rings||[]).push(performance.now()); st.n=(st.n||0)+1; AU.sfx('tonfo'); try{ navigator.vibrate&&navigator.vibrate(25); }catch(e){} if(st.n===1) st.boost=true; if(st.n>=3&&!st.shown){ st.shown=true; setHint(''); setCtl('avanti'); } }
 // Il primo tocco sulla stella o sul sasso conta subito (difetto segnalato dal giocatore): si prova prima l'azione, poi la frase.
-function onDown(e){ if(!el||e.target.closest('.f-ctl,.f-skip')) return; setPtr(e); const id=SCN[sc].id, t=performance.now(); const an=R.anchors(id); let hit=false;
+function onDown(e){ if(!el||e.target.closest('.f-ctl,.f-skip,.f-gate')) return; if(SCN[sc]&&SCN[sc].foto){ const L=SCN[sc].lines(); if(lineI<L.length-1) nextLine(); else if(!st.next){ st.next=1; go(sc+1); } return; } setPtr(e); const id=SCN[sc].id, t=performance.now(); const an=R.anchors(id); let hit=false;
   if(id==='cielo'&&st.fall==null){ if(an.star&&dist(ptr,an.star)<u*.22){ st.fall=t; setHint(''); AU.sfx('mut'); hit=true; } }
   else if(id==='giardino'&&!st.lift){ if(an.stone&&dist(ptr,an.stone)<u*.25){ st.hold=t; setHint(''); hit=true; } }
   else if(id==='barattolo'&&!st.drop){ if(an.stone&&dist(ptr,an.stone)<u*.25){ st.drag=true; st.stone={x:ptr.x,y:ptr.y}; setHint(''); hit=true; } }
@@ -104,14 +119,14 @@ function onClick(e){ if(!el) return; const b=e.target.closest('[data-f]'); if(!b
   else if(a==='next'){ go(sc+1); } else if(a==='chip'){ nm=b.dataset.n; const i=$('#f-nm'); if(i) i.value=nm; }
   else if(a==='end'){ const i=$('#f-nm'); nm=((i&&i.value)||'').trim().slice(0,18)||'Piccolo Mondo'; st.end=performance.now(); setCtl(''); setHint(''); const L=S.PRO.fine; sub(L[0]); AU.say(L[0]); lineTimer=setTimeout(()=>{ sub(L[1]); AU.say(L[1]); lineTimer=setTimeout(()=>finish({name:nm,setup:{luce:P.luce,acqua:1,meteorite:1,piante:[],insetti:[],oggetti:[]}}),fast()?200:3600); },fast()?200:3200); }
   else if(a==='gate'){ AU.unlock(); AU.unlockVoice(); const gt=$('.f-gate'); if(gt) gt.remove(); enter(0); }
-  else if(a==='skip'){ if(replay) finish(); else go(3); } }
-function fit(){ if(!R) return; R.fit(); const s=R.size(); dpr=s.dpr; w=s.w; h=s.h; u=Math.min(w,h*.7); }
+  else if(a==='skip'){ if(replay) finish(); else go(LUCE); } }
+function fit(){ if(el&&el.clientWidth) layoutPhotos(); if(!R) return; R.fit(); const s=R.size(); dpr=s.dpr; w=s.w; h=s.h; u=Math.min(w,h*.7); }
 function use(r){ if(!el) return; const old=R; R=r; mode=r.kind; const c=r.canvas; c.className=(old&&old.canvas.className.includes('out'))?'out':''; el.insertBefore(c,el.firstChild); if(old){ old.canvas.remove(); if(old.kind==='3d') old.dispose(); } cv=c; fit(); }
 function fallback2D(why){ if(!el||!R||R.kind!=='3d') return; try{ console.warn('apertura 3D: riserva 2D ('+why+')'); }catch(e){} R3=null; use(make2D()); }
 function start3D(){ if(window.__no3d||!window.__APERTURA||load3) return; const my=load3=Promise.race([window.__APERTURA.create(el,{onFallback:fallback2D}),new Promise((_,rej)=>setTimeout(()=>rej('timeout'),fast()?20000:12000))]);
   my.then(r=>{ if(!el||load3!==my){ try{ r.dispose(); }catch(e){} return; } R3=r; use(r); }).catch(e=>{ try{ console.warn('apertura 3D non disponibile:',e&&e.message||e); }catch(x){} }).finally(()=>{ if(load3===my) load3=null; }); }
 function start(cb,opts){ opts=opts||{}; replay=!!opts.replay; done=cb; P={luce:null,acqua:null,oggetto:undefined}; pair=[]; nm='Piccolo Mondo';
-  el=document.createElement('div'); el.id='film'; el.className='film'; el.innerHTML='<button class="f-skip" data-f="skip">Salta ›</button><div class="f-fade" style="position:absolute;inset:0;background:#04060d;opacity:0;pointer-events:none;z-index:2"></div><div class="f-sub" aria-live="polite"></div><div class="f-hint"></div><div class="f-ctl"></div>'+(replay?'':'<div class="f-gate" data-f="gate"><div class="gt" role="img" aria-label="Terrario"></div><div class="gs">Tocca per iniziare</div><div class="gn">Meglio con l’audio acceso: la storia ti viene raccontata a voce.</div></div>'); document.body.appendChild(el); R=null; use(make2D()); start3D();
+  el=document.createElement('div'); el.id='film'; el.className='film'; el.innerHTML='<div class="f-ph"></div><div class="f-vig"></div><div class="f-grain"></div><div class="f-star"></div><div class="f-glow"></div><button class="f-skip" data-f="skip">Salta ›</button><div class="f-fade" style="position:absolute;inset:0;background:#04060d;opacity:0;pointer-events:none;z-index:2"></div><div class="f-sub" aria-live="polite"></div><div class="f-hint"></div><div class="f-ctl"></div>'+(replay?'':'<div class="f-gate" data-f="gate"><div class="gt" role="img" aria-label="Terrario"></div><div class="gs">Tocca per iniziare</div><div class="gn">Meglio con l’audio acceso: la storia ti viene raccontata a voce.</div></div>'); document.body.appendChild(el); PL={}; const FOTO=window.__STORIA_FOTO||{}; const phd=$('.f-ph'); [1,2,3,4,5,6].forEach(n=>{ if(!FOTO[n]) return; const d=document.createElement('div'); d.className='f-pl'; const kb=document.createElement('div'); kb.className='f-kb'; const im=new Image(); im.alt=''; im.decoding='async'; im.draggable=false; im.src=FOTO[n]; kb.appendChild(im); d.appendChild(kb); phd.appendChild(d); PL[n]={d,kb,im,ar:n===6?2:1400/788}; }); layoutPhotos(); R=null; use(make2D()); start3D();
   el.addEventListener('pointerdown',onDown); el.addEventListener('pointermove',onMove); el.addEventListener('pointerup',onUp); el.addEventListener('pointercancel',onUp); el.addEventListener('click',onClick); window.addEventListener('resize',fit);
   AU.unlock(); sc=0; st={v:{}}; lineI=-1; if(replay) enter(0); raf=requestAnimationFrame(draw); }
 window.__film={start,_go:i=>go(i),get scene(){ return sc>=0?SCN[sc].id:null; },get P(){ return P; },get mode(){ return mode; },get loading3d(){ return !!load3; },anchors(){ return R&&sc>=0?R.anchors(SCN[sc].id):null; },info(){ return R&&R.info?R.info():null; },get slots(){ return R3?R3.slots:null; }};

@@ -96,6 +96,19 @@ img.ico{width:1.05em;height:1.05em;object-fit:contain;display:inline-block;verti
 .film.out{opacity:0}
 .film canvas{position:absolute;inset:0;width:100%;height:100%;transition:opacity .45s}
 .film canvas.out{opacity:0}
+.f-ph,.f-vig,.f-grain{position:absolute;inset:0;z-index:1;pointer-events:none}
+.f-ph{overflow:hidden}
+.f-pl{position:absolute;inset:0;opacity:0;transition:opacity .6s ease}
+.f-pl.on{opacity:1}
+.f-kb{position:absolute;inset:0;will-change:transform}
+.f-kb img{position:absolute;top:0;left:0;height:100%;max-width:none;will-change:transform;user-select:none;-webkit-user-drag:none}
+.f-vig{opacity:0;transition:opacity .6s;background:radial-gradient(ellipse at 50% 42%,transparent 42%,rgba(4,6,13,.6) 100%),linear-gradient(to top,rgba(4,6,13,.82),rgba(4,6,13,0) 40%),linear-gradient(to bottom,rgba(4,6,13,.45),rgba(4,6,13,0) 18%)}
+.f-grain{opacity:0;transition:opacity .6s;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.4 -.2'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");animation:fgr .6s steps(1) infinite}
+.film.ph .f-vig{opacity:1}.film.ph .f-grain{opacity:.22}
+@keyframes fgr{0%{background-position:0 0}25%{background-position:-40px 24px}50%{background-position:30px -50px}75%{background-position:-20px -30px}}
+.f-star{position:absolute;left:0;top:0;width:2px;height:110px;z-index:1;opacity:0;pointer-events:none;background:linear-gradient(to bottom,rgba(255,240,200,0),#fff);box-shadow:0 0 10px 2px rgba(255,235,190,.7);border-radius:2px}
+.f-glow{position:absolute;left:50%;top:82%;width:46vmin;height:46vmin;z-index:1;opacity:0;pointer-events:none;border-radius:50%;background:radial-gradient(circle,rgba(190,160,255,.85),rgba(168,139,255,.3) 40%,transparent 70%)}
+.film.ph .f-sub{top:auto;bottom:calc(env(safe-area-inset-bottom) + 54px);min-height:0}
 .f-skip{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:14px;z-index:3;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:8px 14px;font-weight:700;font-size:13px}
 .f-sub{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top) + 58px);padding:0 26px;text-align:center;font:italic 400 21px/1.35 Fraunces,Georgia,serif;color:#EAF1F5;text-shadow:0 2px 12px #000;z-index:2;min-height:90px;opacity:0;pointer-events:none}
 .f-sub.in{animation:fin 1s forwards}
