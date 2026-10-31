@@ -121,7 +121,6 @@ img.ico{width:1.05em;height:1.05em;object-fit:contain;display:inline-block;verti
 .nar{font-family:Fraunces,Georgia,serif;font-style:italic;font-size:16px;line-height:1.4;color:#E4EBF0}
 .diary .ln.nar span:last-child{font-family:Fraunces,Georgia,serif;font-style:italic;font-size:14.5px}
 .li.nar>div{font-size:15px}
-.card.qp .nar{margin:6px 0 0}
 .page{font-size:18px!important}
 .epi{max-width:310px;color:#DCE4EE;font-family:Fraunces,Georgia,serif;font-style:italic;font-size:18px;line-height:1.45}
 .tbar{height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin:6px 0 12px}.tbar i{display:block;height:100%;width:100%;transform-origin:left center;background:var(--amber)}
@@ -391,3 +390,14 @@ body:has(.mpill) .toast{bottom:calc(env(safe-area-inset-bottom) + 218px)}
 .mpill.ok .mp-n{color:#7CF5C8}
 .mpill .mp-go.rc{background:#7CF5C8;color:#0d241c}
 @media (prefers-reduced-motion: reduce){.mi .rcbtn{transition:none}}
+/* icone SVG a linea (libreria ICN in app3.js) al posto delle emoji */
+svg.ei{width:1.1em;height:1.1em;display:inline-block;vertical-align:-.18em;flex:none;pointer-events:none;overflow:visible}
+svg.ei .a{stroke:#A88BFF}svg.ei .g{stroke:#7CF5C8}
+.nf span svg.ei{width:24px;height:24px;vertical-align:middle}
+/* pagine del quaderno su carta a righe: ogni riga di testo è alta 28 px e poggia sulla riga della carta (passo 28 px) */
+.paper{background:var(--carta-quaderno) 0 0/100% 532px repeat-y,#E8DCC0;border-radius:10px;padding:22px 14px 6px 44px;margin:6px 0;box-shadow:0 6px 18px #0008,inset 0 0 22px #6b4a1a33;color:#2B2433}
+.paper .qp{margin:0 0 28px}
+.paper .kicker{line-height:28px;color:#8a3b3b;font-size:11px;margin:0}
+.paper .qp b{display:block;font:700 17px/28px Fraunces,Georgia,serif;color:#2B2433;margin:0}
+.paper .qp .nar{font:italic 16px/28px Fraunces,Georgia,serif;color:#3a3040;margin:0}
+.paper svg.ei{stroke:#5b4630}

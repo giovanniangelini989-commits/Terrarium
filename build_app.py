@@ -84,7 +84,10 @@ def _logo(n):
     if _im.width>1200: _im=_im.resize((1200,round(_im.height*1200/_im.width)),Image.LANCZOS)
     _b=io.BytesIO(); _im.save(_b,'WEBP',quality=88,method=6)
     return 'data:image/webp;base64,'+base64.b64encode(_b.getvalue()).decode('ascii')
-LOGO_VARS=':root{--logo-scuro:url('+_logo('scuro')+');--logo-orizz:url('+_logo('orizzontale')+');--logo-chiaro:url('+_logo('chiaro')+')}'
+# carta del quaderno (assets/materiali/carta_quaderno, foto di Giovanni): ritagliata su 19 righe esatte (passo 52,2 px) così si ripete senza stacchi
+_c=Image.open('assets/materiali/carta_quaderno/colore.webp').convert('RGB').crop((0,24,1024,1016)); _c=_c.resize((640,round(640*992/1024)),Image.LANCZOS); _b=io.BytesIO(); _c.save(_b,'WEBP',quality=80,method=6)
+CARTA_VAR='--carta-quaderno:url(data:image/webp;base64,'+base64.b64encode(_b.getvalue()).decode('ascii')+')'
+LOGO_VARS=':root{'+CARTA_VAR+';--logo-scuro:url('+_logo('scuro')+');--logo-orizz:url('+_logo('orizzontale')+');--logo-chiaro:url('+_logo('chiaro')+')}'
 SPLASH=base64.b64encode(open('assets/brand/splash.webp','rb').read()).decode()
 # marchio e icona dell'app (assets/brand, da Giovanni): incorporati, così «Aggiungi a Home» mostra l'icona vera
 ICO180=base64.b64encode(open('assets/brand/icona-180.png','rb').read()).decode(); FAV=base64.b64encode(open('assets/brand/favicon-64.png','rb').read()).decode()
