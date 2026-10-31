@@ -79,6 +79,12 @@ MAN_URI='data:application/manifest+json;base64,'+base64.b64encode(json.dumps(MAN
 MARCHIO=open('assets/brand/marchio.svg').read().split('?>',1)[-1]
 MARCHIO=__import__('re').sub(r'<!--.*?-->','',MARCHIO,flags=__import__('re').S).strip().replace('<svg ','<svg class="mk" aria-hidden="true" ',1)
 print('manifest',len(MAN_URI),'byte')
+def _logo(n):
+    _im=Image.open('assets/brand/logo_%s.png'%n).convert('RGBA')
+    if _im.width>1200: _im=_im.resize((1200,round(_im.height*1200/_im.width)),Image.LANCZOS)
+    _b=io.BytesIO(); _im.save(_b,'WEBP',quality=88,method=6)
+    return 'data:image/webp;base64,'+base64.b64encode(_b.getvalue()).decode('ascii')
+LOGO_VARS=':root{--logo-scuro:url('+_logo('scuro')+');--logo-orizz:url('+_logo('orizzontale')+');--logo-chiaro:url('+_logo('chiaro')+')}'
 SPLASH=base64.b64encode(open('assets/brand/splash.webp','rb').read()).decode()
 # marchio e icona dell'app (assets/brand, da Giovanni): incorporati, così «Aggiungi a Home» mostra l'icona vera
 ICO180=base64.b64encode(open('assets/brand/icona-180.png','rb').read()).decode(); FAV=base64.b64encode(open('assets/brand/favicon-64.png','rb').read()).decode()
@@ -98,6 +104,7 @@ html=f'''<!doctype html>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..500&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+{LOGO_VARS}
 {css}
 </style>
 <script type="importmap">{{"imports":{{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js"}}}}</script>
@@ -105,7 +112,7 @@ html=f'''<!doctype html>
 <body>
 <div id="app"><div id="screen" class="screen"></div><nav id="tabbar" class="glass" hidden aria-label="Sezioni"></nav></div>
 <div id="layer"></div>
-<div id="splash" class="splash" role="status" aria-label="Terrario si sta caricando"><img class="bg" alt="" src="data:image/webp;base64,{SPLASH}">{MARCHIO}<div class="sname">Terrario</div></div>
+<div id="splash" class="splash" role="status" aria-label="Terrario si sta caricando"><img class="bg" alt="" src="data:image/webp;base64,{SPLASH}"><div class="sname" role="img" aria-label="Terrario"></div></div>
 <script>
 {icone_js}
 </script>
