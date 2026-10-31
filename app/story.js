@@ -10,8 +10,11 @@ const TITOLI=['Ospite','Curioso','Osservatore','Custode','Testimone','Guardiano'
 // ---------- prologo (ricordo, in seconda persona: il giocatore è il bambino) ----------
 const PRO={
  cielo:['Quella notte non riuscivi a dormire.','Dalla finestra hai visto una stella staccarsi dal cielo.'],
- giardino:['È caduta in giardino, dietro il gelso. Un rumore come di vetro su un tappeto.','Era un sasso nero con delle crepe viola. Era caldo. E batteva, piano, come un cuore.'],
- barattolo:['Hai svuotato il barattolo della marmellata. Dentro, solo il sasso.','Il vetro si è scaldato subito. La nonna dice che per fare un mondo ci vuole prima la terra, poi l’acqua. Il resto viene da sé.'],
+ giardino:['È caduta in giardino, dietro il gelso. Sei corso fuori scalzo, senza pensarci.'],
+ scoperta:['Un sasso nero, con delle crepe viola. Fumava ancora.','Era caldo. E batteva, piano, come un cuore.'],
+ mano:['Te lo sei messo tra le mani, dentro le maniche, per non lasciarlo al freddo.'],
+ vaso:['In camera hai svuotato il barattolo della marmellata. Il sasso ci sta giusto, sulla scrivania, vicino alla finestra.'],
+ respiro:['Hai avvicinato il viso. Il tuo fiato ha appannato il vetro.','Là dentro, qualcosa respirava con te.'],
  posto:['Dove lo metti? Vicino alla finestra il sole lo fa battere più forte. Ma ti fa un po’ paura.'],
  acqua:['Quanta acqua? La nonna dice che le piante bevono pochissimo. Le lumache invece…'],
  ospite:['Una formica ti ha seguito fin dentro. Era già lì, in fondo al muschio, come se aspettasse.'],

@@ -14,13 +14,10 @@ with sync_playwright() as p:
     pg.goto('file://'+__import__('os').path.abspath('dist')+'/terrario-gioco.html'); pg.wait_for_timeout(1900)
     sc=lambda:pg.evaluate("__film.scene")
     t('parte dal video con la schermata «Tocca per iniziare»',pg.evaluate("__ui.mode")=='film' and pg.locator('.f-gate').count()==1); pg.screenshot(path=f'screenshots/{tag}_f0_gate.png'); pg.click('.f-gate'); pg.wait_for_timeout(300); t('si inizia dalla notte',sc()=='cielo',sc())
-    pg.wait_for_timeout(500); pg.screenshot(path=f'screenshots/{tag}_f1_cielo.png')
-    pg.mouse.click(VW*.5,VH*.22); pg.wait_for_timeout(700); pg.screenshot(path=f'screenshots/{tag}_f1b_caduta.png'); pg.wait_for_timeout(900)
-    t('la stella cade → giardino',sc()=='giardino',sc()); pg.wait_for_timeout(500); pg.screenshot(path=f'screenshots/{tag}_f2_giardino.png')
-    pg.mouse.move(VW*.66,VH*.84); pg.mouse.down(); pg.wait_for_timeout(450); pg.mouse.up(); pg.wait_for_timeout(1000)
-    t('tenere premuto → barattolo',sc()=='barattolo',sc()); pg.wait_for_timeout(500); pg.screenshot(path=f'screenshots/{tag}_f3_barattolo.png')
-    pg.mouse.move(VW*.5,VH*.2); pg.mouse.down(); pg.mouse.move(VW*.5,VH*.3,steps=6); pg.mouse.move(VW*.5,VH*.44,steps=6); pg.screenshot(path=f'screenshots/{tag}_f3b_trascina.png'); pg.mouse.up(); pg.wait_for_timeout(1400)
-    t('sasso nel barattolo → scelta luce',sc()=='luce',sc()); pg.wait_for_timeout(400)
+    for _n in range(30):
+        if sc()=='luce': break
+        pg.mouse.click(VW*.5,VH*.5); pg.wait_for_timeout(250)
+    t('film fotografico: toccando si arriva alla scelta luce',sc()=='luce',sc()); pg.wait_for_selector('.f-ctl [data-f=next]',timeout=20000); pg.screenshot(path=f'screenshots/{tag}_f1_luce.png')
     t('Avanti bloccato finché non scegli',pg.locator('.f-ctl [data-f=next]').is_disabled())
     pg.click('.f-opt[data-k=luce][data-i="2"]'); pg.screenshot(path=f'screenshots/{tag}_f4_luce.png'); pg.click('[data-f=next]'); pg.wait_for_timeout(700)
     t('leggenda',sc()=='legenda',sc()); pg.wait_for_timeout(500); pg.screenshot(path=f'screenshots/{tag}_f7_leggenda.png')
