@@ -12,7 +12,7 @@ Verifica: `python3 e2e_emoji.py` apre tutti gli scenari di `?test`, le schede e 
 | ⏩ | app3.js | SVG `ff` |  |
 | ⏭ | app1.js | SVG `skip` |  |
 | ⏰ | app1.js | foto orologio | sì |
-| ⏱ | app3.js | ? |  |
+| ⏱ | app3.js | foto orologio |  |
 | ⏳ | app1.js | foto orologio |  |
 | ⏸ | app3.js | SVG `pause` |  |
 | ☀ | app3.js | SVG `sun` |  |
@@ -29,8 +29,8 @@ Verifica: `python3 e2e_emoji.py` apre tutti gli scenari di `?test`, le schede e 
 | ✉ | app3.js | SVG `mail` |  |
 | ✋ | app1.js | SVG `hand` |  |
 | ✍ | app3.js | SVG `pencil` |  |
-| ✔ | app3.js | ? |  |
-| ✖ | app3.js | ? |  |
+| ✔ | app3.js | SVG `check` |  |
+| ✖ | app3.js | SVG `cross` |  |
 | ✨ | app1.js | SVG `sparkle` |  |
 | ❄ | app1.js | SVG `snow` |  |
 | ❓ | app3.js | SVG `ask` |  |
@@ -142,3 +142,5 @@ Verifica: `python3 e2e_emoji.py` apre tutti gli scenari di `?test`, le schede e 
 
 ## Da chiedere a Giovanni come foto (ChatGPT)
 Oggetti: statuina, orsetto (giocattolo), specchietto, libro, moneta, radio, candela, orologio (già foto). Piante: muschio, succulenta, fungo, carnivora. Facoltative: lanterna, barattolo, gemma, uovo.
+
+Nel 3D e nella vista 2D (canvas): `window.__icnImg` / `__icnFT` (app3.js) usate da `emoji()` in v3d.js e dai fillText di app2.js: foto o icona SVG a linea con alone scuro.

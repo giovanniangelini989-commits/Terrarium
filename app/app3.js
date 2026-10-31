@@ -109,13 +109,14 @@
     coffee:P('M5 8h11v6a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 10h2a2 2 0 0 1 0 4h-2')+P('M8 3.5v2M12 3.5v2','a'),
     cookie:O(12,12,9)+O(9,9,.9,'a')+O(15,10.5,.9,'a')+O(10,15,.9,'a')+O(15,15.5,.9,'a'),
     flask:P('M9 3h6M10 3v6l-5 10a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 19l-5-10V3')+P('M7.5 15.5h9','a'),
+    check:P('M5 12.5l4.5 4.5L19 7'), cross:P('M6 6l12 12M18 6L6 18'),
     dot:O(12,12,2.4),
     badge:P('M12 3l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z'),
     tag:P('M3.5 12.5V4.5h8l9 9-8 8z')+O(8,9,1,'a'),
     star:P('M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z')
   };
   /* emoji (senza U+FE0F) -> chiave; elenco separato da spazi, i rimandi a foto stanno in PH */
-  const EM={sparkle:'✨ ⭐ 🌟',bolt:'⚡',bell:'🔔',eye:'👁',swords:'⚔',meteor:'☄',monster:'👹 👺',dove:'🕊',dna:'🧬',temple:'🏛',cat:'🐈 🐱',paw:'🐾',child:'🧒 👶',steps:'👣',smile:'🙂 😊 😀',neutral:'😐',worried:'😟 😕',sleepy:'😴 💤',pause:'⏸',play:'▶',ff:'⏩',skip:'⏭',wilted:'🥀',sun:'☀',cloud:'☁',partly:'🌤 ⛅',shake:'🤝',skull:'💀',pot:'🪴',drop:'💧',ask:'❔ ❓',lantern:'🏮',lamp:'🪔',candle:'🕯',cards:'🃏',jar:'🫙',notebook:'📓',book:'📖 📚',gear:'⚙',warn:'⚠',gift:'🎁',sprout:'🌱',branch:'🌿',leaves:'🍃',mushroom:'🍄',cactus:'🌵',moai:'🗿',alarm:'',hourglass:'⌛',teddy:'🧸',mirror:'🪞',coin:'🪙',radio:'📻',tent:'🏕',rain:'🌧',fog:'🌫 🌁',snow:'❄',storm:'⛈',party:'🎉',confetti:'🎊',search:'🔎 🔍',milk:'🥛',larva:'🪱',stone:'🪨',shield:'🔰 🛡',yarn:'🧶',compass:'🧭',key:'🗝',grave:'🪦',moonfull:'🌕',moonnew:'🌑',torch:'🔦',mail:'✉',hand:'✋',wave:'👋',pencil:'✍',window:'🪟',sunrise:'🌅',drum:'🥁',music:'🎶',steam:'♨',dotg:'🟢',dotv:'🟣',shoot:'🌠',web:'🕸',thermo:'🌡',scope:'🔬',autumn:'🍂',wheat:'🌾',gem:'💎',log:'🪵',ear:'👂',bandage:'🩹',bubbles:'🫧',crown:'👑',egg:'🥚',wing:'🪽',sponge:'🧽',broom:'🧹',barrier:'🚧',flag:'🏳',desert:'🏜',coffee:'☕',cookie:'🍪',flask:'🧪',tag:'🔖',badge:'🎖'};
+  const EM={sparkle:'✨ ⭐ 🌟',bolt:'⚡',bell:'🔔',eye:'👁',swords:'⚔',meteor:'☄',monster:'👹 👺',dove:'🕊',dna:'🧬',temple:'🏛',cat:'🐈 🐱',paw:'🐾',child:'🧒 👶',steps:'👣',smile:'🙂 😊 😀',neutral:'😐',worried:'😟 😕',sleepy:'😴 💤',pause:'⏸',play:'▶',ff:'⏩',skip:'⏭',wilted:'🥀',sun:'☀',cloud:'☁',partly:'🌤 ⛅',shake:'🤝',skull:'💀',pot:'🪴',drop:'💧',ask:'❔ ❓',lantern:'🏮',lamp:'🪔',candle:'🕯',cards:'🃏',jar:'🫙',notebook:'📓',book:'📖 📚',gear:'⚙',warn:'⚠',gift:'🎁',sprout:'🌱',branch:'🌿',leaves:'🍃',mushroom:'🍄',cactus:'🌵',moai:'🗿',alarm:'',hourglass:'⌛',teddy:'🧸',mirror:'🪞',coin:'🪙',radio:'📻',tent:'🏕',rain:'🌧',fog:'🌫 🌁',snow:'❄',storm:'⛈',party:'🎉',confetti:'🎊',search:'🔎 🔍',milk:'🥛',larva:'🪱',stone:'🪨',shield:'🔰 🛡',yarn:'🧶',compass:'🧭',key:'🗝',grave:'🪦',moonfull:'🌕',moonnew:'🌑',torch:'🔦',mail:'✉',hand:'✋',wave:'👋',pencil:'✍',window:'🪟',sunrise:'🌅',drum:'🥁',music:'🎶',steam:'♨',dotg:'🟢',dotv:'🟣',shoot:'🌠',web:'🕸',thermo:'🌡',scope:'🔬',autumn:'🍂',wheat:'🌾',gem:'💎',log:'🪵',ear:'👂',bandage:'🩹',bubbles:'🫧',crown:'👑',egg:'🥚',wing:'🪽',sponge:'🧽',broom:'🧹',barrier:'🚧',flag:'🏳',desert:'🏜',coffee:'☕',cookie:'🍪',flask:'🧪',tag:'🔖',badge:'🎖',check:'✔',cross:'✖'};
   const MAPE={}; for(const k in EM) EM[k].split(' ').forEach(e=>{ if(e) MAPE[e]=k; }); MAPE['⌛']='hourglass';
   // 🐜🐌🐛🪲🕷🪰🍃 e gli orologi sono foto (PH); alarm resta per chi non ha le foto
   MAPE['⏰']='alarm'; MAPE['⏱']='alarm'; MAPE['\u{1F570}']='alarm'; MAPE['⏳']='hourglass'; MAPE['\u{1F41C}']='dot'; MAPE['\u{1F40C}']='dot'; MAPE['\u{1F41B}']='dot'; MAPE['\u{1FAB2}']='dot'; MAPE['\u{1F577}']='dot'; MAPE['\u{1FAB0}']='dot'; MAPE['\u{1F343}']='leaves';
@@ -141,6 +142,14 @@
       if(n.nodeName==='INPUT'&&n.value){ RE.lastIndex=0; if(RE.test(n.value)&&n.type!=='text') n.value=strip(n.value); }
       for(let c=n.firstChild;c;){ const nx=c.nextSibling; fix(c); c=nx; } }
   };
+  /* Canvas (sprite 3D e vista 2D): __icnImg(e,ink) -> immagine pronta (foto o SVG a linea con alone scuro) o null mentre carica;
+     __icnFT(ctx,e,x,y) la disegna centrata al posto di fillText (dimensione dal font corrente). */
+  const cvs={};
+  window.__icnImg=(e,ink,cb)=>{ const base=cp(e), ph=PH[base], key=base+'|'+(ink||'w'); let o=cvs[key]; if(o){ if(o.ok) return o.im; if(cb) (o.cbs=o.cbs||[]).push(cb); return null; }
+    o=cvs[key]={im:new Image(),ok:0}; o.im.onload=()=>{ o.ok=1; (o.cbs||[]).forEach(f=>f()); }; if(ph&&IM[ph]) o.im.src=IM[ph];
+    else{ const L=LIB[MAPE[base]||'dot'], ic=ink||'#fff'; o.im.src='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><style>.h *{stroke:#0b0814!important}.a{stroke:#A88BFF}.g{stroke:#7CF5C8}</style>'+(ink?'':'<g class="h" stroke="#0b0814" stroke-width="3.6" opacity=".75">'+L+'</g>')+'<g stroke="'+ic+'" stroke-width="1.9">'+L+'</g></svg>'); }
+    if(cb) (o.cbs=o.cbs||[]).push(cb); return null; };
+  window.__icnFT=(c,e,x,y,ink)=>{ const px=parseFloat(c.font)||12, im=window.__icnImg(e,ink); if(!im) return; const s=px*1.25; c.drawImage(im,x-s/2,y-s*.58,s,s); };
   window.__sansEmoji=fix; window.__EMO_RE=RE;
   if(!window.MutationObserver) return;
   new MutationObserver(ms=>{ for(const m of ms){ if(m.type==='characterData') fix(m.target); else m.addedNodes.forEach(fix); } }).observe(document.body,{childList:true,subtree:true,characterData:true});
