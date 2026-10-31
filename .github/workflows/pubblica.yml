@@ -29,6 +29,7 @@ jobs:
           mkdir -p site
           cp dist/terrario-gioco.html site/index.html
           if [ -d dist/materiali ]; then cp -r dist/materiali site/materiali; fi
+          if [ -d dist/storia ]; then cp -r dist/storia site/storia; fi
           cp dist/terrario-lite.html site/riferimento.html
       - uses: actions/upload-pages-artifact@v3
         with:
