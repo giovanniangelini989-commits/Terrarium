@@ -1,9 +1,159 @@
-/* Icone delle creature: window.__ICONE (build_app.py) sostituisce le emoji di formiche, lumache e tempo con le foto;
-   senza icona resta l'emoji. Livello: nessuna animazione propria (eredita quella dell'elemento che le contiene). */
-(function(){ const IC=window.__ICONE||{}, MAP={'\u{1F41C}':'formiche','\u{1F40C}':'lumache','\u23F1':'orologio','\u{1F570}':'orologio','\u23F3':'orologio','\u{1F41B}':'termiti','\u{1FAB2}':'coleotteri','\u{1F577}':'ragni','\u{1FAB0}':'mosche','\u{1F343}':'felce'}; const RE=/(\u{1F41C}|\u{1F40C}|\u23F1|\u{1F570}|\u23F3|\u{1F41B}|\u{1FAB2}|\u{1F577}|\u{1FAB0}|\u{1F343})\uFE0F?/gu;
-  if(!Object.keys(IC).length||!window.MutationObserver) return;
-  const fix=n=>{ if(n.nodeType===3){ const t=n.nodeValue; RE.lastIndex=0; if(!RE.test(t)) return; const p=n.parentNode; if(!p||/^(SCRIPT|STYLE|TEXTAREA|TITLE)$/.test(p.nodeName)) return; const fr=document.createDocumentFragment(); let last=0; RE.lastIndex=0; let m; while((m=RE.exec(t))){ const id=MAP[m[1]]; if(!IC[id]) continue; if(m.index>last) fr.appendChild(document.createTextNode(t.slice(last,m.index))); const im=document.createElement('img'); im.className='ico'; im.alt=''; im.src=IC[id]; im.draggable=false; fr.appendChild(im); last=m.index+m[0].length; } if(last){ if(last<t.length) fr.appendChild(document.createTextNode(t.slice(last))); p.replaceChild(fr,n); } } else if(n.nodeType===1&&n.nodeName!=='IMG'&&n.nodeName!=='CANVAS'){ for(let c=n.firstChild;c;){ const nx=c.nextSibling; fix(c); c=nx; } } };
-  new MutationObserver(ms=>{ for(const m of ms){ m.addedNodes.forEach(fix); if(m.type==='characterData') fix(m.target); } }).observe(document.body,{childList:true,subtree:true,characterData:true});
+/* ============ ICONE: nessuna emoji in gioco ============
+   I dati (sim.js, story.js, notti.js...) contengono ancora emoji: qui, in visualizzazione, ogni emoji nel DOM diventa
+   (a) una foto di window.__ICONE per creature e tempo, oppure (b) un'icona SVG a linea della libreria ICN
+   (viewBox 24, stroke 1.6, angoli tondi, currentColor; .a = accento viola #A88BFF, .g = verde #7CF5C8).
+   Emoji senza icona: puntino (mai il glifo del sistema). Dentro option/title/attributi le emoji si tolgono.
+   Livello di risposta: nessuna animazione propria (eredita quella dell'elemento che le contiene). */
+(function(){
+  const PH={'\u{1F41C}':'formiche','\u{1F40C}':'lumache','⏱':'orologio','⏰':'orologio','\u{1F570}':'orologio','⏳':'orologio','\u{1F41B}':'termiti','\u{1FAB2}':'coleotteri','\u{1F577}':'ragni','\u{1FAB0}':'mosche','\u{1F343}':'felce'};
+  const P=(d,c)=>'<path'+(c?' class="'+c+'"':'')+' d="'+d+'"/>', O=(x,y,r,c)=>'<circle'+(c?' class="'+c+'"':'')+' cx="'+x+'" cy="'+y+'" r="'+r+'"/>', R=(x,y,w,h,r)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+(r||2)+'"/>';
+  const CLOUD='M7 15a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 8a3.5 3.5 0 0 1 .5 7z';
+  const LIB={
+    sparkle:P('M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8z')+P('M19 15v5M16.5 17.5h5','a'),
+    bolt:P('M13 3L5 14h6l-1 7 8-11h-6z'), bell:P('M6 16V11a6 6 0 0 1 12 0v5l2 2H4z')+P('M10 20a2 2 0 0 0 4 0'),
+    eye:P('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z')+O(12,12,3,'a'),
+    swords:P('M5 19l9-9M14 10l4-4V4h-2l-4 4M19 19l-9-9M10 10L6 6V4h2l4 4M4 20l2-2M20 20l-2-2'),
+    meteor:O(16.5,7.5,3.5)+P('M14 10L4 20M11 7.5L3.5 13M16.5 13L11 20.5','a'),
+    monster:P('M5 3l3 4M19 3l-3 4M5 12a7 7 0 0 1 14 0v2a7 7 0 0 1-14 0z')+P('M9 10l2 1M15 10l-2 1M9.5 16h5','a'),
+    dove:P('M3 14c5 0 7-3 9-8 1 3 3 5 9 5-2 5-5 7-9 7-3 0-5-1-6-3z')+P('M12 6c0-2 1.5-3 3-3','a'),
+    dna:P('M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9')+P('M9.5 6h5M9.5 18h5','a'),
+    temple:P('M3 9l9-5 9 5zM5 9v9M9 9v9M15 9v9M19 9v9M3 21h18'),
+    cat:P('M5 10L6 4l4 3h4l4-3 1 6v3a7 7 0 0 1-14 0z')+P('M9.5 12v.01M14.5 12v.01M11 15.5h2','a'),
+    paw:O(7,10,1.6)+O(12,7,1.6)+O(17,10,1.6)+P('M7 17c0-3 2.5-5 5-5s5 2 5 5c0 2-2 2-5 2s-5 0-5-2z'),
+    child:O(12,8,4)+P('M4.5 21c0-4.5 3.4-7 7.5-7s7.5 2.5 7.5 7'),
+    steps:'<ellipse cx="8" cy="9" rx="2.6" ry="4"/><ellipse cx="16" cy="14" rx="2.6" ry="4"/>'+P('M8 15v2M16 6v2','a'),
+    smile:O(12,12,9)+P('M8.5 14.5a4.5 4.5 0 0 0 7 0')+P('M9 9.5v.01M15 9.5v.01','a'),
+    neutral:O(12,12,9)+P('M8.5 15h7')+P('M9 9.5v.01M15 9.5v.01','a'),
+    worried:O(12,12,9)+P('M8.5 16c1-1.8 2.2-2.5 3.5-2.5s2.5.7 3.5 2.5')+P('M9 9.5v.01M15 9.5v.01','a'),
+    sleepy:O(10,13,8)+P('M6.5 12.5q1.5 1.2 3 0M10.5 12.5q1.5 1.2 3 0')+P('M16 3h4l-4 4h4','a'),
+    pause:P('M8 5v14M16 5v14'), play:P('M7 4l13 8-13 8z'), ff:P('M4 5l8 7-8 7zM12 5l8 7-8 7z'), skip:P('M5 5l9 7-9 7zM19 5v14'),
+    wilted:P('M12 21v-8c0-3 3-4 4-2')+P('M16 11c1.5 0 3 1 3 3-2 0-3-1-3-3zM12 15c-2 0-4 1-4 3 2 0 4-1 4-3z')+P('M6 21h12','a'),
+    sun:O(12,12,4)+P('M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M18.7 5.3l-1.8 1.8M7.1 16.9l-1.8 1.8'),
+    cloud:P(CLOUD), partly:O(8,8,3)+P('M8 2.5v1M2.5 8h1M4.1 4.1l.7.7M11.9 4.1l-.7.7')+P('M9 20a4 4 0 0 1-.5-7.5A5 5 0 0 1 18 14a3 3 0 0 1 0 6z'),
+    shake:P('M3 12l4.5-4.5 4 2 4-2L21 12l-4.5 4.5M7.5 7.5L3 12M11 15l3 3 2.5-2.5M8.5 12.5l3 3 2.5-2.5'),
+    skull:P('M12 3a8 8 0 0 0-8 8c0 3 1.2 4.5 3 5.5V21h10v-4.5c1.8-1 3-2.5 3-5.5a8 8 0 0 0-8-8z')+O(9,11,1.4)+O(15,11,1.4)+P('M10.5 17v2M13.5 17v2'),
+    pot:P('M6.5 14h11L16 21H8z')+P('M12 14V9')+P('M12 10c-4 0-5-3-5-5 3 0 5 1 5 5z','g')+P('M12 9c0-3 2-5 5-5 0 3-2 5-5 5z','g'),
+    drop:P('M12 3c-3 4-6 7-6 10.5A6 6 0 0 0 18 13.5C18 10 15 7 12 3z'),
+    ask:O(12,12,9)+P('M9.6 9.3a2.5 2.5 0 1 1 3.6 2.2c-.8.5-1.2 1-1.2 1.9')+P('M12 16.8v.01','a'),
+    lantern:P('M9 3h6M10 3v2h4V3M7 8a5 5 0 0 1 10 0v7a5 5 0 0 1-10 0z M12 21v-1')+P('M12 10.5c1.5 1.5 1.5 3.5 0 5-1.5-1.5-1.5-3.5 0-5z','a'),
+    lamp:P('M4 12h16c0 4-3 7-8 7s-8-3-8-7zM17 12l3.5-3')+P('M10 8.5c1.5-1.5 1.5-3 0-4.5-1.5 1.5-1.5 3 0 4.5z','a'),
+    candle:P('M8 21V12h8v9M6 21h12')+P('M12 3.5c2 2.2 2.2 4 0 6-2.2-2-2-3.8 0-6z','a'),
+    cards:P('M5 4h9a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z')+P('M18 7.5l2.5 1v10l-8.5 2','a'),
+    jar:P('M8 3h8v3H8zM7 6h10v13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z')+P('M9.5 12h5','a'),
+    notebook:R(6,3,12,18,2)+P('M10 3v18')+P('M13 8h2.5M13 12h2.5','a'),
+    book:P('M12 6.5C9.5 4.5 6.5 4.3 3.5 5.5v13c3-1.2 6-1 8.5 1 2.5-2 5.5-2.2 8.5-1v-13c-3-1.2-6-1-8.5 1zM12 6.5v13'),
+    gear:O(12,12,3)+P('M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1'),
+    warn:P('M12 4L2.5 20h19z')+P('M12 10v4.5M12 17.2v.01','a'),
+    gift:R(3,9,18,4,1)+P('M5 13v8h14v-8M12 9v12')+P('M12 9C9 9 8 5.5 10.5 5S12 7 12 9c0-2 .5-4.5 3-4S15 9 12 9z','a'),
+    sprout:P('M12 21v-9')+P('M12 13c0-4-3-6-7-6 0 4 3 6 7 6z','g')+P('M12 15c0-3 2-5 6-5 0 3-2 5-6 5z'),
+    branch:P('M12 21V4')+P('M12 9C9 9 7 7.5 6.5 5c3 0 5 1.5 5.5 4zM12 9c3 0 5-1.5 5.5-4-3 0-5 1.5-5.5 4zM12 15c-3 0-5-1.5-5.5-4 3 0 5 1.5 5.5 4zM12 15c3 0 5-1.5 5.5-4-3 0-5 1.5-5.5 4z'),
+    leaves:P('M6 20c-1-8 3-14 13-15 0 9-5 14-13 15z')+P('M6 20c3-5 6-8 10-11','g'),
+    mushroom:P('M3 12a9 8 0 0 1 18 0z')+P('M9.5 12v6a2.5 2.5 0 0 0 5 0v-6')+O(8.5,9,.8,'a')+O(14,8,.8,'a'),
+    cactus:P('M10 21V6a2 2 0 0 1 4 0v15M10 14H7a1 1 0 0 1-1-1V9M14 16h3a1 1 0 0 0 1-1v-4M7 21h10'),
+    moai:P('M8 21l-1.5-12L8 4h8l1.5 5L16 21z')+P('M8.5 9h7M12 10v4M9.5 17h5','a'),
+    alarm:O(12,13,7)+P('M12 9.5V13l2.5 2M5 4.5L3 6.5M19 4.5l2 2'),
+    hourglass:P('M7 3h10M7 21h10M8 3v3.5a4 4 0 0 0 1.6 3.2L12 12l-2.4 2.3A4 4 0 0 0 8 17.5V21M16 3v3.5a4 4 0 0 1-1.6 3.2L12 12l2.4 2.3A4 4 0 0 1 16 17.5V21'),
+    teddy:O(12,13,7)+O(6.5,6.5,2.5)+O(17.5,6.5,2.5)+P('M10 14.5h4M12 13v1.5')+P('M9.5 11v.01M14.5 11v.01','a'),
+    mirror:'<ellipse cx="12" cy="9.5" rx="6" ry="7.5"/>'+P('M12 17v4M8 21h8')+P('M9 6.5c1-1 2.2-1.5 3.5-1.5','a'),
+    coin:O(12,12,9)+O(12,12,5.5)+P('M12 9.5v5','a'),
+    radio:R(3,8,18,12,2)+P('M7 8l9-5')+O(9,14,2.5)+P('M14.5 12.5h4M14.5 16h4','a'),
+    tent:P('M2.5 20L12 5l9.5 15zM12 5v15M9 20l3-5 3 5'),
+    rain:P(CLOUD)+P('M8 18.5l-1 2.5M12 18.5l-1 2.5M16 18.5l-1 2.5','a'),
+    fog:P('M3.5 8h13M6.5 12h14M3.5 16h11M8 20h10'),
+    snow:P('M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 7l2.5-2.5M9.5 19.5L12 17l2.5 2.5'),
+    storm:P(CLOUD)+P('M12.5 14l-2.5 4h3.5l-2 4','a'),
+    party:P('M4 21l4-12 8 8z')+P('M13 5l1-2M17 8l2.5-1M15 11.5l3.5.5M10.5 3.5v.01M20 4v.01','a'),
+    confetti:O(12,12,3)+P('M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1','a'),
+    search:O(11,11,6.5)+P('M20 20l-4.5-4.5')+P('M8.5 9a3 3 0 0 1 2.5-1.5','a'),
+    milk:P('M7 4h10l-1.4 16.2a1 1 0 0 1-1 .8H9.4a1 1 0 0 1-1-.8z')+P('M7.7 10h8.6','a'),
+    larva:P('M3.5 16c2.5-6 4.5 2 7-3s4.5 3 7-2.5')+O(19.5,8.5,1.8)+P('M20.5 6l1.5-1.5','a'),
+    stone:P('M4 17l2-8 5-4.5 6 2 3 6.5-3 6H7z')+P('M11 4.5l1 6 5 .5M6 9l6 1.5-2 6.5','a'),
+    shield:P('M12 3l8 3v6c0 5-3.6 8-8 9-4.4-1-8-4-8-9V6z')+P('M8.5 12l2.5 2.5 4.5-5','a'),
+    yarn:O(12,12,8.5)+P('M4.5 9c5 1 9 4 11 11M8 4c1 5 6 8 12 8.5M3.7 14.5c4-1 7 1 9 6')+P('M17 18c2 .5 3.5 1.5 4 3','a'),
+    compass:O(12,12,9)+P('M15.5 8.5l-2 5-5 2 2-5z')+P('M12 12v.01','a'),
+    key:O(8,15,4)+P('M11 12l9-9M16 7l3 3M14 9l2 2')+P('M8 15v.01','a'),
+    grave:P('M6 21V10a6 6 0 0 1 12 0v11zM4 21h16')+P('M12 8v6M9.5 11h5','a'),
+    moonfull:O(12,12,9)+P('M8 9.5v.01M15 8.5v.01M14 14.5v.01M9 15.5v.01','a'),
+    moonnew:'<circle cx="12" cy="12" r="9" stroke-dasharray="1.6 3.1"/>'+P('M17 5a8 8 0 0 0 0 14','a'),
+    torch:P('M9 3h6l1.5 5h-9zM8 8l1.5 3v10h5V11L16 8M12 14v3'),
+    mail:R(3,5,18,14,2)+P('M3.5 7l8.5 6.5L20.5 7','a'),
+    hand:P('M8 13V6.5a1.5 1.5 0 0 1 3 0V11M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v8.5c0 4-2.5 6.5-6 6.5-3 0-4.5-1.5-6.5-4.5l-1.3-2.3a1.5 1.5 0 0 1 2.4-1.7L8 14'),
+    wave:P('M8 13V6.5a1.5 1.5 0 0 1 3 0V11M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v8.5c0 4-2.5 6.5-6 6.5-3 0-4.5-1.5-6.5-4.5l-1.3-2.3a1.5 1.5 0 0 1 2.4-1.7L8 14')+P('M20 6c1 1 1.5 2.2 1.5 3.5','a'),
+    pencil:P('M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z')+P('M14.5 6.5l3 3')+P('M13 21h8','a'),
+    window:R(4,3,16,18,2)+P('M12 3v18M4 12h16'),
+    sunrise:P('M3 18h18M7 18a5 5 0 0 1 10 0')+P('M12 7v3M5 10.5l1.8 1.8M19 10.5l-1.8 1.8','a'),
+    drum:'<ellipse cx="12" cy="10" rx="8" ry="3"/>'+P('M4 10v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6')+P('M8 3l3 5.5M16 3l-3 5.5','a'),
+    music:P('M9 18V6l10-2v12')+O(7,18,2)+O(17,16,2),
+    steam:P('M8 3.5c-2 2 2 3 0 5M12 3.5c-2 2 2 3 0 5M16 3.5c-2 2 2 3 0 5')+P('M4 13h16a8 6 0 0 1-16 0z'),
+    dotg:'<circle class="g" cx="12" cy="12" r="6" fill="#7CF5C8" fill-opacity=".25"/>',
+    dotv:'<circle class="a" cx="12" cy="12" r="6" fill="#A88BFF" fill-opacity=".25"/>',
+    shoot:P('M14 4l1.2 3.3 3.3 1.2-3.3 1.2L14 13l-1.2-3.3-3.3-1.2 3.3-1.2z')+P('M10 12L3 20M7.5 11l-4 4M12 16l-4 4','a'),
+    web:P('M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4')+P('M12 7.5l4.5 4.5-4.5 4.5L7.5 12z','a'),
+    thermo:P('M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z')+P('M12 9v8','a'),
+    scope:P('M8.5 3.5l4 2-3 7.5-4-2zM7 18h10M12.5 18a6 6 0 0 0 4.5-8.5M5 21h14')+P('M10.5 9l-2-1','a'),
+    autumn:P('M5 19C4.5 9 11 4 20 4c0 9-5 15-15 15z')+P('M5 19l9-9','a'),
+    wheat:P('M12 21V8M12 8c-2-1.2-2-3.5 0-5.5 2 2 2 4.3 0 5.5zM12 14c-3 0-4.5-2-4.5-4.5 3 0 4.5 2 4.5 4.5zM12 14c3 0 4.5-2 4.5-4.5-3 0-4.5 2-4.5 4.5z'),
+    gem:P('M6.5 4h11l4 5L12 21 2.5 9z')+P('M2.5 9h19M9 4l-1.5 5L12 21l4.5-12L15 4','a'),
+    log:'<ellipse cx="17" cy="12" rx="3" ry="6"/>'+P('M17 6H8a3 6 0 0 0 0 12h9')+P('M17.5 10.5a1.2 1.5 0 0 0 0 3','a'),
+    ear:P('M7 9.5a5 5 0 0 1 10 0c0 3.2-3 4-3 7a3 3 0 0 1-6 0')+P('M10 9.5a2 2 0 0 1 4 0','a'),
+    bandage:'<g transform="rotate(-45 12 12)">'+R(2.5,8.5,19,7,3.5)+P('M9 8.5v7M15 8.5v7')+'</g>',
+    bubbles:O(9,14,5.5)+O(17,7.5,3)+O(18,17,2)+P('M7 12.5a2.5 2.5 0 0 1 2-1.5','a'),
+    crown:P('M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z')+P('M5.5 19h13','a'),
+    egg:P('M12 3c4 0 7 7 7 12a7 7 0 0 1-14 0c0-5 3-12 7-12z')+P('M9 14a3.2 3.2 0 0 0 2.5 3','a'),
+    wing:P('M4 19c0-9 6-14 16-15-1 9-5 14-12 15z')+P('M8.5 15L16 8','a'),
+    sponge:R(3.5,8,17,10,3)+O(8,12,.9)+O(13,14,.9)+O(16.5,11,.9)+P('M6 8V6M11 8V5.5M16 8V6.5','a'),
+    broom:P('M15 3l-4.5 9M6.5 12.5L4 21h13l1-6.5z')+P('M8.5 17.5l.6 3.5M12 16.5l.3 4.5','a'),
+    barrier:R(3,7,18,7,1)+P('M7 14l-1 7M17 14l1 7M7 7l-3 7M13 7l-4 7M19 7l-4 7','a'),
+    flag:P('M5 21V4M5 4h13l-3 4 3 4H5'),
+    desert:O(17.5,6.5,2.5)+P('M3 17c3.5-5 6.5-5 9 0 2-3 5-4.5 9 0M3 21h18','g'),
+    coffee:P('M5 8h11v6a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 10h2a2 2 0 0 1 0 4h-2')+P('M8 3.5v2M12 3.5v2','a'),
+    cookie:O(12,12,9)+O(9,9,.9,'a')+O(15,10.5,.9,'a')+O(10,15,.9,'a')+O(15,15.5,.9,'a'),
+    flask:P('M9 3h6M10 3v6l-5 10a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 19l-5-10V3')+P('M7.5 15.5h9','a'),
+    check:P('M5 12.5l4.5 4.5L19 7'), cross:P('M6 6l12 12M18 6L6 18'),
+    dot:O(12,12,2.4),
+    badge:P('M12 3l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z'),
+    tag:P('M3.5 12.5V4.5h8l9 9-8 8z')+O(8,9,1,'a'),
+    star:P('M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z')
+  };
+  /* emoji (senza U+FE0F) -> chiave; elenco separato da spazi, i rimandi a foto stanno in PH */
+  const EM={sparkle:'✨ ⭐ 🌟',bolt:'⚡',bell:'🔔',eye:'👁',swords:'⚔',meteor:'☄',monster:'👹 👺',dove:'🕊',dna:'🧬',temple:'🏛',cat:'🐈 🐱',paw:'🐾',child:'🧒 👶',steps:'👣',smile:'🙂 😊 😀',neutral:'😐',worried:'😟 😕',sleepy:'😴 💤',pause:'⏸',play:'▶',ff:'⏩',skip:'⏭',wilted:'🥀',sun:'☀',cloud:'☁',partly:'🌤 ⛅',shake:'🤝',skull:'💀',pot:'🪴',drop:'💧',ask:'❔ ❓',lantern:'🏮',lamp:'🪔',candle:'🕯',cards:'🃏',jar:'🫙',notebook:'📓',book:'📖 📚',gear:'⚙',warn:'⚠',gift:'🎁',sprout:'🌱',branch:'🌿',leaves:'🍃',mushroom:'🍄',cactus:'🌵',moai:'🗿',alarm:'',hourglass:'⌛',teddy:'🧸',mirror:'🪞',coin:'🪙',radio:'📻',tent:'🏕',rain:'🌧',fog:'🌫 🌁',snow:'❄',storm:'⛈',party:'🎉',confetti:'🎊',search:'🔎 🔍',milk:'🥛',larva:'🪱',stone:'🪨',shield:'🔰 🛡',yarn:'🧶',compass:'🧭',key:'🗝',grave:'🪦',moonfull:'🌕',moonnew:'🌑',torch:'🔦',mail:'✉',hand:'✋',wave:'👋',pencil:'✍',window:'🪟',sunrise:'🌅',drum:'🥁',music:'🎶',steam:'♨',dotg:'🟢',dotv:'🟣',shoot:'🌠',web:'🕸',thermo:'🌡',scope:'🔬',autumn:'🍂',wheat:'🌾',gem:'💎',log:'🪵',ear:'👂',bandage:'🩹',bubbles:'🫧',crown:'👑',egg:'🥚',wing:'🪽',sponge:'🧽',broom:'🧹',barrier:'🚧',flag:'🏳',desert:'🏜',coffee:'☕',cookie:'🍪',flask:'🧪',tag:'🔖',badge:'🎖',check:'✔',cross:'✖'};
+  const MAPE={}; for(const k in EM) EM[k].split(' ').forEach(e=>{ if(e) MAPE[e]=k; }); MAPE['⌛']='hourglass';
+  // 🐜🐌🐛🪲🕷🪰🍃 e gli orologi sono foto (PH); alarm resta per chi non ha le foto
+  MAPE['⏰']='alarm'; MAPE['⏱']='alarm'; MAPE['\u{1F570}']='alarm'; MAPE['⏳']='hourglass'; MAPE['\u{1F41C}']='dot'; MAPE['\u{1F40C}']='dot'; MAPE['\u{1F41B}']='dot'; MAPE['\u{1FAB2}']='dot'; MAPE['\u{1F577}']='dot'; MAPE['\u{1FAB0}']='dot'; MAPE['\u{1F343}']='leaves';
+  const svg=k=>'<svg class="ei" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+(LIB[k]||LIB.dot)+'</svg>';
+  window.ICN=LIB; window.icn=svg;
+  const IM=window.__ICONE||{};
+  const RE=/(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|[\u{1F3FB}-\u{1F3FF}])️?(?:‍\p{Extended_Pictographic}️?)*|️|⃣/gu;
+  const TXT=/[←-⇿©®™•●▶◀✓✔✕✖✗]/; // frecce e segni tipografici: restano testo
+  const skip=m=>{ const c=m.codePointAt(0); return m==='️'||m==='⃣'||((c>=0x2190&&c<=0x21FF)||c===0xA9||c===0xAE||c===0x2122||c===0x25CF||c===0x2022||c===0x2713||c===0x2715); };
+  const cp=m=>m.replace(/️/g,'');
+  const mk=e=>{ const base=cp(e), ph=PH[base]; if(ph&&IM[ph]){ const im=document.createElement('img'); im.className='ico'; im.alt=''; im.src=IM[ph]; im.draggable=false; return im; }
+    const t=document.createElement('template'); t.innerHTML=svg(MAPE[base]||'dot'); return t.content.firstChild; };
+  const strip=s=>s.replace(RE,m=>skip(m)&&m!=='️'?m:'');
+  const ATTR=['title','aria-label','alt','placeholder','data-t'];
+  const fix=n=>{
+    if(n.nodeType===3){ const t=n.nodeValue; RE.lastIndex=0; if(!RE.test(t)) return; const p=n.parentNode; if(!p) return;
+      if(/^(SCRIPT|STYLE|TEXTAREA|TITLE|OPTION|TEXT|TSPAN)$/i.test(p.nodeName)){ const s=strip(t); if(s!==t) n.nodeValue=s; return; }
+      const fr=document.createDocumentFragment(); let last=0, any=0; RE.lastIndex=0; let m;
+      while((m=RE.exec(t))){ if(skip(m[0])){ continue; } if(m.index>last) fr.appendChild(document.createTextNode(t.slice(last,m.index))); fr.appendChild(mk(m[0])); last=m.index+m[0].length; any=1; }
+      if(any){ if(last<t.length) fr.appendChild(document.createTextNode(t.slice(last))); p.replaceChild(fr,n); }
+    } else if(n.nodeType===1&&n.nodeName!=='CANVAS'&&n.nodeName!=='SVG'&&n.nodeName!=='svg'&&n.nodeName!=='IMG'){
+      for(const a of ATTR){ const v=n.getAttribute&&n.getAttribute(a); if(v&&a!=='data-t'){ RE.lastIndex=0; if(RE.test(v)) n.setAttribute(a,strip(v).replace(/^\s+/,'')); } }
+      if(n.nodeName==='INPUT'&&n.value){ RE.lastIndex=0; if(RE.test(n.value)&&n.type!=='text') n.value=strip(n.value); }
+      for(let c=n.firstChild;c;){ const nx=c.nextSibling; fix(c); c=nx; } }
+  };
+  /* Canvas (sprite 3D e vista 2D): __icnImg(e,ink) -> immagine pronta (foto o SVG a linea con alone scuro) o null mentre carica;
+     __icnFT(ctx,e,x,y) la disegna centrata al posto di fillText (dimensione dal font corrente). */
+  const cvs={};
+  window.__icnImg=(e,ink,cb)=>{ const base=cp(e), ph=PH[base], key=base+'|'+(ink||'w'); let o=cvs[key]; if(o){ if(o.ok) return o.im; if(cb) (o.cbs=o.cbs||[]).push(cb); return null; }
+    o=cvs[key]={im:new Image(),ok:0}; o.im.onload=()=>{ o.ok=1; (o.cbs||[]).forEach(f=>f()); }; if(ph&&IM[ph]) o.im.src=IM[ph];
+    else{ const L=LIB[MAPE[base]||'dot'], ic=ink||'#fff'; o.im.src='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><style>.h *{stroke:#0b0814!important}.a{stroke:#A88BFF}.g{stroke:#7CF5C8}</style>'+(ink?'':'<g class="h" stroke="#0b0814" stroke-width="3.6" opacity=".75">'+L+'</g>')+'<g stroke="'+ic+'" stroke-width="1.9">'+L+'</g></svg>'); }
+    if(cb) (o.cbs=o.cbs||[]).push(cb); return null; };
+  window.__icnFT=(c,e,x,y,ink)=>{ const px=parseFloat(c.font)||12, im=window.__icnImg(e,ink); if(!im) return; const s=px*1.25; c.drawImage(im,x-s/2,y-s*.58,s,s); };
+  window.__sansEmoji=fix; window.__EMO_RE=RE;
+  if(!window.MutationObserver) return;
+  new MutationObserver(ms=>{ for(const m of ms){ if(m.type==='characterData') fix(m.target); else m.addedNodes.forEach(fix); } }).observe(document.body,{childList:true,subtree:true,characterData:true});
+  fix(document.body); try{ document.title=strip(document.title); }catch(e){}
 })();
 
 /* ============ TABELLA DEI LIVELLI DI RISPOSTA (motion) ============
@@ -220,7 +370,7 @@ function alberoHTML(){ const Tr=A.G.tree; if(!Tr||!Tr.nodes.length) return '<p c
 function scrollEnd(){ requestAnimationFrame(()=>{ const sc=document.querySelector('#screen'); if(sc) sc.scrollTop=sc.scrollHeight; }); }
 function quadernoHTML(){ const G=A.G; if(cdx==='pagine'){ G.ui.unread=0; A.persist(); } if(cdx==='oggi') A.oggiVisto();
   const seg='<div class="seg sc">'+[['oggi','Oggi'],['atlante','Atlante'],['albero','Albero'],['pagine','Pagine'],['cronaca','Cronaca'],['finali','Finali'],['carte','Carte']].map(o=>'<button data-a="cdx" data-t="'+o[0]+'" aria-pressed="'+(cdx===o[0])+'">'+o[1]+'</button>').join('')+'</div>';
-  const pages=G.quaderno.length?G.quaderno.map(p=>'<div class="card qp"><div class="kicker">Giorno '+p.d+'</div><b>'+esc(p.titolo)+'</b><p class="nar">'+esc(p.testo)+'</p></div>').join(''):'<p class="muted">Ancora nessuna pagina.</p>';
+  const pages=G.quaderno.length?'<div class="paper">'+G.quaderno.map(p=>'<div class="qp"><div class="kicker">Giorno '+p.d+'</div><b>'+esc(p.titolo)+'</b><p class="nar">'+esc(p.testo)+'</p></div>').join('')+'</div>':'<p class="muted">Ancora nessuna pagina.</p>';
   const L=A.sim.log, rows=[]; for(let i=L.length-1;i>=0&&rows.length<16;i--){ const e=L[i]; if(e.kind==='meteorite') continue; rows.push('<div class="ln nar'+(e.kind==='azione'?' az':'')+'" data-a="why" data-i="'+i+'"><span class="d">g'+e.d+'</span><span>'+e.icon+' '+esc(narraC(e))+'</span></div>'); }
   return '<div class="kicker">Il mio quaderno</div>'+seg+(cdx==='oggi'?oggiHTML():cdx==='atlante'?atlanteHTML():cdx==='pagine'?pages:cdx==='albero'?alberoHTML():cdx==='cronaca'?'<div class="diary">'+(rows.join('')||'<p class="muted">Ancora niente da raccontare.</p>')+'</div>':codexHTML()); }
 const MIC=(()=>{ const P={'vivi': '<path d="M12 21v-9"/><path d="M12 12c0-4 3-6 7-6 0 4-3 6-7 6z"/><path d="M12 15c0-3-2-5-6-5 0 3 2 5 6 5z"/>', 'pota': '<circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="18" r="2.5"/><path d="M8.3 16.2L18 4M15.7 16.2L6 4"/>', 'osserva': '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/>', 'acqua': '<path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z"/>', 'fungo': '<path d="M4 12a8 7 0 0 1 16 0z"/><path d="M10 12v7h4v-7"/>', 'muta': '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>', 'cure': '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.500-7 10-7 10z"/>', 'arrivo': '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>', 'vetro': '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 12h16M12 4v16"/>', 'tocca': '<path d="M9 11V5a2 2 0 0 1 4 0v6l4 1v3a5 5 0 0 1-5 5h-1a5 5 0 0 1-4-2l-3-4 2-1z"/>', 'dormi': '<path d="M20 14.500A8 8 0 0 1 9.500 4 8 8 0 1 0 20 14.500z"/>', 'grande': '<path d="M5 21V4"/><path d="M5 5h12l-2.500 4L17 13H5"/>', 'umidita': '<path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z"/>'}, o={}; for(const k in P) o[k]='<svg class="mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+P[k]+'</svg>'; return o; })();
