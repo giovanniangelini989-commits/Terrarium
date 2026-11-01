@@ -92,10 +92,12 @@ function reqScegli(kind){ const L=REQV[kind]; const base=[L[0].x,L[0].b];
   try{ const A=window.__app; if(!A||!A.sim||!A.G) return base; const G=A.G, key=kind+'|'+((G.req&&G.req.day)||0)+'|'+((G.ui&&G.ui.reqN)||0);
    if(reqMemo[kind]&&reqMemo[kind].key===key) return reqMemo[kind].r;
    const v=A.sim.view(); const ok=L.filter(o=>{ try{ return !o.c||o.c(v); }catch(e){ return false; } });
+   const ui=G.ui, mem3=ui.idee||(ui.idee={}), dg=A.sim.d||0; Object.keys(mem3).forEach(q=>{ if(dg-mem3[q]>=3||mem3[q]>dg) delete mem3[q]; }); /* stessa idea al massimo una volta ogni 3 giorni di gioco (salvataggio: poche chiavi) */
+   const fresh=ok.filter(o=>mem3[kind+L.indexOf(o)]==null); if(fresh.length) ok.splice(0,ok.length,...fresh);
    const peso=ok.map(o=>o.c?3:1); let tot=peso.reduce((a,b)=>a+b,0), h=0; for(const ch of key) h=(h*31+ch.charCodeAt(0))|0; let r=Math.abs(h)%tot, i=0; while(r>=peso[i]){ r-=peso[i]; i++; }
    const rec=reqUltimo[kind]||(reqUltimo[kind]=[]), mem=Math.min(5,ok.length-1); let o=ok[i];
    for(let j=0;j<ok.length&&rec.slice(0,mem).includes(o);j++) o=ok[(i+j+1)%ok.length];
-   rec.unshift(o); rec.length=Math.min(rec.length,6);
+   rec.unshift(o); rec.length=Math.min(rec.length,6); mem3[kind+L.indexOf(o)]=dg;
    const out=[typeof o.x==='function'?o.x(v):o.x,o.b]; reqMemo[kind]={key,r:out}; return out; }catch(e){ return base; } }
 const REQ={}; Object.keys(REQV).forEach(k=>Object.defineProperty(REQ,k,{enumerable:true,get:()=>reqScegli(k)}));
 // ---------- la voce del vaso ----------
