@@ -155,6 +155,7 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
     P.G.miss.gocce=P.MISS.costo.salto; clr(); const d3=P.sim.d, rg=P.usaSalto(); t('finite le cariche: costo '+P.MISS.costo.salto+' gocce',rg.ok&&rg.fonte==='gocce'&&P.G.miss.gocce===0&&(P.sim.d===d3+2||rg.pausa),JSON.stringify([rg.fonte,P.sim.d-d3]));
     clr(); t('di nuovo senza nulla: bloccato',P.usaSalto().ok===false&&P.G.miss.gocce===0);
     P.G.miss.gocce=P.MISS.costo.salto-1; clr(); t('gocce insufficienti: bloccato, gocce intatte',P.usaSalto().why==='carte'&&P.G.miss.gocce===P.MISS.costo.salto-1);
+    { const M=P.missioni(); t('badge Missioni: conta solo nuove/da riscuotere, non il totale',typeof M.nuove==='number'&&M.nuove<=M.att.length); P.missVista(); t('badge Missioni: cala dopo averle viste',P.missioni().nuove===0); const co=P.cardOdds().cura; t('progresso carta: '+co.fatti+'/'+co.ogni+' visibile',co.ogni===7&&co.fatti>=0&&co.fatti<7); t('Salta senza gocce: la notifica sa quante ne mancano',P.MISS_TXT===undefined&&window.__story.MISS.saltaMancano(1,P.MISS.costo.salto).indexOf('1')>0); }
     P.G.power.salto=6; clr(); const dd=P.sim.d; P.usaSalto(); clr(); t('più salti di fila consumano una carica ciascuno',P.G.power.salto===5&&P.sim.d>dd);
     P.G.miss.gocce=20; const c0=P.G.miss.gocce, rc=P.missSpendi('carta'); t('gocce: pesca una carta (10), una al giorno',rc.ok&&P.G.miss.gocce===c0-P.MISS.costo.carta&&P.missSpendi('carta').why==='oggi');
     const n1=P.G.nonna.n, rn=P.missSpendi('nonna'); t('gocce: un altro dono della nonna',rn.ok&&P.G.nonna.n===n1+1);
