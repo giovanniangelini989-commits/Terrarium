@@ -92,7 +92,7 @@ function reqScegli(kind){ const L=REQV[kind]; const base=[L[0].x,L[0].b];
   try{ const A=window.__app; if(!A||!A.sim||!A.G) return base; const G=A.G, key=kind+'|'+((G.req&&G.req.day)||0)+'|'+((G.ui&&G.ui.reqN)||0);
    if(reqMemo[kind]&&reqMemo[kind].key===key) return reqMemo[kind].r;
    const v=A.sim.view(); const ok=L.filter(o=>{ try{ return !o.c||o.c(v); }catch(e){ return false; } });
-   const ui=G.ui, mem3=ui.idee||(ui.idee={}), dg=A.sim.d||0; Object.keys(mem3).forEach(q=>{ if(dg-mem3[q]>=3||mem3[q]>dg) delete mem3[q]; }); /* stessa idea al massimo una volta ogni 3 giorni di gioco (salvataggio: poche chiavi) */
+   const ui=G.ui, mem3=ui.idee||(ui.idee={}), dg=(A.todayIdx?A.todayIdx():0)||A.sim.d||0; /* giorno del calendario, non quello della simulazione (che salta con le notti) */ Object.keys(mem3).forEach(q=>{ if(dg-mem3[q]>=3||mem3[q]>dg) delete mem3[q]; }); /* stessa idea al massimo una volta ogni 3 giorni di gioco (salvataggio: poche chiavi) */
    const fresh=ok.filter(o=>mem3[kind+L.indexOf(o)]==null); if(fresh.length) ok.splice(0,ok.length,...fresh);
    const peso=ok.map(o=>o.c?3:1); let tot=peso.reduce((a,b)=>a+b,0), h=0; for(const ch of key) h=(h*31+ch.charCodeAt(0))|0; let r=Math.abs(h)%tot, i=0; while(r>=peso[i]){ r-=peso[i]; i++; }
    const rec=reqUltimo[kind]||(reqUltimo[kind]=[]), mem=Math.min(5,ok.length-1); let o=ok[i];

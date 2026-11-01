@@ -432,3 +432,7 @@ body:has(.tip.on) .stage.full .vcap{visibility:hidden}
 .cdot.on{background:#A88BFF;opacity:1;transform:scale(1)}
 .shopb:disabled{cursor:default}
 @media (prefers-reduced-motion: reduce){.cdot{transition:none}}
+
+.sheet .xc{position:sticky;top:0;float:right;z-index:3;width:40px;height:40px;margin:-6px -6px 0 8px;border-radius:50%;display:grid;place-items:center;background:rgba(10,15,21,.78);border:1px solid #34454F;color:#EAE2D3;cursor:pointer;transition:transform .12s cubic-bezier(.2,.7,.3,1)}
+.sheet .xc svg{width:18px;height:18px}
+.sheet .xc:active{transform:scale(.94)}

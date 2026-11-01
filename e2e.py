@@ -71,7 +71,7 @@ with sync_playwright() as p:
     drain()
     # ---- notti vive e Biscotto
     drain(); goto('imp'); pg.click('[data-a=t-notte]'); pg.wait_for_timeout(400); t('una notte racconta qualcosa (scheda se c\'è una scelta, altrimenti notifica: mai una scheda solo Continua)',(pg.locator('.sheet').count()==1 and 'stanotte' in pg.inner_text('.sheet').lower() and pg.locator('.sheet [data-a=nb]').count()>0) or (pg.locator('#toast').count()==1 and pg.locator('.sheet').count()==0)); pg.screenshot(path=f'screenshots/{tag}_x1_notte.png'); drain()
-    goto('imp'); pg.evaluate('__app.popups.length=0'); pg.click('[data-a=t-gatto]'); pg.wait_for_timeout(400); t('Biscotto: primo capitolo con una scelta',pg.locator('.sheet [data-a=gt]').count()==2); pg.screenshot(path=f'screenshots/{tag}_x2_gatto.png'); pg.locator('.sheet [data-a=gt]').nth(1).click(); pg.wait_for_timeout(300); t('la scelta su Biscotto ha un seguito',pg.locator('.sheet').count()==1 and pg.evaluate("(__app.G.ui.gattoF||{}).curioso")==1); drain()
+    goto('imp'); pg.evaluate('__app.popups.length=0'); pg.click('[data-a=t-gatto]'); pg.wait_for_timeout(400); t('Biscotto: primo capitolo con una scelta',pg.locator('.sheet [data-a=gt]').count()==2); pg.screenshot(path=f'screenshots/{tag}_x2_gatto.png'); pg.locator('.sheet [data-a=gt]').nth(1).click(); pg.wait_for_timeout(300); t('la scelta su Biscotto ha un seguito',pg.locator('.sheet').count()==0 and pg.evaluate("(__app.G.ui.gattoF||{}).curioso")==1); drain()
     for _ in range(3):
         goto('imp'); pg.click('[data-a=t-gatto]'); pg.wait_for_timeout(300)
         if pg.locator('.sheet [data-a=gt]').count(): pg.locator('.sheet [data-a=gt]').first.click(); pg.wait_for_timeout(200)
@@ -115,8 +115,8 @@ with sync_playwright() as p:
     t('Salta senza __fast: un tocco avanza di 2 giorni (transizione al buio)',pg.evaluate("__app.sim.d")==dn0+2 and pg.locator('.nite').count()==0 and pg.evaluate('__app.G.power.salto')==2,(dn0,pg.evaluate("__app.sim.d")))
     drain(); pg.evaluate('__app.G.power.salto=0; __app.G.miss.gocce=0; __app.G.power.ultimoDono=__app.todayIdx(); __app.sim.pending.length=0; __app.G.real.owed=0; __app.G.power.resto=0; __app.G.letargo=null'); goto('vaso'); pg.wait_for_timeout(300); dn1=pg.evaluate("__app.sim.d"); pg.click('.rb.sk'); pg.wait_for_timeout(1500)
     t('Salta senza cariche né gocce: non avanza',pg.evaluate("__app.sim.d")==dn1 and pg.locator('.nite').count()==0,(dn1,pg.evaluate("__app.sim.d")))
-    pg.evaluate('__app.G.miss.gocce=6'); goto('vaso'); pg.wait_for_timeout(300); pg.click('.rb.sk'); pg.wait_for_timeout(4000)
-    t('Salta con 6 gocce e nessuna carica: avanza di 2 e spende le gocce',pg.evaluate('__app.G.miss.gocce')==0 and (pg.evaluate("__app.sim.d")==dn1+2 or (pg.evaluate("__app.sim.d")==dn1+1 and pg.evaluate('__app.G.power.resto')==1)),(dn1,pg.evaluate("__app.sim.d")))
+    pg.evaluate('__app.G.miss.gocce=__app.MISS.costo.salto'); goto('vaso'); pg.wait_for_timeout(300); pg.click('.rb.sk'); pg.wait_for_timeout(4000)
+    t('Salta con le gocce del costo e nessuna carica: avanza di 2 e spende le gocce',pg.evaluate('__app.G.miss.gocce')==0 and (pg.evaluate("__app.sim.d")==dn1+2 or (pg.evaluate("__app.sim.d")==dn1+1 and pg.evaluate('__app.G.power.resto')==1)),(dn1,pg.evaluate("__app.sim.d")))
     # Riscuoti: la missione compiuta resta nel pannello, il premio arriva solo al tocco
     drain(); pg.evaluate("window.__fast=false; __app.popups.length=0; __app.sim.pending.length=0; __app.G.real.owed=0; __app.G.letargo=null; __app.G.ui.fase=5; __app.G.miss.gocce=0; __app.G.miss.att=[{k:'cure',x:null,p:3,n:3,g:2,base:0,ann:1}]; __app.missioni(); __ui.render()"); goto('vaso'); pg.wait_for_timeout(400); drain()
     t('missione compiuta: gocce ancora 0, badge menta con spunta sul pulsante Missioni',pg.evaluate('__app.G.miss.gocce')==0 and pg.locator('#mbtn.rc small.rcb').count()==1,pg.evaluate('__app.G.miss.gocce'))
