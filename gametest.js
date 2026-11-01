@@ -134,7 +134,7 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   // eredità per famiglia (archiviaVaso diretto)
   P.archiviaVaso({k:'equilibrio'}); t('Quiete → la terra nuova parte umida (.3)',P.sim.view().needs.um>=.3-1e-9&&P.G.ui.vasoN===3,P.sim.view().needs.um);
   P.archiviaVaso({k:'gigante'}); t('Mostri → il sasso parte carico (E 40)',P.sim.E===40&&P.sim.view().needs.um===0,P.sim.E);
-  P.archiviaVaso({k:'conquista'}); P.doAct('terra'); P.doAct('acqua'); P.inbox().forEach(a=>P.takeArrival(a.id,'si')); const fa=P.G.arrivi.list.find(a=>a.force==='formiche'); t('Conflitti → la prima specie arriva un giorno prima',fa&&fa.due===P.G.ui.d3+6,JSON.stringify(fa));
+  P.archiviaVaso({k:'conquista'}); P.doAct('terra'); P.doAct('acqua'); P.inbox().forEach(a=>P.takeArrival(a.id,'si')); const fa=P.G.arrivi.list.find(a=>a.force==='formiche'); t('Conflitti → la prima specie arriva un giorno prima',fa&&fa.due===P.G.ui.d3+1,JSON.stringify(fa));
   for(let i=0;i<8;i++) P.archiviaVaso({k:'fede'}); P.persist(); const kb=localStorage.getItem('terrario.save.v2').length; t('dopo 12 vasi il salvataggio resta leggero (< 60 KB)',P.G.vasi.length===12&&kb<60000,kb); console.log('mensola di 12 vasi:',JSON.stringify(P.G.vasi).length,'byte · salvataggio',Math.round(kb/1024),'KB'); }
 // 9) ritorno: «Mentre non c'eri», dono della nonna, Avanza di una notte, carta ogni 7 giorni di cura
 { const P=window.__app; P.newGame('T',JSON.parse(JSON.stringify(su))); P.popups.length=0; P.G.ui.fase=5; const dec=()=>{ let g=0; while(P.sim.pending.length&&g++<20){ const d=P.sim.pending[0]; P.sim.resolve?P.sim.resolve(d.id,'lascia'):0; if(P.sim.pending[0]===d) break; } };
