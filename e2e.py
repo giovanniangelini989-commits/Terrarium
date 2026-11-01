@@ -70,7 +70,7 @@ with sync_playwright() as p:
     t('con la prima formica compaiono Osserva e la fila dei gruppi',pg.evaluate("__app.G.ui.fase")==4 and pg.locator('[data-a=osserva]').count()>=1 and pg.locator('.qhandle').is_visible()); pg.screenshot(path=f'screenshots/{tag}_s5_vita.png')
     drain()
     # ---- notti vive e Biscotto
-    drain(); goto('imp'); pg.click('[data-a=t-notte]'); pg.wait_for_timeout(400); t('una notte racconta qualcosa',pg.locator('.sheet').count()==1 and 'stanotte' in pg.inner_text('.sheet').lower()); pg.screenshot(path=f'screenshots/{tag}_x1_notte.png'); drain()
+    drain(); goto('imp'); pg.click('[data-a=t-notte]'); pg.wait_for_timeout(400); t('una notte racconta qualcosa (scheda se c\'è una scelta, altrimenti notifica: mai una scheda solo Continua)',(pg.locator('.sheet').count()==1 and 'stanotte' in pg.inner_text('.sheet').lower() and pg.locator('.sheet [data-a=nb]').count()>0) or (pg.locator('#toast').count()==1 and pg.locator('.sheet').count()==0)); pg.screenshot(path=f'screenshots/{tag}_x1_notte.png'); drain()
     goto('imp'); pg.evaluate('__app.popups.length=0'); pg.click('[data-a=t-gatto]'); pg.wait_for_timeout(400); t('Biscotto: primo capitolo con una scelta',pg.locator('.sheet [data-a=gt]').count()==2); pg.screenshot(path=f'screenshots/{tag}_x2_gatto.png'); pg.locator('.sheet [data-a=gt]').nth(1).click(); pg.wait_for_timeout(300); t('la scelta su Biscotto ha un seguito',pg.locator('.sheet').count()==1 and pg.evaluate("(__app.G.ui.gattoF||{}).curioso")==1); drain()
     for _ in range(3):
         goto('imp'); pg.click('[data-a=t-gatto]'); pg.wait_for_timeout(300)
