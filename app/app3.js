@@ -265,7 +265,7 @@ function riepilogo(p,v){ const ev=p.eventi||[], G=A.G;
   const mom=notable.concat(rest).slice(0,3).map(e=>({ic:e.icon,tx:narraC(e)}));
   queued.forEach(B=>{ const tx=typeof B.x==='function'?B.x(A.nightCtx(v)):B.x; A.nightFx(B.id,-1); if(mom.length<3) mom.push({ic:B.ic,tx}); });
   const arrNew=[]; for(let i=A.popups.length-1;i>=0;i--){ const q=A.popups[i]; if(q.t!=='arrivo') continue; const a=A.G.arrivi.list.find(x=>x.id===q.id); if(a&&a.state==='nuovo'&&FASE()>=4){ arrNew.unshift(a); A.popups.splice(i,1); } } // restano nella posta: un solo pulsante li apre
-  if(arrNew.length) mom.splice(0,mom.length,{ic:'🔔',tx:arrNew.length>1?arrNew.length+' nuovi arrivi, tra cui: '+arrNew[0].title+'.':'È arrivato qualcuno: '+arrNew[0].title+'.'},...mom.slice(0,2));
+  if(arrNew.length) mom.splice(0,mom.length,{ic:'🔔',tx:arrNew.length>1?arrNew.length+' nuovi arrivi ti aspettano.':(arrNew[0].kind==='oggetto'?'Sul tavolo ti aspetta qualcosa.':'Qualcuno è arrivato '+String(arrNew[0].title||'').replace(/^./,c=>c.toLowerCase())+'.')},...mom.slice(0,2));
   const th=(p.notti||0)>0?.4:.25, low=['um','ter','pul'].filter(k=>(k!=='pul'||FASE()>=3)&&(k!=='um'||FASE()>=1)&&v.needs[k]<th).sort((a,b)=>v.needs[a]-v.needs[b]).slice(0,2);
   const lt=G.letargo, st=[];
   if(lt&&lt.giorni>0) st.push(['😴','Il vaso dorme da '+lt.giorni+(lt.giorni>1?' giorni':' giorno')+': basta una cura per svegliarlo.']); else if(p.giorni>1) st.push(['🌿','Il vaso ha tenuto bene.']);

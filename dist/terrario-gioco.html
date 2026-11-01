@@ -941,10 +941,12 @@ function reqScegli(kind){ const L=REQV[kind]; const base=[L[0].x,L[0].b];
   try{ const A=window.__app; if(!A||!A.sim||!A.G) return base; const G=A.G, key=kind+'|'+((G.req&&G.req.day)||0)+'|'+((G.ui&&G.ui.reqN)||0);
    if(reqMemo[kind]&&reqMemo[kind].key===key) return reqMemo[kind].r;
    const v=A.sim.view(); const ok=L.filter(o=>{ try{ return !o.c||o.c(v); }catch(e){ return false; } });
+   const ui=G.ui, mem3=ui.idee||(ui.idee={}), dg=A.sim.d||0; Object.keys(mem3).forEach(q=>{ if(dg-mem3[q]>=3||mem3[q]>dg) delete mem3[q]; }); /* stessa idea al massimo una volta ogni 3 giorni di gioco (salvataggio: poche chiavi) */
+   const fresh=ok.filter(o=>mem3[kind+L.indexOf(o)]==null); if(fresh.length) ok.splice(0,ok.length,...fresh);
    const peso=ok.map(o=>o.c?3:1); let tot=peso.reduce((a,b)=>a+b,0), h=0; for(const ch of key) h=(h*31+ch.charCodeAt(0))|0; let r=Math.abs(h)%tot, i=0; while(r>=peso[i]){ r-=peso[i]; i++; }
    const rec=reqUltimo[kind]||(reqUltimo[kind]=[]), mem=Math.min(5,ok.length-1); let o=ok[i];
    for(let j=0;j<ok.length&&rec.slice(0,mem).includes(o);j++) o=ok[(i+j+1)%ok.length];
-   rec.unshift(o); rec.length=Math.min(rec.length,6);
+   rec.unshift(o); rec.length=Math.min(rec.length,6); mem3[kind+L.indexOf(o)]=dg;
    const out=[typeof o.x==='function'?o.x(v):o.x,o.b]; reqMemo[kind]={key,r:out}; return out; }catch(e){ return base; } }
 const REQ={}; Object.keys(REQV).forEach(k=>Object.defineProperty(REQ,k,{enumerable:true,get:()=>reqScegli(k)}));
 // ---------- la voce del vaso ----------
@@ -5095,6 +5097,7 @@ window.__carte={init,reveal,hand:openHand,album,albumHTML,cardEl,view:openView,i
    warn   (barra sotto il 25%, 2 pulsazioni, poi ferma)        piccolo  1100 ms x2
    toast dono (2 carte sul davanzale)      medio     250 ms
    riepilogo (scheda Mentre non c'eri)     medio     sheetIn 320 ms
+   riep-arr (pulsante «Vedi chi è arrivato» nel riepilogo)  piccolo  120 ms press
    count  (numero che sale)                medio     400 ms
    nfin   (notifica a destra)              medio     300 ms
    toast  (avviso)                         medio     250 ms
@@ -5129,8 +5132,8 @@ function sheet(html,modal){ const had=!!layer.querySelector('.sheet'); layer.inn
 function closeSheet(){ if(window.__fx&&layer.querySelector('.sheet')) __fx.ghostOut(layer); layer.innerHTML=''; }
 const sheetOpen=()=>!!layer.firstChild;
 let nHold=null, nEl=null, gShow=null;
-// Fogli per visita (raffica ravvicinata, 90 s di quiete la azzerano): al massimo 3 (riepilogo, poi una decisione, poi un arrivo; il resto aspetta o finisce nel badge). Le decisioni che fermano il vaso passano sempre.
-const POP_MAX=3, POP_FREE={missione:1,'miss-nuova':1,'notte-ora':1,levelup:1}, POP_PRI={missione:-2,'miss-nuova':-2,'notte-ora':-2,levelup:-2,risveglio:0,decisione:1,notte:1.5,arrivo:2};
+// Fogli per visita (raffica ravvicinata, 90 s di quiete la azzerano): al massimo 2 (riepilogo che assorbe arrivi e notti senza scelta, poi una scelta notturna o un dono; il resto aspetta nel badge, nel quaderno o nelle notifiche). Le decisioni che fermano il vaso passano sempre.
+const POP_MAX=2, POP_FREE={missione:1,'miss-nuova':1,'notte-ora':1,levelup:1}, POP_PRI={missione:-2,'miss-nuova':-2,'notte-ora':-2,levelup:-2,risveglio:0,decisione:1,notte:1.5,arrivo:2};
 let popSeen=0, popSeenT=0, popForce=0;
 function popTake(){ const q=A.popups; if(!q.length) return null; if(popForce) return q.shift(); const now=Date.now(); if(now-popSeenT>9e4||q.some(x=>x.t==='risveglio')) popSeen=0; let best=-1,bp=99;
   q.forEach((x,i)=>{ if(!POP_FREE[x.t]&&popSeen>=POP_MAX&&x.t!=='decisione'&&!(x.t==='arrivo'&&FASE()<4)) return; const pr=POP_PRI[x.t]!=null?POP_PRI[x.t]:3; if(pr<bp){ bp=pr; best=i; } });
@@ -5163,7 +5166,7 @@ function showNextPopup(){ if(busy()||mode!=='game') return; const p=popTake(); i
     cinema([{focus:d.type==='guerra'?{kind:'centro'}:{kind:'specie',id:d.sp},text:txt,sfx:d.type==='mutazione'?'mut':d.type==='societa'?'societa':'guerra'}],show); return; }
   if(p.t==='arrivo'){ const a=A.G.arrivi.list.find(x=>x.id===p.id); if(!a||a.state!=='nuovo'){ showNextPopup(); return; } arrivoSheet(a); return; }
   if(p.t==='biscotto'){ biscottoSheet(); return; }
-  if(p.t==='notte'){ const N=window.__notti, B=N&&N.NOTTI.find(n=>n.id===p.id); if(!B){ showNextPopup(); return; } const tx=typeof B.x==='function'?B.x(A.nightCtx(A.sim.view())):B.x; AU.sfx('pagina'); AU.say(tx); if(!B.ch) A.nightFx(B.id,-1);
+  if(p.t==='notte'){ const N=window.__notti, B=N&&N.NOTTI.find(n=>n.id===p.id); if(!B){ showNextPopup(); return; } const tx=typeof B.x==='function'?B.x(A.nightCtx(A.sim.view())):B.x; if(!B.ch){ A.nightFx(B.id,-1); A.toast(tx); render(); setTimeout(showNextPopup,60); return; } /* niente scheda solo «Continua»: arriva come notifica */ AU.sfx('pagina'); AU.say(tx);
     sheet('<div class="kicker" style="text-align:center">Stanotte</div><p style="text-align:center;font-size:46px;margin:4px 0">'+B.ic+'</p><p class="nar" style="text-align:center">'+esc(tx)+'</p><div class="stack">'+(B.ch?B.ch.map((c,i)=>'<button class="btn '+(i?'s':'g')+'" data-a="nb" data-id="'+B.id+'" data-i="'+i+'">'+esc(c.l)+'</button>').join(''):'<button class="btn" data-a="sx">Continua</button>')+'</div>',true); render(); return; }
   if(p.t==='gatto'){ const N=window.__notti; if(!N){ showNextPopup(); return; } AU.sfx('biscotto'); if(p.s>=4){ const r=A.gattoChoice(4,-1); AU.say(r.x); sheet('<div class="kicker" style="text-align:center">Biscotto · l’ultimo capitolo</div><p style="text-align:center;font-size:46px;margin:4px 0">🐈</p><h2>'+esc(r.t)+'</h2><p class="nar" style="text-align:center">'+esc(r.x)+'</p><div class="stack"><button class="btn" data-a="sx">Continua</button></div>',true); render(); return; }
     const C=N.GATTO[p.s]; AU.say(C.x); sheet('<div class="kicker" style="text-align:center">Biscotto · '+esc(C.t)+'</div><p style="text-align:center;font-size:46px;margin:4px 0">🐈</p><p class="nar" style="text-align:center">'+esc(C.x)+'</p><div class="stack">'+C.ch.map((c,i)=>'<button class="btn '+(i?'s':'g')+'" data-a="gt" data-s="'+p.s+'" data-i="'+i+'">'+esc(c.l)+'</button>').join('')+'</div>',true); return; }
@@ -5184,13 +5187,15 @@ function riepilogo(p,v){ const ev=p.eventi||[], G=A.G;
   const notable=ev.filter(e=>NOTA.includes(e.kind)), rest=ev.filter(e=>!NOTA.includes(e.kind));
   const mom=notable.concat(rest).slice(0,3).map(e=>({ic:e.icon,tx:narraC(e)}));
   queued.forEach(B=>{ const tx=typeof B.x==='function'?B.x(A.nightCtx(v)):B.x; A.nightFx(B.id,-1); if(mom.length<3) mom.push({ic:B.ic,tx}); });
+  const arrNew=[]; for(let i=A.popups.length-1;i>=0;i--){ const q=A.popups[i]; if(q.t!=='arrivo') continue; const a=A.G.arrivi.list.find(x=>x.id===q.id); if(a&&a.state==='nuovo'&&FASE()>=4){ arrNew.unshift(a); A.popups.splice(i,1); } } // restano nella posta: un solo pulsante li apre
+  if(arrNew.length) mom.splice(0,mom.length,{ic:'🔔',tx:arrNew.length>1?arrNew.length+' nuovi arrivi ti aspettano.':(arrNew[0].kind==='oggetto'?'Sul tavolo ti aspetta qualcosa.':'Qualcuno è arrivato '+String(arrNew[0].title||'').replace(/^./,c=>c.toLowerCase())+'.')},...mom.slice(0,2));
   const th=(p.notti||0)>0?.4:.25, low=['um','ter','pul'].filter(k=>(k!=='pul'||FASE()>=3)&&(k!=='um'||FASE()>=1)&&v.needs[k]<th).sort((a,b)=>v.needs[a]-v.needs[b]).slice(0,2);
   const lt=G.letargo, st=[];
   if(lt&&lt.giorni>0) st.push(['😴','Il vaso dorme da '+lt.giorni+(lt.giorni>1?' giorni':' giorno')+': basta una cura per svegliarlo.']); else if(p.giorni>1) st.push(['🌿','Il vaso ha tenuto bene.']);
   low.forEach(k=>st.push(['⚠️','Ha bisogno '+S.prep('di',NLOW[k])+': '+CURA[k].avviso.replace(/^[^:]*: /,''),CURA[k]]));
   const body=mom.length?mom.map(m=>'<div class="li nar"><span class="em">'+m.ic+'</span><div>'+esc(m.tx)+'</div></div>').join(''):'<p class="nar" style="text-align:center">Una notte tranquilla. Il sasso ha continuato a battere, piano.</p>';
   AU.sfx('arrivo');
-  const nn=p.notti||0; sheet('<div class="kicker" style="text-align:center">'+(nn>=1||p.giorni>1?S.RITORNO.titolo:S.RITORNO.buongiorno)+'</div><h2>'+esc(G.name)+'</h2>'+(nn>=1?'<p class="muted" style="text-align:center;margin:-4px 0 8px">'+esc(S.RITORNO.notti(nn))+'</p>':'')+body+(st.length?'<div class="rstate">'+st.map(x=>'<div><span>'+x[0]+'</span>'+esc(x[1])+(x[2]?'<button class="btn g" data-a="cura-qui" data-k="'+x[2].k+'" style="width:auto;flex:none;min-height:0;padding:4px 14px;font-size:12px;margin:6px 0 0 8px">'+esc(x[2].n)+'</button>':'')+'</div>').join('')+'</div>':'')+(dono?'<div class="rstate dono"><div><span>'+dono.ic+'</span>'+esc(dono.testo)+'</div></div>':'')+'<div class="stack"><button class="btn g" data-a="sx">'+esc(S.RITORNO.guarda)+'</button></div>'); if(dono) A.G.ui.unread=A.G.ui.unread; }
+  const nn=p.notti||0, c0=low[0]?CURA[low[0]]:null, act=arrNew.length?'<button class="btn g" data-a="riep-arr">Vedi chi è arrivato</button>':c0?'<button class="btn g" data-a="cura-qui" data-k="'+c0.k+'">'+esc(c0.n)+'</button>':''; sheet('<div class="kicker" style="text-align:center">'+(nn>=1||p.giorni>1?S.RITORNO.titolo:S.RITORNO.buongiorno)+'</div><h2>'+esc(G.name)+'</h2>'+(nn>=1?'<p class="muted" style="text-align:center;margin:-4px 0 8px">'+esc(S.RITORNO.notti(nn))+'</p>':'')+body+(st.length?'<div class="rstate">'+st.map(x=>'<div><span>'+x[0]+'</span>'+esc(x[1])+''+'</div>').join('')+'</div>':'')+(dono?'<div class="rstate dono"><div><span>'+dono.ic+'</span>'+esc(dono.testo)+'</div></div>':'')+'<div class="stack">'+act+'<button class="btn '+(act?'s':'g')+'" data-a="sx">'+esc(S.RITORNO.guarda)+'</button></div>'); if(dono) A.G.ui.unread=A.G.ui.unread; }
 function decisionSheet(d,x){ const id=d.id, b=(c,t,s,k)=>'<button class="btn '+(k||'s')+'" data-a="dec" data-id="'+id+'" data-c="'+c+'">'+t+'<br><small style="font-weight:600;color:var(--quiet)">'+s+'</small></button>';
   if(d.type==='mutazione'){ const M=T.MUT[d.mutation]; sheet('<div class="kicker" style="text-align:center">Una mutazione</div><p style="text-align:center;font-size:42px;margin:0">'+(x?x.icon:'🧬')+'</p><p class="nar" style="text-align:center"><b>'+esc(x?cap(the(x.nome)):'')+'</b>: '+esc(M.nome.toLowerCase())+'.</p><p class="muted" style="text-align:center">'+esc(M.fx)+' Il tempo è sospeso finché scegli.</p><div class="stack">'+b('proteggi','Proteggili','si fissa, e gli dai una mano','g')+b('rimuovi','Riportali com’erano','ci riproveranno più tardi')+b('lascia','Lascia fare','può non succedere niente')+'</div>',true); }
   else if(d.type==='societa'){ sheet('<div class="kicker" style="text-align:center">Nasce un popolo</div><p style="text-align:center;font-size:42px;margin:0">'+(x?x.icon:'🏛️')+'</p><p class="nar" style="text-align:center"><b>'+esc(x&&x.society?x.society.name:'')+'</b></p><p class="muted" style="text-align:center">Si sono accorti di te. Come vuoi apparire?</p><div class="stack">'+b('mostrati','Mostrati','ti guarderanno come una presenza','g')+b('nascosto','Resta nascosto','venereranno il meteorite')+'</div>',true); }
@@ -5412,6 +5417,7 @@ const H={
  'tab'(d){ tab=d.t; render(); }, 'cdx'(d){ cdx=d.t; render(); if(cdx==='albero') scrollEnd(); },
  'tnode'(d){ const n=(A.G.tree||{nodes:[]}).nodes[+d.i]; if(!n) return; sheet((n.img?'<img class="tbig" src="'+n.img+'" alt="Il vaso quel giorno">':'')+'<div class="kicker" style="text-align:center">Giorno '+n.d+((n.cap||1)>1?' · capitolo '+n.cap:'')+'</div><h2>'+esc(n.t)+'</h2>'+(n.k==='scelta'?'<p class="nar" style="text-align:center">Hai scelto: <b>'+esc(n.ch||'')+'</b></p><p class="muted" style="text-align:center">La strada non presa: '+esc(n.alt||'')+'. Chissà dove portava.</p>':'')+'<div class="stack"><button class="btn" data-a="sx">Chiudi</button></div>',true); },
  'sx'(){ closeSheet(); V.reset(); render(); setTimeout(showNextPopup,60); },
+ 'riep-arr'(){ closeSheet(); setTimeout(()=>{ popForce=1; H['arr-open'](); popForce=0; },80); },
  'cura-qui'(d){ closeSheet(); if(tab!=='vaso'){ tab='vaso'; render(); } H.act({k:d.k}); setTimeout(showNextPopup,200); },
  'act'(d){  const was=A.G.req.done, KN={acqua:'um',nutri:'ter',terra:'ter',pulisci:'pul'}[d.k], n0=KN?A.sim.view().needs[KN]:null; A.doAct(d.k); V.fx&&V.fx(d.k); AU.sfx('azione'); const last=A.sim.log[A.sim.log.length-1]; render();
    const same=KN&&FASE()>=3&&Math.abs(A.sim.view().needs[KN]-n0)<.012&&n0>.9;
