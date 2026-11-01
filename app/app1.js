@@ -283,29 +283,29 @@ function closeChapter0(){ const fp=sim.closeChapter(); const k=fp.finale; const 
 function newGame(name,setup){ const seed=1+Math.floor(Math.random()*99999); G=fresh(name,setup,seed); sim=T.createSim(setup,{seed,game:true,decisions:true,needs:true}); const pieno=setup.piante.length||setup.insetti.length; G.ui.fase=pieno?5:0; if(pieno) planArrivals(0); else sim.setNeeds({um:0,ter:0}); G.real.lastDay=todayIdx(); G.real.lastSlot=slotIdx(); G.ui.vasoN=1; G.ui.vasoDal=todayIdx(); G.vasi=[]; calEnsure(); calRow(todayIdx())[2]|=1; G.req=makeRequest(); updateCodex(); addPage('inizio',S.PAG.inizio[0],S.PAG.inizio[1],false); G.ui.nextBiscotto=sim.d+14; donoPower(); persist(); }
 // ---------- Missioni e gocce (docs/CONTRATTI.md «Missioni e gocce»): 3 missioni dal vaso reale → gocce → notti e salti in più ----------
 // Nessuna scadenza, nessuna serie: una missione che diventa impossibile (specie estinta, pianta sparita) si cambia da sola, in silenzio.
-const MISS={costo:{salto:6,carta:10,nonna:5,cambia:2},tetti:{salto:6,carta:1,nonna:1},cambiGratis:1,ripetiGiorni:3,quante:3,alGiorno:4,recenti:2,curaGoccia:1,faseMin:4,popGiorno:4,ogniMs:3*36e5,assenzaMs:36e5,subitoMs:45e3};
+const MISS={costo:{salto:4,carta:8,nonna:3,cambia:2},tetti:{salto:6,carta:1,nonna:1},cambiGratis:1,ripetiGiorni:3,quante:3,alGiorno:4,recenti:2,curaGoccia:1,faseMin:4,popGiorno:4,ogniMs:3*36e5,assenzaMs:36e5,subitoMs:45e3};
 function missEnsure(){ return G.miss||(G.miss={gocce:0,tot:0,fatte:0,cambiate:0,n:0,att:[],recenti:[],compri:{salto:0},vista:true}); }
 const mAl=(v,id)=>v.sp.some(s=>s.id===id&&s.alive), mPl=(v,id)=>v.plants.some(p=>p.id===id);
 const mMut=v=>v.sp.reduce((a,s)=>a+(s.alive?(s.mut||[]).length:0),0)+v.plants.filter(p=>p.mut).length;
 const mArr=()=>!!(G.arrivi&&G.arrivi.list.some(a=>a.state==='nuovo'||a.state==='futuro'));
 const mVivi=v=>v.sp.filter(s=>s.alive).map(s=>s.id);
 const MDEF={
-  vivi:{n:3,g:2,xs:mVivi,morta:(v,m)=>!mAl(v,m.x),on:(e,a,v,m)=>{ if(e!=='notte'||m.u===todayIdx()||!mAl(v,m.x)) return null; m.u=todayIdx(); return m.p+1; }},
+  vivi:{n:3,g:3,xs:mVivi,morta:(v,m)=>!mAl(v,m.x),on:(e,a,v,m)=>{ if(e!=='notte'||m.u===todayIdx()||!mAl(v,m.x)) return null; m.u=todayIdx(); return m.p+1; }},
   pota:{n:1,g:2,puo:v=>mPl(v,'felce')&&mPl(v,'muschio'),morta:v=>!mPl(v,'felce')||!mPl(v,'muschio'),on:(e,a)=>e==='pota'&&a&&a.ok?1:null},
-  osserva:{n:1,g:1,xs:mVivi,morta:(v,m)=>!mAl(v,m.x),on:(e,a,v,m)=>e==='osserva'&&mAl(v,m.x)?1:null},
+  osserva:{n:1,g:2,xs:mVivi,morta:(v,m)=>!mAl(v,m.x),on:(e,a,v,m)=>e==='osserva'&&mAl(v,m.x)?1:null},
   umidita:{n:2,g:2,puo:()=>true,morta:()=>false,on:(e,a,v,m)=>{ if(e!=='notte'||m.u===todayIdx()||v.needs.um<.4||v.needs.um>.85) return null; m.u=todayIdx(); return m.p+1; }},
   fungo:{n:1,g:2,puo:v=>mPl(v,'fungo')||mArr(),morta:v=>!mPl(v,'fungo')&&!mArr(),on:(e,a,v)=>{ const f=v.plants.find(p=>p.id==='fungo'); return f&&f.v>=.4?1:null; }},
   muta:{n:1,g:3,puo:v=>mVivi(v).length>0,base:mMut,morta:v=>mVivi(v).length===0,on:(e,a,v,m)=>e==='notte'&&mMut(v)>m.base?1:null},
-  cure:{n:3,g:1,puo:()=>true,morta:()=>false,on:(e,a,v,m)=>e==='cura'?m.p+1:null},
+  cure:{n:3,g:2,puo:()=>true,morta:()=>false,on:(e,a,v,m)=>e==='cura'?m.p+1:null},
   arrivo:{n:1,g:2,puo:()=>mArr(),morta:()=>!mArr(),on:(e)=>e==='arrivo'?1:null},
   // missioni brevi (1-3 minuti), scelte dallo stato vero del vaso; peso 2 = più frequenti
-  vetro:{n:1,g:1,peso:2,xs:v=>v.needs.pul<.8?['v']:[],morta:()=>false,on:(e,a)=>e==='cura'&&a==='pulisci'?1:null},
-  acqua:{n:1,g:1,peso:2,xs:v=>{ const f=v.plants.find(q=>q.id==='felce'); return (f&&f.v<.6)?['felce']:v.needs.um<.55?['terra']:[]; },morta:()=>false,on:(e,a)=>e==='cura'&&a==='acqua'?1:null},
-  tocca:{n:3,g:1,peso:2,xs:mVivi,morta:(v,m)=>!mAl(v,m.x),on:(e,a,v,m)=>e==='tocca'&&a===m.x?m.p+1:null},
-  dormi:{n:1,g:1,peso:2,puo:()=>true,morta:()=>false,on:(e)=>e==='notte'?1:null}
+  vetro:{n:1,g:2,peso:2,xs:v=>v.needs.pul<.8?['v']:[],morta:()=>false,on:(e,a)=>e==='cura'&&a==='pulisci'?1:null},
+  acqua:{n:1,g:2,peso:2,xs:v=>{ const f=v.plants.find(q=>q.id==='felce'); return (f&&f.v<.6)?['felce']:v.needs.um<.55?['terra']:[]; },morta:()=>false,on:(e,a)=>e==='cura'&&a==='acqua'?1:null},
+  tocca:{n:3,g:2,peso:2,xs:mVivi,morta:(v,m)=>!mAl(v,m.x),on:(e,a,v,m)=>e==='tocca'&&a===m.x?m.p+1:null},
+  dormi:{n:1,g:2,peso:2,puo:()=>true,morta:()=>false,on:(e)=>e==='notte'?1:null}
 };
 // missione «grande» di più giorni, sempre attiva (una sola, fuori dalle tre): ogni giorno reale conta una volta, niente serie da non rompere
-const GRANDI=[{ev:'cura',n:5,g:4},{ev:'osserva',n:5,g:4},{ev:'notte',n:4,g:4}];
+const GRANDI=[{ev:'cura',n:5,g:5},{ev:'osserva',n:5,g:5},{ev:'notte',n:4,g:5}];
 function missGrande(){ const M=missEnsure(); if(!M.grande){ const i=(M.gv||0)%GRANDI.length; M.grande={v:i,p:0,n:GRANDI[i].n,g:GRANDI[i].g,u:-1}; } return M.grande; }
 function missTitolo(m,v){ const T0=S.MISS[m.k]||{}, sp=m.x&&(v||sim.view()).sp.find(s=>s.id===m.x), nome=sp?String(sp.nome).toLowerCase():'', art=S.MISS.art[m.x]||'le'; const f=(c,d)=>typeof c==='function'?c(nome,art,m.x):c||d; return {titolo:f(T0.t,m.k), sotto:T0.s||'', frase:f(T0.f,'')}; }
 function missOggi(){ const M=missEnsure(), t=todayIdx(); if(!M.oggi||M.oggi.t!==t) M.oggi={t,n:0}; return M.oggi; }

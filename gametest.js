@@ -294,4 +294,12 @@ t('arriva un finale',!!F.finalePending,guard); if(F.finalePending){ const d0=F.d
   // salvataggio
   const S1=JSON.stringify(Q.view().bio), Q3=mk([]); Q3.load(JSON.parse(JSON.stringify(Q.save()))); t('bio: la covata e la regina si salvano col vaso',JSON.stringify(Q3.view().bio)===S1);
 }
+// memoria idee: la stessa idea non torna entro 3 giorni
+{ const P=window.__app, S2=window.__story; P.newGame('Id',JSON.parse(JSON.stringify(su))); P.G.ui.fase=5; const seen=[]; let rip=0;
+  for(let d=1;d<=14;d++){ P.G.dev={offset:d}; P.G.req={day:d,kind:'osserva',done:false}; const x=S2.REQ.osserva[0]; seen.push(x); const j=seen.slice(0,-1).slice(-2).includes(x); if(j) rip++; }
+  t('idee: nessuna ripetizione entro 3 giorni',rip===0,JSON.stringify(seen.map(x=>x.slice(0,14)))); }
+// tetto di 2 schede per visita: vale per tutte (notti con scelta, biscotto, pagine), non per le decisioni che bloccano
+{ const P=window.__app; P.newGame('Tt',JSON.parse(JSON.stringify(su))); P.G.ui.fase=5; P.G.arrivi={list:[],n:0}; P.popups.length=0;
+  const st=require('fs').readFileSync('./app/app3.js','utf8'); t('tetto schede: arrivi del tutorial esenti solo se fanno avanzare la guida',/function guidaArr/.test(st)&&!/x\.t==='arrivo'&&FASE\(\)<4\)\) return/.test(st));
+  t('nessuna scheda con il solo Continua per notti e Biscotto',!/data-a="nb"[^]*Continua/.test(st.split("'nb'(d)")[1].split("'gt'(d)")[0])&&!/'gt'\(d\)\{[^\n]*Continua/.test(st)); }
 console.log(ok,'ok',bad,'falliti');
