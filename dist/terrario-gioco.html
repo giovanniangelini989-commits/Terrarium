@@ -432,6 +432,19 @@ svg.ei .a{stroke:#A88BFF}svg.ei .g{stroke:#7CF5C8}
 .paper .qp .nar{font:italic 16px/28px Fraunces,Georgia,serif;color:#3a3040;margin:0}
 .paper svg.ei{stroke:#5b4630}
 
+/* consiglio del momento e avvisi gentili: solo transform e opacity */
+.tip{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 118px);z-index:4;max-width:92vw;width:max-content;padding:7px 14px;border-radius:999px;background:rgba(10,15,21,.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(168,139,255,.5);color:#F2F6FA;font:600 13px/1.3 'Instrument Sans',system-ui,sans-serif;text-align:center;opacity:0;transform:translate(-50%,8px);transition:opacity .25s cubic-bezier(.2,.8,.2,1),transform .25s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+.tip.on{opacity:1;transform:translate(-50%,0)}
+body:has(.tip.on) .stage.full .vcap{visibility:hidden}
+.rb.avv::before{content:'';position:absolute;inset:-4px;border-radius:50%;border:1.5px solid rgba(168,139,255,.7);pointer-events:none;animation:avvr 2.4s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes avvr{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:.9;transform:scale(1.06)}}
+.np.soft{animation:softp .18s cubic-bezier(.2,.8,.2,1) 2 alternate}
+@keyframes softp{from{transform:scale(1)}to{transform:scale(1.08)}}
+.nf.soft{animation:softin .3s cubic-bezier(.2,.8,.2,1);transition:opacity .3s,transform .3s}
+.nf.soft.out{opacity:0;transform:scale(.9)}
+@keyframes softin{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.rb.avv::before,.np.soft,.nf.soft{animation:none}.tip{transition:opacity .01s;transform:translate(-50%,0)}}
+
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js"}}</script>
 </head>
@@ -1127,6 +1140,8 @@ function biscotto(){ return {intro:'Un’ombra sul muro. Poi una zampa sul coper
 // Ritorno e dono della nonna (docs/CONTRATTI.md «Ritorno…»). Seconda persona, mai un obbligo.
 const RITORNO={notti:n=>n===1?'È passata una notte.':'Sono passate '+n+' notti.',titolo:'Mentre non c’eri',buongiorno:'Buongiorno',guarda:'Guarda il vaso',salta:'Salta due giorni',saltaCariche:'Non hai più salti: domani ne arrivano due, o li compri con le gocce.',saltaDone:'Due notti passano. Il sasso batte, il muschio respira.',dono:'Sul davanzale'};
 // Missioni (seconda persona, gentili: niente scadenze). Le gocce sono «gocce di rugiada».
+const CONSIGLIO={um:'Le foglie hanno sete: tocca Acqua.',ter:'La terra è povera: tocca Nutri.',pul:'Il vetro è sporco: tocca Pulisci.',riscuoti:'Una missione è pronta: apri Missioni per riscuoterla.',missione:'Hai una missione in corso: guarda Missioni.',osserva:'Tocca Osserva e guarda da vicino una creatura.',quaderno:'Apri il Quaderno: ci hai scritto qualcosa.',
+ avvUm:'L’umidità sta calando. Quando vuoi, un po’ d’Acqua.',avvTer:'Il terreno si sta impoverendo. Quando vuoi, un po’ di Nutri.',avvPul:'Il vetro si sta sporcando. Quando vuoi, Pulisci.'};
 const MISS={art:{coleotteri:'i',ragni:'i'},gocce:'gocce di rugiada',titolo:'Missioni',riposo:'Per oggi basta così: domani arrivano missioni nuove.',vuoto:'Per ora nessuna missione: il vaso deve prima riempirsi.',cambia:'Cambia',cambiata:'Una missione non era più possibile: ne è arrivata un’altra.',fatta:'Missione compiuta',toccaRiscuoti:'tocca Riscuoti',riscuoti:'Riscuoti',completata:'Completata',riscosse:g=>'Hai riscosso '+g+(g===1?' goccia':' gocce')+'.',guarda:'Guarda le missioni',
   spendi:{salto:'Un salto in più',carta:'Pesca una carta',nonna:'Un altro dono della nonna'},spendiSotto:{salto:'Due giorni in un tocco, quando vuoi.',carta:'Una carta del mazzo, una al giorno.',nonna:'Un secondo regalo sul davanzale, oggi.'},ok:{salto:'Hai un salto in più da usare.',carta:'Una carta nuova ti aspetta.',nonna:'La nonna ha lasciato qualcosa.'},no:{gocce:'Ti servono ancora un po’ di gocce.',tetto:'Ne hai già abbastanza da parte.',oggi:'Per oggi basta così: domani si può ancora.',inizio:'Il vaso deve prima riempirsi.'},cambiaCosto:n=>'Cambia · '+n+(n===1?' goccia':' gocce'),
   grandi:[{t:'Cinque giorni con il vaso',s:'Una cura in cinque giorni diversi. Niente fretta: i giorni si sommano, non si perdono.',f:'Passa a trovare il vaso in cinque giorni diversi. Basta una cura, quando vuoi tu.'},
@@ -1209,7 +1224,7 @@ const ATL={
  pl:{muschio:'Il muschio non ha vere radici: beve con le foglie e ama l’aria umida.',felce:'Le felci si riproducono con le spore, non con i semi.',fungo:'Il fungo che vedi è solo il frutto: il corpo vero è una rete di fili sotto terra, il micelio.',succulenta:'Conserva l’acqua nelle foglie: troppa acqua la fa marcire.',carnivora:'Prende dagli insetti l’azoto che la terra povera non le dà.'},
  mu:{gigantismo:'Gli insetti respirano con piccoli tubi, le trachee: per questo non diventano mai troppo grandi, e un gigante paga un prezzo.',radioattivo:'Alcuni animali resistono alle radiazioni perché riparano il DNA più in fretta. Nessuno emette radiazioni: la resistenza è l’unico tratto vero.',intelligenza:'Le formiche non diventano intelligenti da sole: la loro forza è lavorare in gruppo, e chi vive in gruppo impara.',corazza:'Un guscio più spesso protegge, ma pesa e costa energia a ogni muta.',velenoso:'Molte creature piccole hanno veleno e colori vivi che avvisano: «non mangiarmi».',iperfertilita:'Fare molte uova piccole funziona finché c’è cibo; poi il numero crolla.',bioluminescenza:'Alcuni funghi brillano davvero, con un orologio interno; gli insetti di casa quasi mai.'},
  ev:{regina:['La prima regina','Una colonia ha una regina che depone tutte le uova.'],covata:['La prima covata','Uova, larve e pupe stanno nel nido: vanno tenute al caldo e all’umido giusti.'],sciame:['Il primo sciame','Le termiti alate sciamano dopo l’umido, per fondare nuove colonie.'],collemboli:['Il primo collembolo','I collemboli sono pulitori minuscoli: mangiano muffa e detriti, e saltano con una piccola molla.'],giungla:['La prima giungla','Quando le piante crescono senza freni fanno ombra e le più piccole soffrono: serve potare.'],popolo:['Il primo popolo','Il popolo è la parte fantastica del meteorite: nessun insetto vero costruisce statuine.'],gigante:['Il primo gigante','Gli insetti veri non crescono così: qui è colpa del sasso.'],guerra:['La prima guerra','In natura le colonie di formiche si combattono per il territorio.']}};
-window.__story={prep,RITORNO,OGGI,SCHEDE,ATL,NONNA,MISS,TEMPO,CAL,the,cap,pick,TITOLI,PRO,OGG_VOCE,ARR,REQ,REQV,narra,osserva,ambient,PAG,DIARIO,diario,MITO,EPI,epilogo,atto,biscotto,MUTMAP,MUTFX,LETARGO,letargo,SALTO_NO,SALTO_DONO,SALTO_FATTO,FILM_FEDE};
+window.__story={prep,RITORNO,OGGI,SCHEDE,ATL,NONNA,MISS,CONSIGLIO,TEMPO,CAL,the,cap,pick,TITOLI,PRO,OGG_VOCE,ARR,REQ,REQV,narra,osserva,ambient,PAG,DIARIO,diario,MITO,EPI,epilogo,atto,biscotto,MUTMAP,MUTFX,LETARGO,letargo,SALTO_NO,SALTO_DONO,SALTO_FATTO,FILM_FEDE};
 })();
 
 /* Notti vive e storia di Biscotto — il giocatore è il bambino (seconda persona) */
@@ -5099,6 +5114,9 @@ window.__carte={init,reveal,hand:openHand,album,albumHTML,cardEl,view:openView,i
    riepilogo (scheda Mentre non c'eri)     medio     sheetIn 320 ms
    riep-arr (pulsante «Vedi chi è arrivato» nel riepilogo)  piccolo  120 ms press
    count  (numero che sale)                medio     400 ms
+   consiglio (riga sopra le cure, 8 s)     medio     250 ms (opacity+translateY)
+   avviso bisogno <50% (pillola pulsa, anello sulla cura)  piccolo  180 ms + anello fisso
+   avviso bisogno <30% (nota a destra, 1 volta al giorno)   medio     300 ms
    nfin   (notifica a destra)              medio     300 ms
    toast  (avviso)                         medio     250 ms
    Missioni (pillola sul vaso, popup, completamento)
@@ -5265,11 +5283,11 @@ const IHG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
 const IMN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
 const WHYS={carte:S.RITORNO.saltaCariche,inizio:'Il vaso deve prima riempirsi',letargo:'Il vaso dorme: prima una cura',finale:'Prima chiudi il capitolo',decisione:'Il vaso aspetta una tua decisione'};
 function potaOk(){ try{ const m=A.micro(); return !!m&&(m.copertura>.6||m.giungla>0); }catch(e){ return false; } }
-function toolbar(G,f){ if(f<3) return ''; const on=k=>G.req.kind===k&&!G.req.done; const rb=(a,k,lb,key)=>'<button class="rb'+(on(key)?' req':'')+'" data-a="'+a+'"'+(k?' data-k="'+k+'"':'')+' aria-label="'+lb+'">'+IC[key]+'<em class="lb">'+lb+'</em></button>'; const nc=A.mazzoTot(); const av=A.powerCards();
+function toolbar(G,f){ if(f<3) return ''; const on=k=>G.req.kind===k&&!G.req.done; const nn=A.sim.view().needs, AV={acqua:'um',nutri:'ter',pulisci:'pul'}; const rb=(a,k,lb,key)=>'<button class="rb'+(on(key)?' req':'')+(AV[key]&&nn[AV[key]]<.5?' avv':'')+'" data-a="'+a+'"'+(k?' data-k="'+k+'"':'')+' aria-label="'+lb+'">'+IC[key]+'<em class="lb">'+lb+'</em></button>'; const nc=A.mazzoTot(); const av=A.powerCards();
   return '<div class="toolbar round">'+rb('act','pulisci','Pulisci','pulisci')+rb('act','acqua','Acqua','acqua')+rb('act','nutri','Nutri','nutri')+(potaOk()?rb('pota',null,'Pota','pota'):'')+(f>=4?rb('osserva',null,'Osserva','osserva'):'')+(nc?'<button class="rb ace" data-a="mazzo" aria-label="Asso nella manica: '+nc+' carte">'+IC.carte+'<small>'+nc+'</small><em class="lb">Carte</em></button>':'')+(av.why==='inizio'?'':'<button class="rb sk"'+(av.why?' style="opacity:.55;border-style:dashed"':'')+' data-a="salta" aria-label="'+S.RITORNO.salta+'. '+av.salto+' di '+av.max+(av.why==='carte'?'. '+S.RITORNO.saltaCariche:'')+gAria()+'">'+IHG+gcHTML()+'<small>'+av.salto+'/'+av.max+'</small><em class="lb">Salta</em></button>')+'</div>'; }
 function dock(f,G){ if(f<3){ const c=cta(f); return '<div class="dock"><button class="cta'+(c.q?' q':'')+'" data-a="'+c.a+'"'+(c.k?' data-k="'+c.k+'"':'')+'><span>'+c.ic+'</span>'+esc(c.l)+'</button></div>'; } return '<div class="dock">'+toolbar(G,f)+'</div>'; }
 function vasoHTML(){ const v=A.sim.view(), G=A.G, f=FASE();
-  return '<div class="stage full'+(f<4?' pure':'')+'"><div class="vasebox hero" id="vb"><div class="hud">'+(f>=3?'<button class="day" data-a="needs" aria-label="Come sta il vaso"><span>Giorno</span><b>'+v.d+'</b></button>':'')+needBars(v)+'</div><div class="side">'+sideBtns()+notifHTML(v)+'</div><div class="vcap" id="vcap"></div>'+demoOv()+'</div>'+dock(f,G)+(f>=3?'<button class="qhandle" data-a="tab" data-t="quaderno" aria-label="Apri il quaderno"><span></span>Quaderno'+(G.ui.unread>0?' ●':'')+'</button>':'')+'</div>'; }
+  return '<div class="stage full'+(f<4?' pure':'')+'"><div class="vasebox hero" id="vb"><div class="hud">'+(f>=3?'<button class="day" data-a="needs" aria-label="Come sta il vaso"><span>Giorno</span><b>'+v.d+'</b></button>':'')+needBars(v)+'</div><div class="side">'+sideBtns()+notifHTML(v)+'</div><div class="vcap" id="vcap"></div>'+demoOv()+'</div>'+dock(f,G)+(f>=3?'<div class="tip" id="tip" aria-live="polite"></div>':'')+(f>=3?'<button class="qhandle" data-a="tab" data-t="quaderno" aria-label="Apri il quaderno"><span></span>Quaderno'+(G.ui.unread>0?' ●':'')+'</button>':'')+'</div>'; }
 const TCOL={vaso:'#8C97A3',formiche:'#C98B5B',termiti:'#E8D2A0',coleotteri:'#6FD39A',ragni:'#B79BD9',lumache:'#E6B36A',mosche:'#9DB4C8'};
 function alberoHTML(){ const Tr=A.G.tree; if(!Tr||!Tr.nodes.length) return '<p class="muted">L’albero comincia con il primo giorno del vaso.</p>';
   const N=Tr.nodes, lanes=['vaso']; N.forEach(n=>{ [n.lane,n.link].forEach(l=>{ if(l&&!lanes.includes(l)) lanes.push(l); }); });
@@ -5397,8 +5415,27 @@ function fxAfter(pv){ const F=window.__fx; if(!F||!pv) return; const sc=$('#scre
   if(mode!=='game') return; const fresh=pv.tab!=='vaso'||pv.mode!=='game';
   if(fresh){ document.querySelectorAll('.np').forEach(b=>{ const k=b.dataset.n, low=nv0()[k]<.25; b.classList.toggle('crit',low); if(low) warnPulse(b); }); F.rise(document.querySelectorAll('.hud > *, .hud .bars > *, .side > *, .dock .rb, .dock .cta, .qhandle'),38); return; }
   const day=document.querySelector('.hud .day b'); if(day&&pv.day!=null&&pv.day!==A.sim.d) F.count(day,pv.day,A.sim.d);
-  const nv=A.sim.view().needs; document.querySelectorAll('.np').forEach(b=>{ const k=b.dataset.n, now=nv[k], was=pv.needs&&pv.needs[k]; if(now==null) return; if(was!=null&&Math.abs(now-was)>.015){ F.bump(b,now>was); const f=b.querySelector('i b'); if(f) F.bar(f,was,now); } const low=now<.25; b.classList.toggle('crit',low); if(low&&(was==null||was>=.25)){ warnPulse(b); if(was!=null) lowCap(k); } });
+  const nv=A.sim.view().needs; document.querySelectorAll('.np').forEach(b=>{ const k=b.dataset.n, now=nv[k], was=pv.needs&&pv.needs[k]; if(now==null) return; if(was!=null&&Math.abs(now-was)>.015){ F.bump(b,now>was); const f=b.querySelector('i b'); if(f) F.bar(f,was,now); } const low=now<.25; b.classList.toggle('crit',low); if(now<.5&&was!=null&&was>=.5) softPulse(b); if(low&&(was==null||was>=.25)){ warnPulse(b); if(was!=null) lowCap(k); } });
   const old=pv.nf||[]; let i=0; document.querySelectorAll('.side .nf').forEach(e=>{ if(!old.includes(e.dataset.a+'|'+(e.dataset.t||''))) F.pop(e,(i++)*70); }); }
+
+// Consiglio del momento + avviso gentile (bisogni sotto 50% e 30%)
+const CS={key:'',last:'',until:0,hideT:0,next:0,fol:'',alt:0};
+function consCalc(){ if(FASE()<3||!A.sim||!A.G) return null; const n=A.sim.view().needs, K=S.CONSIGLIO, f=FASE();
+  const lo=['um','ter','pul'].filter(k=>n[k]<.5).sort((a,b)=>n[a]-n[b])[0]; if(lo) return {key:'n-'+lo,x:K[lo],fol:{um:'acqua',ter:'nutri',pul:'pulisci'}[lo]};
+  if(f<4) return null; let M=null; try{ M=A.missioni(); }catch(e){}
+  if(M&&M.daRiscuotere) return {key:'riscuoti',x:K.riscuoti,fol:'miss'};
+  if(M&&M.att&&M.att.some(m=>m.ann)) return {key:'missione',x:K.missione,fol:'miss'};
+  return [{key:'osserva',x:K.osserva,fol:'osserva'},{key:'quaderno',x:K.quaderno,fol:'quaderno'}][CS.alt%2]; }
+function consHide(){ const e=$('#tip'); clearTimeout(CS.hideT); if(e) e.classList.remove('on'); CS.until=0; CS.next=Date.now()+(fast()?500:12000); }
+function consShow(c){ const e=$('#tip'); if(!e) return; e.textContent=c.x; e.classList.remove('on'); void e.offsetWidth; e.classList.add('on'); CS.key=c.key; CS.last=c.key; CS.fol=c.fol; CS.until=Date.now()+8000; clearTimeout(CS.hideT); CS.hideT=setTimeout(()=>{ if(CS.key.indexOf('n-')!==0) CS.alt++; consHide(); },8000); }
+function consTick(){ if(mode!=='game'||tab!=='vaso'||cine||busy()) return; const e=$('#tip'); if(!e) return; if(CS.until&&Date.now()<CS.until){ if(!e.classList.contains('on')&&e.textContent) e.classList.add('on'); return; }
+  if(Date.now()<CS.next) return; const c=consCalc(); if(!c||c.key===CS.last) return; if(A.inbox().length&&c.key.indexOf('n-')!==0) return; consShow(c); }
+function consFollow(f){ if(f&&CS.until&&CS.fol===f){ if(f==='osserva'||f==='quaderno') CS.alt++; consHide(); } }
+function avvisoDolce(){ if(FASE()<3||!A.sim||!A.G||busy()) return; const n=A.sim.view().needs, d=A.todayIdx(), U=A.G.ui.avvisi||(A.G.ui.avvisi={}), K=S.CONSIGLIO, T={um:K.avvUm,ter:K.avvTer,pul:K.avvPul};
+  ['um','ter','pul'].forEach(k=>{ if(n[k]<.3&&U[k]!==d){ U[k]=d; A.persist(); softNote(T[k],k); } }); }
+function softNote(t,k){ const col=document.querySelector('.side .notifs'); if(!col) return; const b=document.createElement('div'); b.className='nf soft n-'+(k==='um'?'q':k==='ter'?'a':'p'); b.setAttribute('role','status'); b.setAttribute('aria-label',t); b.innerHTML='<span>'+NICO[k]+'</span>'; col.appendChild(b); flashCap(t); setTimeout(()=>{ b.classList.add('out'); setTimeout(()=>b.remove(),320); },6000); }
+function softPulse(b){ b.classList.remove('soft'); void b.offsetWidth; b.classList.add('soft'); setTimeout(()=>b.classList.remove('soft'),400); }
+setInterval(()=>{ try{ consTick(); avvisoDolce(); }catch(e){} },1500);
 let missSes=0, lastPill='';
 function render(){ if(nHold){ nHold.render=1; return; } const pv=fxSnap(); render0(); try{ const pe=document.getElementById('mbtn'); const key=pe?pe.dataset.key:''; if(pe&&key!==lastPill&&lastPill!==''&&window.__fx) __fx.pop(pe); lastPill=key||lastPill; }catch(e){} try{ fxAfter(pv); }catch(e){} try{ if(mode==='game'&&A.sim){ lastHud.day=A.sim.d; lastHud.needs=Object.assign({},A.sim.view().needs); } }catch(e){} }
 function render0(){ const sc=$('#screen'), tb=$('#tabbar'); const st=sc.scrollTop; let h=''; if(tab==='codex') tab='quaderno';
@@ -5414,16 +5451,16 @@ setInterval(ambientNow,3000);
 // ---------------- azioni ----------------
 function startFilm(replay){ mode='film'; render(); window.__film.start(res=>{ if(replay||!res){ mode='game'; try3d(); render(); return; } A.newGame(res.name,res.setup); mode='game'; tab='vaso'; try3d(); render(); setTimeout(showNextPopup,400); },{replay}); }
 const H={
- 'tab'(d){ tab=d.t; render(); }, 'cdx'(d){ cdx=d.t; render(); if(cdx==='albero') scrollEnd(); },
+ 'tab'(d){ if(d.t==='quaderno') consFollow('quaderno'); tab=d.t; render(); }, 'cdx'(d){ cdx=d.t; render(); if(cdx==='albero') scrollEnd(); },
  'tnode'(d){ const n=(A.G.tree||{nodes:[]}).nodes[+d.i]; if(!n) return; sheet((n.img?'<img class="tbig" src="'+n.img+'" alt="Il vaso quel giorno">':'')+'<div class="kicker" style="text-align:center">Giorno '+n.d+((n.cap||1)>1?' · capitolo '+n.cap:'')+'</div><h2>'+esc(n.t)+'</h2>'+(n.k==='scelta'?'<p class="nar" style="text-align:center">Hai scelto: <b>'+esc(n.ch||'')+'</b></p><p class="muted" style="text-align:center">La strada non presa: '+esc(n.alt||'')+'. Chissà dove portava.</p>':'')+'<div class="stack"><button class="btn" data-a="sx">Chiudi</button></div>',true); },
  'sx'(){ closeSheet(); V.reset(); render(); setTimeout(showNextPopup,60); },
  'riep-arr'(){ closeSheet(); setTimeout(()=>{ popForce=1; H['arr-open'](); popForce=0; },80); },
  'cura-qui'(d){ closeSheet(); if(tab!=='vaso'){ tab='vaso'; render(); } H.act({k:d.k}); setTimeout(showNextPopup,200); },
- 'act'(d){  const was=A.G.req.done, KN={acqua:'um',nutri:'ter',terra:'ter',pulisci:'pul'}[d.k], n0=KN?A.sim.view().needs[KN]:null; A.doAct(d.k); V.fx&&V.fx(d.k); AU.sfx('azione'); const last=A.sim.log[A.sim.log.length-1]; render();
+ 'act'(d){ consFollow({acqua:'acqua',nutri:'nutri',pulisci:'pulisci'}[d.k]||'');  const was=A.G.req.done, KN={acqua:'um',nutri:'ter',terra:'ter',pulisci:'pul'}[d.k], n0=KN?A.sim.view().needs[KN]:null; A.doAct(d.k); V.fx&&V.fx(d.k); AU.sfx('azione'); const last=A.sim.log[A.sim.log.length-1]; render();
    const same=KN&&FASE()>=3&&Math.abs(A.sim.view().needs[KN]-n0)<.012&&n0>.9;
    if(same){ const NO={acqua:'Il terreno è già bagnato.',nutri:'Il terreno è già ricco.',pulisci:'Il vetro è già pulito.'}[d.k]; if(NO){ const b=document.querySelector('.rb[data-k='+d.k+']'); if(window.__fx&&b) __fx.nope(b); flashCap(NO); } else flashCap(narraC(last)); } else flashCap(narraC(last)); if(!was&&A.G.req.done) A.toast('Fatto. +20 XP'); checkPopups(); },
  'pota'(){ const r=A.pota(); AU.sfx('azione'); render(); A.toast(r.text); checkPopups(); },
- 'osserva'(){ const o=A.osserva(); cinema([{focus:o.focus,text:o.text}],()=>{ render(); checkPopups(); }); },
+ 'osserva'(){ consFollow('osserva'); const o=A.osserva(); cinema([{focus:o.focus,text:o.text}],()=>{ render(); checkPopups(); }); },
  'grp'(d){ groupSheet(d.id); },
  'nb'(d){ const o=A.nightFx(d.id,+d.i); sheet('<div class="kicker" style="text-align:center">Stanotte</div><p class="nar" style="text-align:center">'+esc(o)+'</p><div class="stack"><button class="btn" data-a="sx">Continua</button></div>',true); render(); },
  'gt'(d){ const r=A.gattoChoice(+d.s,+d.i); sheet('<div class="kicker" style="text-align:center">Biscotto · '+esc(r.t)+'</div><p class="nar" style="text-align:center">'+esc(r.x)+'</p><div class="stack"><button class="btn" data-a="sx">Continua</button></div>',true); render(); },
@@ -5436,7 +5473,7 @@ const H={
  'menu-go'(d){ closeSheet(); const g=d.g; if(g==='v3d') H.v3d(d); else if(g==='demo'){ tab='vaso'; render(); demoStart(); } else if(g==='quad'){ tab='quaderno'; render(); } else if(g==='albero'){ cdx='albero'; tab='quaderno'; render(); scrollEnd(); } else if(g==='mazzo') H.mazzo(); else if(g==='imp'){ tab='imp'; render(); } },
  'notte-ui'(){ const r=A.passaNotte(); bubbleEvents(r.eventi); const v=A.sim.view(); const nota=r.eventi.filter(e=>NOTA.includes(e.kind)).slice(-2); AU.sfx('azione'); const after=()=>{ render(); checkPopups(); setTimeout(showNextPopup,80); };
    if(nota.length) cinema(nota.map(e=>stepFor(e,v)),after); else { render(); const last=r.eventi[r.eventi.length-1]; flashCap(last?narraC(last):(r.pausa?'Il vaso aspetta una tua decisione.':'Una notte passa. Il sasso batte, il muschio respira.')); checkPopups(); } },
- 'miss-list'(){ if(busy()) return; AU.sfx('pagina'); sheet('<div class="kicker" style="text-align:center">'+esc(S.MISS.tutte)+'</div>'+missioniHTML(false)+'<div class="stack"><button class="btn s" data-a="sx">'+esc(S.MISS.chiudi)+'</button></div>'); A.missVista(); },
+ 'miss-list'(){ consFollow('miss'); if(busy()) return; AU.sfx('pagina'); sheet('<div class="kicker" style="text-align:center">'+esc(S.MISS.tutte)+'</div>'+missioniHTML(false)+'<div class="stack"><button class="btn s" data-a="sx">'+esc(S.MISS.chiudi)+'</button></div>'); A.missVista(); },
  'miss-riscuoti'(d,el){ if(cine||nEl||document.getElementById('reveal')) return; const r=A.missRiscuoti(d.g?-1:+d.i); if(!r.ok){ render(); return; } AU.sfx('level'); const hadSheet=!!layer.querySelector('.sheet'); if(!fast()&&gShow==null) gShow=Math.max(0,gNow()-r.g); if(hadSheet) closeSheet(); if(tab!=='vaso'){ A.toast(S.MISS.riscosse(r.g)); gShow=null; render(); return; } render(); const from=document.querySelector('#mbtn')||el; if(window.__fx&&from) __fx.pop(from); setTimeout(()=>volaGocce(from,r.g,!!r.grande),hadSheet?200:60); },
  'miss-fallo'(d){ const M=A.missioni(), o=d.g?M.grande:M.att[+d.i]; if(!o) return; missFallo(o); },
  'miss-open'(){ closeSheet(); tab='quaderno'; cdx='oggi'; render(); },
