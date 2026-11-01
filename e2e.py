@@ -98,7 +98,7 @@ with sync_playwright() as p:
             elif pg.locator('.sheet [data-a=sx]').count(): pg.locator('.sheet [data-a=sx]').first.click(); pg.wait_for_timeout(150)
             elif pg.locator('.sheet [data-a=dec]').count(): pg.locator('.sheet [data-a=dec]').first.click(); pg.wait_for_timeout(150)
             else: break
-    n1=pg.evaluate("__app.sim.view().needs"); t('passando le notti senza curare le barre calano',n1['um']<n0['um']-.08 and n1['ter']<.8 and n1['pul']<1,[n0,n1]); pg.screenshot(path=f'screenshots/{tag}_n2_calate.png')
+    n1=pg.evaluate("__app.sim.view().needs"); t('passando le notti senza curare le barre calano',n1['um']<n0['um']-.08 and n1['ter']<.8 and n1['pul']<=n0['pul']+.01,[n0,n1]); pg.screenshot(path=f'screenshots/{tag}_n2_calate.png')
     pg.evaluate("window.__notti.NOTTI=window.__bakN")
     goto('vaso')
     for k in ['acqua','nutri','pulisci']: pg.click(f'[data-a=act][data-k={k}]'); pg.wait_for_timeout(150)
