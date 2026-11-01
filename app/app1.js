@@ -59,7 +59,7 @@ function takeArrival0(id,choice){ const a=G.arrivi.list.find(x=>x.id===id); if(!
   if(ok){ try{ missEv('arrivo'); }catch(e){} } updateCodex(); persist(); return ok; }
 function skipStart(){ if((G.ui.fase||0)>=4) return false; sim.setNeeds({um:.7,ter:.8}); ['muschio','felce'].forEach(p=>sim.addPlant(p)); sim.addSpecies('formiche'); G.ui.fase=5; gamiFase4(); G.arrivi={list:[],n:0}; G.arrivi.list=[]; planArrivals(sim.d); G.req=makeRequest(); updateCodex(); persist(); return true; }
 function forceArrival(slot,force){ G.arrivi.list.push({id:'a'+(G.arrivi.n++),slot,force,due:sim.d,state:'futuro'}); dueArrivals().forEach(x=>popups.push({t:'arrivo',id:x.id})); }
-function planAfterMoss(d){ const a=G.arrivi, ant=(G.ui.eredita&&G.ui.eredita.anticipo)||0; a.list.push({id:'a'+(a.n++),slot:'pianta',force:'felce',due:d+3,state:'futuro'},{id:'a'+(a.n++),slot:'insetto',force:'formiche',due:d+7-ant,state:'futuro'}); planArrivals(d+10); }
+function planAfterMoss(d){ const a=G.arrivi, ant=(G.ui.eredita&&G.ui.eredita.anticipo)||0; a.list.push({id:'a'+(a.n++),slot:'pianta',force:'felce',due:d+3,state:'futuro'},{id:'a'+(a.n++),slot:'insetto',force:'formiche',due:d+3-ant,state:'futuro'}); planArrivals(d+10); }
 const inbox=()=>G.arrivi.list.filter(x=>x.state==='nuovo');
 // ---------- carte: asso nella manica (dati e logica; presentazione in carte.js) ----------
 // r: carta (70%) · argento (22%) · sasso (8%) · ricordo (non si pesca). set: tempo · casa · biscotto · cassetto. come: riga per la sagoma nell'album.
